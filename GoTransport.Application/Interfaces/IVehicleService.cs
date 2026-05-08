@@ -5,7 +5,7 @@ using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IVehicleService : IServiceBase<VehicleCreationDto, VehicleUpdateDto, VehicleDto>
+public interface IVehicleService : IServiceBase<int, VehicleCreationDto, VehicleUpdateDto, VehicleDto>
 {
     Task<JsonPagedResponse<IEnumerable<VehicleDto>>> GetAsync(VehicleParameters parameters, CancellationToken cancellationToken);
 }

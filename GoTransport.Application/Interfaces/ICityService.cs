@@ -10,11 +10,11 @@ public interface ICityService
 
     Task<JsonResponse<IEnumerable<CityDto>>> GetAllByDepartmentAsync(int departmentId, CancellationToken cancellationToken);
 
-    Task<JsonResponse<CityDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken);
+    Task<JsonResponse<CityDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
     Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto dto);
 
-    Task<JsonResponse<CityDto>> UpdateAsync(dynamic id, CityUpdateDto dto);
+    Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto dto);
 
-    Task<JsonResponse<bool?>> DeleteAsync(dynamic id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id);
 }

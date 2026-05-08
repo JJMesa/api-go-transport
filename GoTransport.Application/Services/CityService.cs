@@ -39,7 +39,7 @@ public class CityService : ICityService
         return ResponseBuilder<IEnumerable<CityDto>>.OkPaged(cities, metadata);
     }
 
-    public async Task<JsonResponse<CityDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<CityDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(id, null), cancellationToken);
         if (city is null) return ResponseBuilder<CityDto>.NotFound();
@@ -57,7 +57,7 @@ public class CityService : ICityService
         return ResponseBuilder<CityDto>.Created(_mapper.Map<CityDto>(city));
     }
 
-    public async Task<JsonResponse<CityDto>> UpdateAsync(dynamic id, CityUpdateDto cityUpdateDto)
+    public async Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto cityUpdateDto)
     {
         if (id != cityUpdateDto.CityId)
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -73,7 +73,7 @@ public class CityService : ICityService
         return ResponseBuilder<CityDto>.Ok(_mapper.Map<CityDto>(city));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
     {
         var city = await _cityRepository.GetByIdAsync(id);
         if (city is null) return ResponseBuilder<bool?>.NotFound();

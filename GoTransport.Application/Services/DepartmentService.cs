@@ -48,7 +48,7 @@ internal class DepartmentService : IDepartmentService
         return ResponseBuilder<IEnumerable<DepartmentDto>>.OkPaged(departments, metadata);
     }
 
-    public async Task<JsonResponse<DepartmentDto>> GetByIdAsync(dynamic departmentId, CancellationToken cancellationToken)
+    public async Task<JsonResponse<DepartmentDto>> GetByIdAsync(int departmentId, CancellationToken cancellationToken)
     {
         var department = await _departmentRepository.GetByIdAsync(departmentId, cancellationToken);
         if (department is null) return ResponseBuilder<DepartmentDto>.NotFound();
@@ -66,7 +66,7 @@ internal class DepartmentService : IDepartmentService
         return ResponseBuilder<DepartmentDto>.Created(_mapper.Map<DepartmentDto>(department));
     }
 
-    public async Task<JsonResponse<DepartmentDto>> UpdateAsync(dynamic id, DepartmentUpdateDto departmentUpdate)
+    public async Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate)
     {
         if (id != departmentUpdate.DepartmentId)
             return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -82,7 +82,7 @@ internal class DepartmentService : IDepartmentService
         return ResponseBuilder<DepartmentDto>.Ok(_mapper.Map<DepartmentDto>(department));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic departmentId)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int departmentId)
     {
         var department = await _departmentRepository.GetByIdAsync(departmentId);
         if (department is null) return ResponseBuilder<bool?>.NotFound();

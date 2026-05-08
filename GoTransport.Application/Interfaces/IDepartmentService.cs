@@ -5,7 +5,7 @@ using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IDepartmentService : IServiceBase<DepartmentCreationDto, DepartmentUpdateDto, DepartmentDto>
+public interface IDepartmentService : IServiceBase<int, DepartmentCreationDto, DepartmentUpdateDto, DepartmentDto>
 {
     Task<JsonPagedResponse<IEnumerable<DepartmentDto>>> GetAsync(DepartmentParameters parameters, CancellationToken cancellationToken);
 }

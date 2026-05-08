@@ -7,11 +7,11 @@ public interface IScheduleService
 {
     Task<JsonResponse<IEnumerable<ScheduleDto>>> GetAllByRouteAsync(int routeId, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ScheduleDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken);
+    Task<JsonResponse<ScheduleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
     Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto entity);
 
-    Task<JsonResponse<ScheduleDto>> UpdateAsync(dynamic id, ScheduleUpdateDto entity);
+    Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto entity);
 
-    Task<JsonResponse<bool?>> DeleteAsync(dynamic id);
+    Task<JsonResponse<bool?>> DeleteAsync(Guid id);
 }

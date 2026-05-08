@@ -42,7 +42,7 @@ internal class UserService : IUserService
         return ResponseBuilder<IEnumerable<UserDto>>.OkPaged(users, metadata);
     }
 
-    public async Task<JsonResponse<UserDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<UserDto>> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
         var user = await _userRepository.GetByIdAsync(id);
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
@@ -73,7 +73,7 @@ internal class UserService : IUserService
         }
     }
 
-    public async Task<JsonResponse<UserDto>> UpdateAsync(dynamic id, UserUpdateDto userUpdateDto)
+    public async Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto)
     {
         if (id != userUpdateDto.UserId)
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);

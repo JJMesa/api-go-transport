@@ -49,7 +49,7 @@ internal class RouteService : IRouteService
         return ResponseBuilder<IEnumerable<RouteDto>>.OkPaged(routes, metadata);
     }
 
-    public async Task<JsonResponse<RouteDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<RouteDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
@@ -67,7 +67,7 @@ internal class RouteService : IRouteService
         return ResponseBuilder<RouteDto>.Created(_mapper.Map<RouteDto>(route));
     }
 
-    public async Task<JsonResponse<RouteDto>> UpdateAsync(dynamic id, RouteUpdateDto routeUpdate)
+    public async Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate)
     {
         if (id != routeUpdate.RouteId)
             return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -86,7 +86,7 @@ internal class RouteService : IRouteService
         return ResponseBuilder<RouteDto>.Ok(_mapper.Map<RouteDto>(route));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
     {
         var route = await _routeRepository.GetByIdAsync(id);
         if (route is null) return ResponseBuilder<bool?>.NotFound();
