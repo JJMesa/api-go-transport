@@ -5,7 +5,7 @@ using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IReservationService : IServiceBase<ReservationCreationDto, ReservationUpdateDto, ReservationDto>
+public interface IReservationService : IServiceBase<Guid, ReservationCreationDto, ReservationUpdateDto, ReservationDto>
 {
     Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken);
 

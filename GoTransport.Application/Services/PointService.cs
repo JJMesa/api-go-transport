@@ -48,7 +48,7 @@ internal class PointService : IPointService
         return ResponseBuilder<IEnumerable<PointDto>>.OkPaged(points, metadata);
     }
 
-    public async Task<JsonResponse<PointDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<PointDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id), cancellationToken);
         if (point is null) return ResponseBuilder<PointDto>.NotFound();
@@ -63,7 +63,7 @@ internal class PointService : IPointService
         return ResponseBuilder<PointDto>.Created(_mapper.Map<PointDto>(point));
     }
 
-    public async Task<JsonResponse<PointDto>> UpdateAsync(dynamic id, PointUpdateDto pointUpdate)
+    public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate)
     {
         if (id != pointUpdate.PointId)
             return ResponseBuilder<PointDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -79,7 +79,7 @@ internal class PointService : IPointService
         return ResponseBuilder<PointDto>.Ok(_mapper.Map<PointDto>(point));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic pointId)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int pointId)
     {
         var point = await _pointRepository.GetByIdAsync(pointId);
         if (point is null) return ResponseBuilder<bool?>.NotFound();

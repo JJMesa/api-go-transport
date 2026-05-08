@@ -58,7 +58,7 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
     }
 
-    public async Task<JsonResponse<ReservationDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var reservation = await _reservationRepository.GetByIdAsync(id, cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
@@ -78,7 +78,7 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
     }
 
-    public async Task<JsonResponse<ReservationDto>> UpdateAsync(dynamic id, ReservationUpdateDto reservationUpdateDto)
+    public async Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdateDto)
     {
         if (id != reservationUpdateDto.ReservationId)
             return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -94,7 +94,7 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)
     {
         var reservation = await _reservationRepository.GetByIdAsync(id);
         if (reservation is null) return ResponseBuilder<bool?>.NotFound();

@@ -48,7 +48,7 @@ internal class VehicleService : IVehicleService
         return ResponseBuilder<IEnumerable<VehicleDto>>.OkPaged(_mapper.Map<IEnumerable<VehicleDto>>(vehicles), metadata);
     }
 
-    public async Task<JsonResponse<VehicleDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<VehicleDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
         var vehicle = await _vehicleRepository.GetByIdAsync(id, cancellationToken);
         if (vehicle is null) return ResponseBuilder<VehicleDto>.NotFound();
@@ -67,7 +67,7 @@ internal class VehicleService : IVehicleService
         return ResponseBuilder<VehicleDto>.Created(_mapper.Map<VehicleDto>(vehicle));
     }
 
-    public async Task<JsonResponse<VehicleDto>> UpdateAsync(dynamic id, VehicleUpdateDto vehicleUpdate)
+    public async Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate)
     {
         if (id != vehicleUpdate.VehicleId)
             return ResponseBuilder<VehicleDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -81,7 +81,7 @@ internal class VehicleService : IVehicleService
         return ResponseBuilder<VehicleDto>.Ok(_mapper.Map<VehicleDto>(vehicle));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
     {
         var vehicle = await _vehicleRepository.GetByIdAsync(id);
         if (vehicle is null) return ResponseBuilder<bool?>.NotFound();

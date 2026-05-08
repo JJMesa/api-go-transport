@@ -5,7 +5,7 @@ using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IRouteService : IServiceBase<RouteCreationDto, RouteUpdateDto, RouteDto>
+public interface IRouteService : IServiceBase<int, RouteCreationDto, RouteUpdateDto, RouteDto>
 {
     Task<JsonPagedResponse<IEnumerable<RouteDto>>> GetAsync(RouteParameters parameters, CancellationToken cancellationToken);
 }

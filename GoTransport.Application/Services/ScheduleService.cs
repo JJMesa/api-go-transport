@@ -29,7 +29,7 @@ internal class ScheduleService : IScheduleService
         return ResponseBuilder<IEnumerable<ScheduleDto>>.Ok(_mapper.Map<IEnumerable<ScheduleDto>>(schedules));
     }
 
-    public async Task<JsonResponse<ScheduleDto>> GetByIdAsync(dynamic id, CancellationToken cancellationToken)
+    public async Task<JsonResponse<ScheduleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var schedule = await _scheduleRepository.GetByIdAsync(id, cancellationToken);
         if (schedule is null) return ResponseBuilder<ScheduleDto>.NotFound();
@@ -46,7 +46,7 @@ internal class ScheduleService : IScheduleService
         return ResponseBuilder<ScheduleDto>.Created(_mapper.Map<ScheduleDto>(schedule));
     }
 
-    public async Task<JsonResponse<ScheduleDto>> UpdateAsync(dynamic id, ScheduleUpdateDto scheduleUpdate)
+    public async Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto scheduleUpdate)
     {
         if (id != scheduleUpdate.ScheduleId)
             return ResponseBuilder<ScheduleDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -62,7 +62,7 @@ internal class ScheduleService : IScheduleService
         return ResponseBuilder<ScheduleDto>.Ok(_mapper.Map<ScheduleDto>(schedule));
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(dynamic id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)
     {
         var schedule = await _scheduleRepository.GetByIdAsync(id);
         if (schedule is null) return ResponseBuilder<bool?>.NotFound();

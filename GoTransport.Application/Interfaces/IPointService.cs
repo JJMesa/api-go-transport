@@ -5,7 +5,7 @@ using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IPointService : IServiceBase<PointCreationDto, PointUpdateDto, PointDto>
+public interface IPointService : IServiceBase<int, PointCreationDto, PointUpdateDto, PointDto>
 {
     Task<JsonPagedResponse<IEnumerable<PointDto>>> GetAsync(PointParameters parameters, CancellationToken cancellationToken);
 }
