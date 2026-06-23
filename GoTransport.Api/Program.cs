@@ -5,6 +5,13 @@ using GoTransport.Application;
 using GoTransport.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateScopes = true;
+    options.ValidateOnBuild = true;
+});
+
 var configuration = builder.Configuration
 .AddUserSecrets(Assembly.GetExecutingAssembly(), true).Build();
 
