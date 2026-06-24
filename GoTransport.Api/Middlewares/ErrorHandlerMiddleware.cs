@@ -11,17 +11,18 @@ namespace GoTransport.Api.Middlewares;
 public class ErrorHandlerMiddleware
 {
     private readonly RequestDelegate _next;
+    private readonly ILogger<ErrorHandlerMiddleware> _logger;
 
-    public ErrorHandlerMiddleware(RequestDelegate next) =>
+    public ErrorHandlerMiddleware(RequestDelegate next, ILogger<ErrorHandlerMiddleware> logger)
+    {
         _next = next;
+        _logger = logger;
+    }
 
     public async Task Invoke(HttpContext context)
     {
         try
         {
-            context.Request.EnableBuffering();
-            string bodyAsText = await new StreamReader(context.Request.Body).ReadToEndAsync();
-            context.Request.Body.Position = 0;
             await _next(context);
         }
         catch (Exception ex)
@@ -30,13 +31,14 @@ public class ErrorHandlerMiddleware
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
+    private async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var response = context.Response;
 
         if (response.HasStarted)
         {
-            await response.WriteAsync(string.Empty);
+            _logger.LogError(exception, "Unhandled exception. {Method} {Path}",
+                context.Request.Method, context.Request.Path);
             return;
         }
 
@@ -50,11 +52,15 @@ public class ErrorHandlerMiddleware
                 response.StatusCode = (int)HttpStatusCode.BadRequest;
                 jsonResponse.HttpCode = HttpStatusCode.BadRequest;
                 jsonResponse.Errors = new List<string>() { ErrorMessages.CanceledTask };
+                _logger.LogWarning(exception, "Request canceled. {Method} {Path}",
+                    context.Request.Method, context.Request.Path);
                 break;
 
             case KeyNotFoundException:
                 response.StatusCode = (int)HttpStatusCode.NotFound;
                 jsonResponse.HttpCode = HttpStatusCode.NotFound;
+                _logger.LogWarning(exception, "Resource not found. {Method} {Path}",
+                    context.Request.Method, context.Request.Path);
                 break;
 
             default:
@@ -74,6 +80,15 @@ public class ErrorHandlerMiddleware
                         2601 => new List<string>() { ErrorMessages.ConflictPrimaryKey },
                         _ => new List<string>() { ErrorMessages.InternalServerError },
                     };
+
+                    _logger.LogWarning(exception,
+                        "Database conflict (SQL {SqlErrorNumber}). {Method} {Path}",
+                        sqlEx.Number, context.Request.Method, context.Request.Path);
+                }
+                else
+                {
+                    _logger.LogError(exception, "Unhandled exception. {Method} {Path}",
+                        context.Request.Method, context.Request.Path);
                 }
 
                 break;
