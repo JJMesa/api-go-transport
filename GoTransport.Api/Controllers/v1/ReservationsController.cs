@@ -59,7 +59,6 @@ public class ReservationsController : ControllerBase
     }
 
     //POST: api/v1/reservations
-    [AllowAnonymous]
     [HttpPost]
     public async Task<ActionResult<JsonResponse<ReservationDto>>> CreateAsync([FromBody] ReservationCreationDto reservationCreationDto)
     {
@@ -68,7 +67,6 @@ public class ReservationsController : ControllerBase
     }
 
     //PUT: api/v1/reservations/ABCD-1234-A1B2-C3D4
-    [AllowAnonymous]
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<JsonResponse<ReservationDto>>> UpdateAsync(Guid id, [FromBody] ReservationUpdateDto reservationUpdateDto)
     {

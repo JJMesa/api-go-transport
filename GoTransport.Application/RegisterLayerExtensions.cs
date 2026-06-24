@@ -19,6 +19,7 @@ public static class RegisterLayerExtensions
         services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddFluentValidationAutoValidation();
+        services.AddMemoryCache();
         services.AddTransient(typeof(ICacheService<>), typeof(CacheService<>));
 
         services.Configure<CachingSettings>(configuration.GetSection("CachingSettings"));

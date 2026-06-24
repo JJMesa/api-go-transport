@@ -5,6 +5,13 @@ using GoTransport.Application;
 using GoTransport.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseDefaultServiceProvider(options =>
+{
+    options.ValidateScopes = true;
+    options.ValidateOnBuild = true;
+});
+
 var configuration = builder.Configuration
 .AddUserSecrets(Assembly.GetExecutingAssembly(), true).Build();
 
@@ -29,6 +36,8 @@ builder.Services.AddConventionConfiguration();
 
 var app = builder.Build();
 
+app.UseErrorHandlerMiddleware();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -42,8 +51,6 @@ app.UseCors("Security");
 app.UseAuthentication();
 
 app.UseAuthorization();
-
-app.UseErrorHandlerMiddleware();
 
 app.MapControllers();
 
