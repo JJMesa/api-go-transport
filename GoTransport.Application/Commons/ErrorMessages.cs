@@ -4,6 +4,7 @@ public static class ErrorMessages
 {
     public const string NotFound = "El recurso al que intentas acceder no existe.";
     public const string InvalidCredentials = "El usuario o contraseña proporcionados no son válidos.";
+    public const string UserLockedOut = "La cuenta ha sido bloqueada temporalmente debido a múltiples intentos fallidos de inicio de sesión. Por favor, intenta nuevamente más tarde.";
     public const string DuplicateDescription = "Ya existe otro registro con la misma descripción suministrada.";
     public const string Unauthorized = "El usuario no se encuentra autenticado.";
     public const string Forbidden = "El usuario no tiene permisos para acceder al recurso solicitado.";

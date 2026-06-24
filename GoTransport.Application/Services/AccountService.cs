@@ -20,12 +20,15 @@ namespace GoTransport.Application.Services;
 internal class AccountService : IAccountService
 {
     private readonly UserManager<User> _userManager;
+    private readonly SignInManager<User> _signInManager;
     private readonly JwtSettings _jwtSettings;
 
     public AccountService(UserManager<User> userManager
+        , SignInManager<User> signInManager
         , IOptionsSnapshot<JwtSettings> jwtSettings)
     {
         _userManager = userManager;
+        _signInManager = signInManager;
         _jwtSettings = jwtSettings.Value;
     }
 
@@ -34,8 +37,10 @@ internal class AccountService : IAccountService
         var user = await _userManager.FindByEmailAsync(userLogin.Email);
         if (user is null) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
 
-        var checkUserAndPass = await _userManager.CheckPasswordAsync(user, userLogin.Password);
-        if (!checkUserAndPass) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
+        var signInResult = await _signInManager.CheckPasswordSignInAsync(user, userLogin.Password, lockoutOnFailure: true);
+
+        if (signInResult.IsLockedOut) return ResponseBuilder<UserTokenDto>.TooManyRequests(ErrorMessages.UserLockedOut);
+        if (!signInResult.Succeeded) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
 
         var token = await GenerateToken(user);
 
