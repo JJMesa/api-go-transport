@@ -33,6 +33,13 @@ public class ErrorHandlerMiddleware
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var response = context.Response;
+
+        if (response.HasStarted)
+        {
+            await response.WriteAsync(string.Empty);
+            return;
+        }
+
         response.ContentType = MediaTypeNames.Application.Json;
 
         var jsonResponse = new JsonResponse<object>();

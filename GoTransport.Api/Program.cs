@@ -36,6 +36,8 @@ builder.Services.AddConventionConfiguration();
 
 var app = builder.Build();
 
+app.UseErrorHandlerMiddleware();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -49,8 +51,6 @@ app.UseCors("Security");
 app.UseAuthentication();
 
 app.UseAuthorization();
-
-app.UseErrorHandlerMiddleware();
 
 app.MapControllers();
 
