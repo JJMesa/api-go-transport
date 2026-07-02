@@ -3,55 +3,79 @@ using System.Text.Json.Serialization;
 using GoTransport.Api.Extensions;
 using GoTransport.Application;
 using GoTransport.Persistence;
+using Serilog;
 
-var builder = WebApplication.CreateBuilder(args);
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
 
-builder.Host.UseDefaultServiceProvider(options =>
+try
 {
-    options.ValidateScopes = true;
-    options.ValidateOnBuild = true;
-});
+    var builder = WebApplication.CreateBuilder(args);
 
-var configuration = builder.Configuration
-.AddUserSecrets(Assembly.GetExecutingAssembly(), true).Build();
+    builder.Host.UseDefaultServiceProvider(options =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
 
-builder.Services.AddHttpContextAccessor();
-builder.Services.AddApplicationLayer(configuration);
-builder.Services.AddPersistenceLayer(configuration);
-builder.Services.AddControllers()
-    .AddJsonOptions(opt => opt.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
+    var configuration = builder.Configuration
+    .AddUserSecrets(Assembly.GetExecutingAssembly(), true).Build();
 
-builder.Services.AddVersioningConfiguration();
+    builder.AddSerilogConfiguration();
 
-builder.Services.AddCustomResponseFluentValidation();
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddApplicationLayer(configuration);
+    builder.Services.AddPersistenceLayer(configuration);
+    builder.Services.AddControllers()
+        .AddJsonOptions(opt => opt.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
 
-builder.Services.AddJwtAuthentication(configuration);
+    builder.Services.AddVersioningConfiguration();
 
-builder.Services.AddCorsConfiguration();
+    builder.Services.AddCustomResponseFluentValidation();
 
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGenConfiguration();
+    builder.Services.AddJwtAuthentication(configuration);
 
-builder.Services.AddConventionConfiguration();
+    builder.Services.AddCorsConfiguration();
 
-var app = builder.Build();
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGenConfiguration();
 
-app.UseErrorHandlerMiddleware();
+    builder.Services.AddConventionConfiguration();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    builder.Services.AddHealthChecksConfiguration();
+
+    var app = builder.Build();
+
+    app.UseSerilogRequestLogging();
+
+    app.UseErrorHandlerMiddleware();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseCors("Security");
+
+    app.UseAuthentication();
+
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.MapHealthChecksConfiguration();
+
+    app.Run();
 }
-
-app.UseHttpsRedirection();
-
-app.UseCors("Security");
-
-app.UseAuthentication();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}

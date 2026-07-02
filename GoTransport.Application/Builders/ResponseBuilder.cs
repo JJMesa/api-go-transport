@@ -50,4 +50,9 @@ public static class ResponseBuilder<T>
     {
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.Conflict, Ok = false, Errors = new List<string> { error } };
     }
+
+    public static JsonResponse<T> TooManyRequests(string error)
+    {
+        return new JsonResponse<T>() { HttpCode = HttpStatusCode.TooManyRequests, Ok = false, Errors = new List<string> { error } };
+    }
 }
