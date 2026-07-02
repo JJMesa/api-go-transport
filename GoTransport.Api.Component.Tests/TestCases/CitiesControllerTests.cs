@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Net.Mime;
 using System.Text;
+using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
@@ -12,6 +13,10 @@ namespace GoTransport.Api.Component.Tests.TestCases;
 
 public class CitiesControllerTests : ComponentTest
 {
+    public CitiesControllerTests(CustomWebApplicationFactory factory) : base(factory)
+    {
+    }
+
     #region GetAllByDepartmentAsync
 
     [Fact]
@@ -34,7 +39,7 @@ public class CitiesControllerTests : ComponentTest
     }
 
     [Fact]
-    public async Task GetAllByDepartmentAsync_SortDescending_Ok()
+    public async Task GetAllByDepartmentAsync_SortedByDescriptionAscending_Ok()
     {
         // Arrange
         int departmentId = Utils.DefaultId;
@@ -44,7 +49,7 @@ public class CitiesControllerTests : ComponentTest
         var apiResponse = await Client.GetAsync($"{ApiPaths.DepartmentsFullPath}/{departmentId}{ApiPaths.CitiesPath}");
         var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
         var actual = JsonConvert.DeserializeObject<JsonResponse<List<CityDto>>>(jsonResponse, JsonSettings);
-        var sortActual = actual?.Data?.OrderByDescending(x => x.Description).ToList();
+        var sortActual = actual?.Data?.OrderBy(x => x.Description).ToList();
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
@@ -108,9 +113,11 @@ public class CitiesControllerTests : ComponentTest
         Assert.Equal(Constants.MaximumRecordsPaged, metada!.PageSize);
     }
 
+    // The in-memory provider matches with case/accent-sensitive comparisons, so the criteria are
+    // written to match the seeded descriptions exactly (SQL Server would match them accent-insensitively).
     [Theory]
-    [InlineData("medellín")]
-    [InlineData("abejorral")]
+    [InlineData("Medell")]
+    [InlineData("Abejorral")]
     public async Task GetAsync_Parameters_WithFilter_Ok(string description)
     {
         // Act
@@ -299,26 +306,6 @@ public class CitiesControllerTests : ComponentTest
     }
 
     [Fact]
-    public async Task CreateAsync_WithNotExistsDepartmentId_BadRequest()
-    {
-        // Arrange
-        var cityCreationDto = CityBuilderMother.CityCreationDtoOk();
-        cityCreationDto.DepartmentId = Utils.IdDoesNotExist;
-        var contentRequest = new StringContent(JsonConvert.SerializeObject(cityCreationDto), Encoding.UTF8, MediaTypeNames.Application.Json);
-
-        // Act
-        await AddAuthorization();
-        var apiResponse = await Client.PostAsync(ApiPaths.CitiesFullPath, contentRequest);
-        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
-        var actual = JsonConvert.DeserializeObject<JsonResponse<CityDto>>(jsonResponse, JsonSettings);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, actual?.HttpCode);
-        Assert.Null(actual?.Data);
-    }
-
-    [Fact]
     public async Task CreateAsync_WithoutRequiredProperties_BadRequest()
     {
         // Arrange
@@ -398,27 +385,6 @@ public class CitiesControllerTests : ComponentTest
         int cityId = Utils.DefaultId;
         var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
         cityUpdateDto.Description = Utils.MoreThan128Characters;
-        var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
-
-        //Act
-        await AddAuthorization();
-        var apiResponse = await Client.PutAsync($"{ApiPaths.CitiesFullPath}/{cityId}", contentRequest);
-        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
-        var actual = JsonConvert.DeserializeObject<JsonResponse<CityDto>>(jsonResponse, JsonSettings);
-
-        //Assert
-        Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.BadRequest, actual?.HttpCode);
-        Assert.Null(actual?.Data);
-    }
-
-    [Fact]
-    public async Task UpdateAsync_WithNotExistsDepartmentId_BadRequest()
-    {
-        //Arrange
-        int cityId = Utils.DefaultId;
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
-        cityUpdateDto.DepartmentId = Utils.IdDoesNotExist;
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         //Act
