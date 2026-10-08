@@ -1,11 +1,11 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Point;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Points;
 using GoTransport.Application.Wrappers;
@@ -17,15 +17,12 @@ namespace GoTransport.Application.Services;
 internal class PointService : IPointService
 {
     private readonly IRepository<Point> _pointRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Point> _cacheService;
 
     public PointService(IRepository<Point> pointRepository
-        , IMapper mapper
         , ICacheService<Point> cacheService)
     {
         _pointRepository = pointRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -37,7 +34,7 @@ internal class PointService : IPointService
             points = await _pointRepository.ListAsync(new PointSpecification(), cancellationToken);
             _cacheService.Set(CacheKey.Points, points);
         }
-        return ResponseBuilder<IEnumerable<PointDto>>.Ok(_mapper.Map<IEnumerable<PointDto>>(points));
+        return ResponseBuilder<IEnumerable<PointDto>>.Ok(points.Select(point => point.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<PointDto>>> GetAsync(PointParameters parameters, CancellationToken cancellationToken)
@@ -52,15 +49,15 @@ internal class PointService : IPointService
     {
         var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id), cancellationToken);
         if (point is null) return ResponseBuilder<PointDto>.NotFound();
-        return ResponseBuilder<PointDto>.Ok(_mapper.Map<PointDto>(point));
+        return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
     public async Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation)
     {
-        var point = _mapper.Map<Point>(pointCreation);
+        var point = pointCreation.ToEntity();
         await _pointRepository.AddAsync(point);
 
-        return ResponseBuilder<PointDto>.Created(_mapper.Map<PointDto>(point));
+        return ResponseBuilder<PointDto>.Created(point.ToDto());
     }
 
     public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate)
@@ -73,10 +70,10 @@ internal class PointService : IPointService
 
         pointUpdate.Detail = pointUpdate.Detail.RemoveExtraBlank();
 
-        point = _mapper.Map(pointUpdate, point);
+        pointUpdate.ApplyTo(point);
         await _pointRepository.UpdateAsync(point);
 
-        return ResponseBuilder<PointDto>.Ok(_mapper.Map<PointDto>(point));
+        return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(int pointId)

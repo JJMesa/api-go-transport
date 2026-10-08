@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Departments;
 using GoTransport.Application.Wrappers;
@@ -16,15 +16,12 @@ namespace GoTransport.Application.Services;
 internal class DepartmentService : IDepartmentService
 {
     private readonly IRepository<Department> _departmentRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Department> _cacheService;
 
     public DepartmentService(IRepository<Department> departmentRepository
-        , IMapper mapper
         , ICacheService<Department> cacheService)
     {
         _departmentRepository = departmentRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -37,7 +34,7 @@ internal class DepartmentService : IDepartmentService
             _cacheService.Set(CacheKey.Departments, departments);
         }
 
-        return ResponseBuilder<IEnumerable<DepartmentDto>>.Ok(_mapper.Map<IEnumerable<DepartmentDto>>(departments));
+        return ResponseBuilder<IEnumerable<DepartmentDto>>.Ok(departments.Select(department => department.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<DepartmentDto>>> GetAsync(DepartmentParameters parameters, CancellationToken cancellationToken)
@@ -52,7 +49,7 @@ internal class DepartmentService : IDepartmentService
     {
         var department = await _departmentRepository.GetByIdAsync(departmentId, cancellationToken);
         if (department is null) return ResponseBuilder<DepartmentDto>.NotFound();
-        return ResponseBuilder<DepartmentDto>.Ok(_mapper.Map<DepartmentDto>(department));
+        return ResponseBuilder<DepartmentDto>.Ok(department.ToDto());
     }
 
     public async Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation)
@@ -60,10 +57,10 @@ internal class DepartmentService : IDepartmentService
         if (await IsDuplicateDescriptionAsync(departmentCreation.Description))
             return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
-        var department = _mapper.Map<Department>(departmentCreation);
+        var department = departmentCreation.ToEntity();
         await _departmentRepository.AddAsync(department);
 
-        return ResponseBuilder<DepartmentDto>.Created(_mapper.Map<DepartmentDto>(department));
+        return ResponseBuilder<DepartmentDto>.Created(department.ToDto());
     }
 
     public async Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate)
@@ -77,9 +74,9 @@ internal class DepartmentService : IDepartmentService
         if (await IsDuplicateDescriptionAsync(departmentUpdate.Description, id))
             return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
-        _mapper.Map(departmentUpdate, department);
+        departmentUpdate.ApplyTo(department);
         await _departmentRepository.UpdateAsync(department);
-        return ResponseBuilder<DepartmentDto>.Ok(_mapper.Map<DepartmentDto>(department));
+        return ResponseBuilder<DepartmentDto>.Ok(department.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(int departmentId)

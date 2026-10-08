@@ -1,11 +1,9 @@
 using System.Net;
-using AutoMapper;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Mappings;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Reservations;
 using GoTransport.Application.Specifications.Vehicles;
@@ -19,7 +17,6 @@ public class ReservationServiceTests
     private readonly Mock<IRepository<Reservation>> _reservationRepositoryMock;
     private readonly Mock<IRepository<Vehicle>> _vehicleRepositoryMock;
     private readonly Mock<ICacheService<Reservation>> _cacheServiceMock;
-    private readonly IMapper _mapper;
     private readonly IReservationService _reservationService;
 
     public ReservationServiceTests()
@@ -27,9 +24,7 @@ public class ReservationServiceTests
         _reservationRepositoryMock = new Mock<IRepository<Reservation>>();
         _vehicleRepositoryMock = new Mock<IRepository<Vehicle>>();
         _cacheServiceMock = new Mock<ICacheService<Reservation>>();
-        // ReservationDto projects nested Schedule/IdentificationType, so the whole set of profiles is required.
-        _mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddMaps(typeof(ReservationMappingProfile).Assembly)));
-        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _vehicleRepositoryMock.Object, _mapper, _cacheServiceMock.Object);
+        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _vehicleRepositoryMock.Object, _cacheServiceMock.Object);
     }
 
     #region GetAllAsync

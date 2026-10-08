@@ -1,12 +1,10 @@
 using System.Net;
-using AutoMapper;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Mappings;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Departments;
 using GoTransport.Domain.Entities.Bas;
@@ -18,15 +16,13 @@ public class DepartmentServiceTests
 {
     private readonly Mock<IRepository<Department>> _departmentRepositoryMock;
     private readonly Mock<ICacheService<Department>> _cacheServiceMock;
-    private readonly IMapper _mapper;
     private readonly IDepartmentService _departmentService;
 
     public DepartmentServiceTests()
     {
         _departmentRepositoryMock = new Mock<IRepository<Department>>();
         _cacheServiceMock = new Mock<ICacheService<Department>>();
-        _mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new DepartmentMappingProfile())));
-        _departmentService = new DepartmentService(_departmentRepositoryMock.Object, _mapper, _cacheServiceMock.Object);
+        _departmentService = new DepartmentService(_departmentRepositoryMock.Object, _cacheServiceMock.Object);
     }
 
     #region DataSeed

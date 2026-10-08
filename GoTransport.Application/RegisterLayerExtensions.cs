@@ -16,7 +16,6 @@ public static class RegisterLayerExtensions
     public static void AddApplicationLayer(this IServiceCollection services, IConfiguration configuration)
     {
         ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("es-CO");
-        services.AddAutoMapper(Assembly.GetExecutingAssembly());
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddFluentValidationAutoValidation();
         services.AddMemoryCache();
