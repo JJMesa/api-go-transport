@@ -1,91 +1,36 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Net.Mime;
-using System.Reflection;
-using System.Text;
-using GoTransport.Api.Component.Tests.Settings;
-using GoTransport.Api.Test.Utilities.Commons;
-using GoTransport.Application.Dtos.Account;
-using GoTransport.Application.Wrappers;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using GoTransport.Api.Component.Tests.Infrastructure;
 using Newtonsoft.Json;
 
 namespace GoTransport.Api.Component.Tests;
 
-public class ComponentTest
+public abstract class ComponentTest : IClassFixture<CustomWebApplicationFactory>
 {
     protected readonly HttpClient Client;
-    private static UserTokenDto userToken = new();
-    protected AuthTestingSettings authTestingSettings;
 
     protected JsonSerializerSettings JsonSettings = new()
     {
         NullValueHandling = NullValueHandling.Ignore
     };
 
-    protected ComponentTest()
+    protected ComponentTest(CustomWebApplicationFactory factory)
     {
-        IConfigurationRoot _config = null!;
-        Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "ComponentTesting");
-        Environment.SetEnvironmentVariable("Environment", "ComponentTesting");
+        factory.ResetDatabase();
 
-        string environment = Environment.GetEnvironmentVariable("Environment")!;
-        var isComponentTesting = !string.IsNullOrEmpty(environment) && environment.ToLower() == "componenttesting";
-
-        var appFactory = new WebApplicationFactory<Program>()
-            .WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureAppConfiguration((hostContext, cfgbuilder) =>
-                {
-                    if (isComponentTesting)
-                    {
-                        cfgbuilder.Sources.Clear();
-                        cfgbuilder
-                            .AddJsonFile("appsettings.json", true, true)
-                            .AddJsonFile($"appsettings.{environment}.json", true, true)
-                            .AddUserSecrets(Assembly.GetExecutingAssembly(), true)
-                            .AddEnvironmentVariables();
-                    }
-
-                    _config = cfgbuilder.Build();
-                });
-
-                builder.ConfigureServices(services =>
-                {
-                    services.BuildServiceProvider();
-                });
-            });
-
-        Client = appFactory.CreateDefaultClient();
+        Client = factory.CreateClient();
         Client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue(MediaTypeNames.Application.Json));
-        authTestingSettings = _config.GetSection("AuthTestingSettings").Get<AuthTestingSettings>()!;
     }
 
-    protected async Task AddAuthorization(bool regenerateToken = false)
+    /// <summary>
+    /// Marks subsequent requests as authenticated for the test authentication scheme. Kept as an
+    /// awaitable member so the existing call sites that predate the in-memory setup remain valid.
+    /// </summary>
+    protected Task AddAuthorization()
     {
-        if (!string.IsNullOrEmpty(userToken.Token) && !regenerateToken)
-        {
-            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", userToken.Token);
-            return;
-        }
+        if (!Client.DefaultRequestHeaders.Contains(TestAuthHandler.AuthHeader))
+            Client.DefaultRequestHeaders.Add(TestAuthHandler.AuthHeader, "true");
 
-        var userLoginDto = new UserLoginDto()
-        {
-            Email = authTestingSettings.Email,
-            Password = authTestingSettings.Password
-        };
-
-        var contentRequest = new StringContent(JsonConvert.SerializeObject(userLoginDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
-        var apiResponse = await Client.PostAsync(ApiPaths.AuthBasePath, contentRequest);
-
-        if (apiResponse.IsSuccessStatusCode)
-        {
-            var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
-            var auth = JsonConvert.DeserializeObject<JsonResponse<UserTokenDto>>(jsonResponse, JsonSettings);
-            userToken = auth?.Data!;
-            if (regenerateToken) Client.DefaultRequestHeaders.Remove("Authorization");
-            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", auth!.Data!.Token);
-        }
+        return Task.CompletedTask;
     }
 }

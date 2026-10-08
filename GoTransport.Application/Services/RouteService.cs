@@ -1,11 +1,11 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Route;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Routes;
 using GoTransport.Application.Wrappers;
@@ -17,15 +17,12 @@ namespace GoTransport.Application.Services;
 internal class RouteService : IRouteService
 {
     private readonly IRepository<Route> _routeRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Route> _cacheService;
 
     public RouteService(IRepository<Route> routeRepository
-        , IMapper mapper
         , ICacheService<Route> cacheService)
     {
         _routeRepository = routeRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -38,7 +35,7 @@ internal class RouteService : IRouteService
             _cacheService.Set(CacheKey.Routes, routes);
         }
 
-        return ResponseBuilder<IEnumerable<RouteDto>>.Ok(_mapper.Map<IEnumerable<RouteDto>>(routes));
+        return ResponseBuilder<IEnumerable<RouteDto>>.Ok(routes.Select(route => route.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<RouteDto>>> GetAsync(RouteParameters parameters, CancellationToken cancellationToken)
@@ -53,7 +50,7 @@ internal class RouteService : IRouteService
     {
         var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
-        return ResponseBuilder<RouteDto>.Ok(_mapper.Map<RouteDto>(route));
+        return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
 
     public async Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation)
@@ -61,10 +58,10 @@ internal class RouteService : IRouteService
         if (await IsDuplicarePoints(routeCreation.OriginPointId, routeCreation.DestinationPointId))
             return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
 
-        var route = _mapper.Map<Route>(routeCreation);
+        var route = routeCreation.ToEntity();
         await _routeRepository.AddAsync(route);
 
-        return ResponseBuilder<RouteDto>.Created(_mapper.Map<RouteDto>(route));
+        return ResponseBuilder<RouteDto>.Created(route.ToDto());
     }
 
     public async Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate)
@@ -80,10 +77,10 @@ internal class RouteService : IRouteService
 
         routeUpdate.Description = routeUpdate.Description.RemoveExtraBlank();
 
-        route = _mapper.Map(routeUpdate, route);
+        routeUpdate.ApplyTo(route);
         await _routeRepository.UpdateAsync(route);
 
-        return ResponseBuilder<RouteDto>.Ok(_mapper.Map<RouteDto>(route));
+        return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(int id)

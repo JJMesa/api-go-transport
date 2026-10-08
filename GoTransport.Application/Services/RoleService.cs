@@ -1,11 +1,11 @@
 ﻿using System.Data;
-using AutoMapper;
 using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Role;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Specifications.Roles;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.App;
@@ -18,17 +18,14 @@ internal class RoleService : IRoleService
 {
     private readonly UserManager<User> _userManager;
     private readonly IRepository<Role> _roleRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Role> _cacheService;
 
     public RoleService(UserManager<User> userManager
         , IRepository<Role> roleRepository
-        , IMapper mapper
         , ICacheService<Role> cacheService)
     {
         _userManager = userManager;
         _roleRepository = roleRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -41,7 +38,7 @@ internal class RoleService : IRoleService
             _cacheService.Set(CacheKey.Roles, roles);
         }
 
-        return ResponseBuilder<IEnumerable<RoleDto>>.Ok(_mapper.Map<IEnumerable<RoleDto>>(roles));
+        return ResponseBuilder<IEnumerable<RoleDto>>.Ok(roles.Select(role => role.ToDto()).ToList());
     }
 
     public async Task<IdentityResult> AssignRolesToUser(User user, long roleId)

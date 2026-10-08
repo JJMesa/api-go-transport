@@ -1,11 +1,11 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Users;
 using GoTransport.Application.Wrappers;
@@ -21,17 +21,14 @@ internal class UserService : IUserService
     private readonly UserManager<User> _userManager;
     private readonly IRepository<User> _userRepository;
     private readonly IRoleService _roleService;
-    private readonly IMapper _mapper;
 
     public UserService(UserManager<User> userManager
         , IRepository<User> userRepository
-        , IRoleService roleService
-        , IMapper mapper)
+        , IRoleService roleService)
     {
         _userManager = userManager;
         _userRepository = userRepository;
         _roleService = roleService;
-        _mapper = mapper;
     }
 
     public async Task<JsonPagedResponse<IEnumerable<UserDto>>> GetAsync([FromQuery] UserParameters parameters, CancellationToken cancellationToken)
@@ -46,7 +43,7 @@ internal class UserService : IUserService
     {
         var user = await _userRepository.GetByIdAsync(id);
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
-        return ResponseBuilder<UserDto>.Ok(_mapper.Map<UserDto>(user));
+        return ResponseBuilder<UserDto>.Ok(user.ToDto());
     }
 
     public async Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto)
@@ -54,7 +51,7 @@ internal class UserService : IUserService
         if (await IsDuplicateEmailAsync(userCreationDto.Email))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.DuplicateEmail);
 
-        var user = _mapper.Map<User>(userCreationDto);
+        var user = userCreationDto.ToEntity();
         var isCreated = await _userManager.CreateAsync(user, userCreationDto.Password);
 
         if (isCreated.Succeeded)
@@ -63,8 +60,7 @@ internal class UserService : IUserService
             if (!assingRolesResult.Succeeded)
                 return ResponseBuilder<UserDto>.BadRequest(assingRolesResult.Errors.ToErrorList());
 
-            var userDto = _mapper.Map<UserDto>(user);
-            return ResponseBuilder<UserDto>.Created(userDto);
+            return ResponseBuilder<UserDto>.Created(user.ToDto());
         }
         else
         {
@@ -81,10 +77,10 @@ internal class UserService : IUserService
         var user = await _userRepository.GetByIdAsync(id);
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
 
-        _mapper.Map(userUpdateDto, user);
+        userUpdateDto.ApplyTo(user);
         await _userRepository.UpdateAsync(user);
 
-        return ResponseBuilder<UserDto>.Ok(_mapper.Map<UserDto>(user));
+        return ResponseBuilder<UserDto>.Ok(user.ToDto());
     }
 
     private async Task<bool> IsDuplicateEmailAsync(string email) =>

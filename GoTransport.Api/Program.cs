@@ -79,3 +79,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Exposes the implicit Program class so the component tests can bootstrap the API host.
+public partial class Program { }

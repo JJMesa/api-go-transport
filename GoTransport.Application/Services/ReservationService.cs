@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Reservations;
 using GoTransport.Application.Specifications.Vehicles;
@@ -18,17 +18,14 @@ internal class ReservationService : IReservationService
 {
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Vehicle> _vehicleRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Reservation> _cacheService;
 
     public ReservationService(IRepository<Reservation> reservationRepository
         , IRepository<Vehicle> vehicleRepository
-        , IMapper mapper
         , ICacheService<Reservation> cacheService)
     {
         _reservationRepository = reservationRepository;
         _vehicleRepository = vehicleRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -40,7 +37,7 @@ internal class ReservationService : IReservationService
             reservations = await _reservationRepository.ListAsync(new ReservationSpecification(), cancellationToken);
             _cacheService.Set(CacheKey.Reservations, reservations);
         }
-        return ResponseBuilder<IEnumerable<ReservationDto>>.Ok(_mapper.Map<IEnumerable<ReservationDto>>(reservations));
+        return ResponseBuilder<IEnumerable<ReservationDto>>.Ok(reservations.Select(reservation => reservation.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken)
@@ -55,14 +52,14 @@ internal class ReservationService : IReservationService
     {
         var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(id, passengerIdentification), cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
-        return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
+        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
     public async Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var reservation = await _reservationRepository.GetByIdAsync(id, cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
-        return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
+        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
     public async Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation)
@@ -73,9 +70,9 @@ internal class ReservationService : IReservationService
         if (IsVehicleFull(reservationsCount, vehicle!.Capacity))
             return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
 
-        var reservation = _mapper.Map<Reservation>(reservationCreation);
+        var reservation = reservationCreation.ToEntity();
         await _reservationRepository.AddAsync(reservation);
-        return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
+        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
     public async Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdateDto)
@@ -89,9 +86,9 @@ internal class ReservationService : IReservationService
         if (IsReservationDatePassed(reservation))
             return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.ReservationDatePassed);
 
-        _mapper.Map(reservationUpdateDto, reservation);
+        reservationUpdateDto.ApplyTo(reservation);
         await _reservationRepository.UpdateAsync(reservation);
-        return ResponseBuilder<ReservationDto>.Ok(_mapper.Map<ReservationDto>(reservation));
+        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)

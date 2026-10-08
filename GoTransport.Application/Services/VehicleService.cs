@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Vehicle;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Vehicles;
 using GoTransport.Application.Wrappers;
@@ -16,15 +16,12 @@ namespace GoTransport.Application.Services;
 internal class VehicleService : IVehicleService
 {
     private readonly IRepository<Vehicle> _vehicleRepository;
-    private readonly IMapper _mapper;
     private readonly ICacheService<Vehicle> _cacheService;
 
     public VehicleService(IRepository<Vehicle> vehicleRepository
-        , IMapper mapper
         , ICacheService<Vehicle> cacheService)
     {
         _vehicleRepository = vehicleRepository;
-        _mapper = mapper;
         _cacheService = cacheService;
     }
 
@@ -37,7 +34,7 @@ internal class VehicleService : IVehicleService
             _cacheService.Set(CacheKey.Vehicles, vehicles);
         }
 
-        return ResponseBuilder<IEnumerable<VehicleDto>>.Ok(_mapper.Map<IEnumerable<VehicleDto>>(vehicles));
+        return ResponseBuilder<IEnumerable<VehicleDto>>.Ok(vehicles.Select(vehicle => vehicle.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<VehicleDto>>> GetAsync(VehicleParameters parameters, CancellationToken cancellationToken)
@@ -45,7 +42,7 @@ internal class VehicleService : IVehicleService
         var vehicles = await _vehicleRepository.ListAsync(new PagedVehicleSpecification(parameters), cancellationToken);
         var totalRecords = await _vehicleRepository.CountAsync(new VehicleSpecification(parameters), cancellationToken);
         var metadata = Metadata.Create(parameters.PageNumber, parameters.PageSize, totalRecords);
-        return ResponseBuilder<IEnumerable<VehicleDto>>.OkPaged(_mapper.Map<IEnumerable<VehicleDto>>(vehicles), metadata);
+        return ResponseBuilder<IEnumerable<VehicleDto>>.OkPaged(vehicles, metadata);
     }
 
     public async Task<JsonResponse<VehicleDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -53,7 +50,7 @@ internal class VehicleService : IVehicleService
         var vehicle = await _vehicleRepository.GetByIdAsync(id, cancellationToken);
         if (vehicle is null) return ResponseBuilder<VehicleDto>.NotFound();
 
-        return ResponseBuilder<VehicleDto>.Ok(_mapper.Map<VehicleDto>(vehicle));
+        return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
     }
 
     public async Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation)
@@ -61,10 +58,10 @@ internal class VehicleService : IVehicleService
         if (await IsDuplicatePlate(vehicleCreation.LicensePlate))
             return ResponseBuilder<VehicleDto>.BadRequest(ErrorMessages.DuplicatePlate);
 
-        var vehicle = _mapper.Map<Vehicle>(vehicleCreation);
+        var vehicle = vehicleCreation.ToEntity();
         await _vehicleRepository.AddAsync(vehicle);
 
-        return ResponseBuilder<VehicleDto>.Created(_mapper.Map<VehicleDto>(vehicle));
+        return ResponseBuilder<VehicleDto>.Created(vehicle.ToDto());
     }
 
     public async Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate)
@@ -75,10 +72,10 @@ internal class VehicleService : IVehicleService
         var vehicle = await _vehicleRepository.GetByIdAsync(id);
         if (vehicle is null) return ResponseBuilder<VehicleDto>.NotFound();
 
-        vehicle = _mapper.Map(vehicleUpdate, vehicle);
+        vehicleUpdate.ApplyTo(vehicle);
         await _vehicleRepository.UpdateAsync(vehicle);
 
-        return ResponseBuilder<VehicleDto>.Ok(_mapper.Map<VehicleDto>(vehicle));
+        return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(int id)

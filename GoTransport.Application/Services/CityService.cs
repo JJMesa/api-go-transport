@@ -1,10 +1,10 @@
-﻿using AutoMapper;
-using GoTransport.Application.Attributes;
+﻿using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
+using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Cities;
 using GoTransport.Application.Wrappers;
@@ -16,19 +16,16 @@ namespace GoTransport.Application.Services;
 public class CityService : ICityService
 {
     private readonly IRepository<City> _cityRepository;
-    private readonly IMapper _mapper;
 
-    public CityService(IRepository<City> cityRepository
-        , IMapper mapper)
+    public CityService(IRepository<City> cityRepository)
     {
         _cityRepository = cityRepository;
-        _mapper = mapper;
     }
 
     public async Task<JsonResponse<IEnumerable<CityDto>>> GetAllByDepartmentAsync(int departmentId, CancellationToken cancellationToken)
     {
         var cities = await _cityRepository.ListAsync(new CitySpecification(departmentId: departmentId), cancellationToken);
-        return ResponseBuilder<IEnumerable<CityDto>>.Ok(_mapper.Map<IEnumerable<CityDto>>(cities));
+        return ResponseBuilder<IEnumerable<CityDto>>.Ok(cities.Select(city => city.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<CityDto>>> GetAsync(CityParameters parameters, CancellationToken cancellationToken)
@@ -43,7 +40,7 @@ public class CityService : ICityService
     {
         var city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(id, null), cancellationToken);
         if (city is null) return ResponseBuilder<CityDto>.NotFound();
-        return ResponseBuilder<CityDto>.Ok(_mapper.Map<CityDto>(city));
+        return ResponseBuilder<CityDto>.Ok(city.ToDto());
     }
 
     public async Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto cityCreation)
@@ -51,10 +48,10 @@ public class CityService : ICityService
         if (await IsDuplicateDescriptionAsync(cityCreation.Description, cityCreation.DepartmentId))
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
-        var city = _mapper.Map<City>(cityCreation);
+        var city = cityCreation.ToEntity();
         await _cityRepository.AddAsync(city);
 
-        return ResponseBuilder<CityDto>.Created(_mapper.Map<CityDto>(city));
+        return ResponseBuilder<CityDto>.Created(city.ToDto());
     }
 
     public async Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto cityUpdateDto)
@@ -68,9 +65,9 @@ public class CityService : ICityService
         if (await IsDuplicateDescriptionAsync(cityUpdateDto.Description, cityUpdateDto.DepartmentId, id))
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
-        _mapper.Map(cityUpdateDto, city);
+        cityUpdateDto.ApplyTo(city);
         await _cityRepository.UpdateAsync(city);
-        return ResponseBuilder<CityDto>.Ok(_mapper.Map<CityDto>(city));
+        return ResponseBuilder<CityDto>.Ok(city.ToDto());
     }
 
     public async Task<JsonResponse<bool?>> DeleteAsync(int id)

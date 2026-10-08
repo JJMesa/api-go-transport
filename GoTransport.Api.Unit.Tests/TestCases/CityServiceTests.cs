@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using AutoMapper;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
@@ -8,7 +7,6 @@ using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Cities;
@@ -20,14 +18,12 @@ namespace GoTransport.Api.Unit.Tests.TestCases;
 public class CityServiceTests
 {
     private readonly Mock<IRepository<City>> _cityRepositoryMock;
-    private readonly IMapper _mapper;
     private readonly ICityService _cityService;
 
     public CityServiceTests()
     {
         _cityRepositoryMock = new Mock<IRepository<City>>();
-        _mapper = new Mapper(new MapperConfiguration(cfg => cfg.AddProfile(new CityMappingProfile())));
-        _cityService = new CityService(_cityRepositoryMock.Object, _mapper);
+        _cityService = new CityService(_cityRepositoryMock.Object);
     }
 
     #region DataSeed
