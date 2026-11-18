@@ -1,0 +1,86 @@
+using System.Reflection;
+using System.Text.Json.Serialization;
+using GoTransport.Api.Extensions;
+using GoTransport.Application;
+using GoTransport.Persistence;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Console()
+    .CreateBootstrapLogger();
+
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Host.UseDefaultServiceProvider(options =>
+    {
+        options.ValidateScopes = true;
+        options.ValidateOnBuild = true;
+    });
+
+    var configuration = builder.Configuration
+    .AddUserSecrets(Assembly.GetExecutingAssembly(), true).Build();
+
+    builder.AddSerilogConfiguration();
+
+    builder.Services.AddHttpContextAccessor();
+    builder.Services.AddApplicationLayer(configuration);
+    builder.Services.AddPersistenceLayer(configuration);
+    builder.Services.AddControllers()
+        .AddJsonOptions(opt => opt.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull);
+
+    builder.Services.AddVersioningConfiguration();
+
+    builder.Services.AddCustomResponseFluentValidation();
+
+    builder.Services.AddJwtAuthentication(configuration);
+
+    builder.Services.AddCorsConfiguration();
+
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGenConfiguration();
+
+    builder.Services.AddConventionConfiguration();
+
+    builder.Services.AddHealthChecksConfiguration();
+
+    var app = builder.Build();
+
+    await app.EnsureAdministratorAsync();
+
+    app.UseSerilogRequestLogging();
+
+    app.UseErrorHandlerMiddleware();
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI();
+    }
+
+    app.UseHttpsRedirection();
+
+    app.UseCors("Security");
+
+    app.UseAuthentication();
+
+    app.UseAuthorization();
+
+    app.MapControllers();
+
+    app.MapHealthChecksConfiguration();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
+
+// Exposes the implicit Program class so the component tests can bootstrap the API host.
+public partial class Program { }

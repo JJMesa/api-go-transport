@@ -1,0 +1,58 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+`GoTransport.Api` is a **.NET 6 / C# REST API** for an intercity passenger-transport company in Colombia (network of routes and schedules, fleet, reservations, staff users). Despite the `api_go_transport` repo name, there is **no Go code here** — "Go" is the product name. The codebase is Spanish: comments, error messages, domain values (`Administrador`, `Operario`, `SISTEMA`) and the README are all in Spanish, and FluentValidation runs under the `es-CO` culture.
+
+Use the domain vocabulary below for names in code, docs and conversation:
+
+@GLOSSARY.md
+
+### Language policy (from 2026-07-02)
+
+Pre-existing code stays in Spanish, but **all newly added application text must be written in English** — log messages, exception/error messages, API response messages, other user-facing strings, and new code comments / XML docs. Leave existing Spanish text as-is unless you are already editing it. **Exception:** identifiers and domain values tied to persisted data or existing conventions (e.g. role names like `Administrador`, the `SISTEMA` audit user, seed values, DB column names) keep their current form to avoid breaking data and consistency.
+
+### Improvement plan & commits
+
+Ongoing work follows the prioritized plan in `docs/audit/INFORME_AUDITORIA.md` §6.2 (items `F-01`…`F-32`, with a status column per item); the `implement-plan-item` skill walks through implementing and recording one. Commit messages are in English, prefixed with a tag — `[Feature]`, `[Fix]`, `[Refactor]`, `[Test]` — and reference the plan item they implement (e.g. "Implements F-05").
+
+## Repository map
+
+Each area has its own `CLAUDE.md`, loaded when you work inside it; this file holds only what applies everywhere.
+
+| Path | Responsibility |
+|---|---|
+| `src/` | Production code: four layered projects (Domain, Application, Persistence, Api) |
+| `tests/` | xUnit unit and component tests plus shared test utilities |
+| `docs/` | Audit report with the improvement plan; ADRs under `docs/adr/` |
+| `database/` | SQL seed scripts (the schema itself comes from EF Core migrations) |
+| `.claude/` | Shared Claude Code settings, path-scoped `rules/`, and the `new-crud-resource` and `implement-plan-item` skills |
+| `GLOSSARY.md` | Domain vocabulary (imported above) |
+
+## Common commands
+
+```bash
+# Build the whole solution
+dotnet build GoTransport.sln
+
+# Run the API (needs configuration — see src/GoTransport.Api/CLAUDE.md; Swagger at https://localhost:7046/swagger, health at /health)
+dotnet run --project src/GoTransport.Api
+
+# Unit tests (services tested in isolation with mocked repositories/cache)
+dotnet test tests/GoTransport.Api.Unit.Tests
+
+# Component tests (full HTTP pipeline over EF Core InMemory — no SQL Server, seed or secrets needed)
+dotnet test tests/GoTransport.Api.Component.Tests
+
+# A single test class or method
+dotnet test --filter "FullyQualifiedName~CityServiceTests"
+dotnet test --filter "Name=GetByIdAsync_ShouldReturnCityForValidId"
+
+# EF Core migrations (migrations live in Persistence; Api is the startup project)
+dotnet ef database update --project src/GoTransport.Persistence --startup-project src/GoTransport.Api
+dotnet ef migrations add <Name> --project src/GoTransport.Persistence --startup-project src/GoTransport.Api
+```
+
+To run the API against a real database, follow `database/CLAUDE.md` (migrate, then load the seed scripts).

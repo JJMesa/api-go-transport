@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet build *)",
+      "Bash(dotnet test *)",
+      "Bash(dotnet restore *)",
+      "Bash(dotnet ef migrations add *)",
+      "Bash(dotnet ef migrations list *)",
+      "Bash(dotnet ef migrations remove *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "PowerShell(dotnet build *)",
+      "PowerShell(dotnet test *)",
+      "PowerShell(dotnet restore *)",
+      "PowerShell(dotnet ef migrations add *)",
+      "PowerShell(dotnet ef migrations list *)",
+      "PowerShell(dotnet ef migrations remove *)",
+      "PowerShell(git status *)",
+      "PowerShell(git diff *)",
+      "PowerShell(git log *)"
+    ],
+    "ask": [
+      "Bash(dotnet ef database *)",
+      "PowerShell(dotnet ef database *)"
+    ]
+  }
+}
