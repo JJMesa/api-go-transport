@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GoTransport.Application\GoTransport.Application.csproj" />
+    <ProjectReference Include="..\..\src\GoTransport.Application\GoTransport.Application.csproj" />
   </ItemGroup>
 
 </Project>
