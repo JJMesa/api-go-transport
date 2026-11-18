@@ -16,7 +16,7 @@ Pre-existing code stays in Spanish, but **all newly added application text must 
 
 ### Improvement plan & commits
 
-Ongoing work follows the prioritized plan in `docs/audit/INFORME_AUDITORIA.md` §6.2 (items `F-01`…`F-32`, with a status column per item); the `implement-plan-item` skill walks through implementing and recording one. Commit messages are in English, prefixed with a tag — `[Feature]`, `[Fix]`, `[Refactor]`, `[Test]` — and reference the plan item they implement (e.g. "Implements F-05").
+Ongoing work follows the prioritized plan in `docs/audit/TECHNICAL_AUDIT.md` §7.2 (items `F-01`…`F-59`, with a status column per item; findings `A-xx` in §5); the `implement-plan-item` skill walks through implementing and recording one. Commit messages are in English, prefixed with a tag — `[Feature]`, `[Fix]`, `[Refactor]`, `[Test]` — and reference the plan item they implement (e.g. "Implements F-05").
 
 ## Repository map
 

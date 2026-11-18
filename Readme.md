@@ -6,7 +6,7 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 
 ## Tech stack
 
-- **.NET 6 / C#**, ASP.NET Core Web API, versioned routes (`/api/v1`). `net6.0` is out of support; moving to .NET 8 is planned (F-06).
+- **.NET 6 / C#**, ASP.NET Core Web API, versioned routes (`/api/v1`). `net6.0` is out of support; moving to .NET 10 (LTS) is planned (F-06).
 - **EF Core 7.0.17** on **SQL Server**, with queries expressed as **Ardalis.Specification** objects.
 - **ASP.NET Core Identity** with **JWT bearer** authentication and account lockout.
 - **FluentValidation** for request validation, **Serilog** for structured logging, health checks, and **Swagger** in Development.
@@ -130,7 +130,7 @@ Neither suite needs SQL Server, seed data or secrets.
 
 ## Contributing
 
-- **Improvement plan:** work follows the plan in [`docs/audit/INFORME_AUDITORIA.md`](docs/audit/INFORME_AUDITORIA.md) §6.2 (items `F-01`…, in Spanish).
+- **Improvement plan:** work follows the plan in [`docs/audit/TECHNICAL_AUDIT.md`](docs/audit/TECHNICAL_AUDIT.md) §7.2 (items `F-01`…), driven by the audit's findings in §5.
 - **Commits:** English messages prefixed with `[Feature]`, `[Fix]`, `[Refactor]` or `[Test]`, referencing the plan item they implement (e.g. `Implements F-24.`).
 - **Language:** new code text (logs, messages, comments) is written in English. Existing Spanish text and persisted domain values such as `Administrador`, `Operario` and `SISTEMA` stay as they are.
 - **AI agents:** the root [`CLAUDE.md`](CLAUDE.md) and a `CLAUDE.md` in each area describe conventions for Claude Code. `.claude/skills` holds the `new-crud-resource` and `implement-plan-item` workflows.
