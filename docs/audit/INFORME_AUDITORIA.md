@@ -165,7 +165,7 @@
 | [ ] | F-23 | Borrado lógico (`IsActive=false`) donde el negocio lo requiera | 🟢 | Datos | M | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-24 | Sacar credenciales de test del control de versiones | 🟢 | Seguridad | S | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` en Swagger | 🟢 | Mantenib. | S | ⬜ Pendiente | — | — | ⬜ |
-| [ ] | F-26 | Reorganizar el repo en `src/` `tests/` `docs/` `database/` con un `CLAUDE.md` por área, glosario y `.claude/` | 🟢 | Mantenib. | M | 🟦 En progreso | Juan Mesa | — | ⬜ |
+| [x] | F-26 | Reorganizar el repo en `src/` `tests/` `docs/` `database/` con un `CLAUDE.md` por área, glosario y `.claude/` | 🟢 | Mantenib. | M | ✅ Hecho | Juan Mesa | — | ✅ |
 | [ ] | F-27 | Exigir auth en `GET schedules/{id}/reservations` (expone nombre y documento de pasajeros) — ver §6.4 | 🟠 | Seguridad | S | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-28 | `ReservationService.DeleteAsync` sin `Include(Schedule)` → `NullReferenceException` en todo borrado — ver §6.4 | 🟠 | Datos/Errores | S | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-29 | Contar el cupo por Trip (Schedule + fecha de viaje), no por Schedule — ver §6.4 | 🟠 | Negocio | M | ⬜ Pendiente | — | — | ⬜ |
@@ -180,9 +180,9 @@
 | 🔴 Crítico | 1 | 0 | 0 | 1 |
 | 🟠 Alto | 8 | 5 | 0 | 3 |
 | 🟡 Medio | 14 | 13 | 0 | 1 |
-| 🟢 Bajo | 9 | 8 | 1 | 0 |
-| **Total** | **32** | **26** | **1** | **5** |
-| **% Completado** | | | | **16%** |
+| 🟢 Bajo | 9 | 8 | 0 | 1 |
+| **Total** | **32** | **26** | **0** | **6** |
+| **% Completado** | | | | **19%** |
 
 ### 6.4 Hallazgos posteriores (2026-11-17)
 
