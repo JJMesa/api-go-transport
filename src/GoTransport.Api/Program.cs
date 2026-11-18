@@ -47,6 +47,8 @@ try
 
     var app = builder.Build();
 
+    await app.EnsureAdministratorAsync();
+
     app.UseSerilogRequestLogging();
 
     app.UseErrorHandlerMiddleware();

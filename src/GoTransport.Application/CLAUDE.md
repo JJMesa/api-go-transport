@@ -12,7 +12,7 @@
 | `Specifications/<Entities>/`, `Parameters/` | Ardalis query objects (folder name is plural) and paging/filter inputs |
 | `Builders/`, `Wrappers/` | `ResponseBuilder<T>` and `JsonResponse` / `JsonPagedResponse` / `Metadata` |
 | `Commons/` | `ErrorMessages`, `Roles`, `CacheKey`, `Constants`, custom claim names |
-| `Settings/` | Options bound from configuration (`JwtSettings`, `CachingSettings`, `LockoutSettings`) |
+| `Settings/` | Options bound from configuration (`JwtSettings`, `CachingSettings`, `LockoutSettings`, `AdminBootstrapSettings`) |
 | `Attributes/`, `Extensions/` | DI lifecycle attributes; helpers such as `ToPacificStandardTime()` |
 
 ## Dependencies

@@ -23,6 +23,7 @@ public static class RegisterLayerExtensions
 
         services.Configure<CachingSettings>(configuration.GetSection("CachingSettings"));
         services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
+        services.Configure<AdminBootstrapSettings>(configuration.GetSection("AdminBootstrap"));
 
         services.RegisterServices();
     }

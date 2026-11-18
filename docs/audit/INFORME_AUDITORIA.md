@@ -111,7 +111,7 @@
 - DI por reflexión (`AppDomain.GetAssemblies()` + convención `I{Nombre}`). Ev.: `RegisterLayerExtensions.cs:30-57`.
 - Repositorio genérico aporta poco + `Context` público no usado. Ev.: `BaseRepository.cs:9`.
 - Borrado físico pese a columnas de soft-delete.
-- Credenciales admin versionadas (`Gotransport_1`). Ev.: `INSERT_SEED.sql`, `appsettings.ComponentTesting.json`.
+- ~~Credenciales admin versionadas (contraseña del usuario administrador del seed). Ev.: `INSERT_SEED.sql`, `appsettings.ComponentTesting.json`.~~ ✅ *Resuelto (F-24):* el seed ya no crea usuarios; el primer `Administrador` se crea al arrancar desde la sección `AdminBootstrap` (User Secrets / variables de entorno). `appsettings.ComponentTesting.json` solo conserva valores JWT ficticios. Las bases de datos creadas con el seed anterior deben cambiar la contraseña de ese administrador, que es pública en el historial.
 - Claim `iat` con formato de fecha larga. Ev.: `AccountService.cs:62`.
 - Typos propagados (`RuoteParameters.cs`, `ruoteId`, `IsDuplicarePoints`, "transaporte").
 - `POST` sin `Location`; header `Pagination` no estándar; sin ProblemDetails.
@@ -163,7 +163,7 @@
 | [ ] | F-21 | `CancellationToken` en `Create/Update/Delete` (servicios + endpoints) | 🟡 | Asincronía | S | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-22 | Excepciones de dominio + `ProblemDetails`; eliminar carpeta `Exceptions` vacía | 🟢 | Errores/API | M | ⬜ Pendiente | — | — | ⬜ |
 | [ ] | F-23 | Borrado lógico (`IsActive=false`) donde el negocio lo requiera | 🟢 | Datos | M | ⬜ Pendiente | — | — | ⬜ |
-| [ ] | F-24 | Sacar credenciales de test del control de versiones | 🟢 | Seguridad | S | ⬜ Pendiente | — | — | ⬜ |
+| [x] | F-24 | Sacar credenciales de test del control de versiones | 🟢 | Seguridad | S | ✅ Hecho | Juan Mesa | — | ✅ |
 | [ ] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` en Swagger | 🟢 | Mantenib. | S | ⬜ Pendiente | — | — | ⬜ |
 | [x] | F-26 | Reorganizar el repo en `src/` `tests/` `docs/` `database/` con un `CLAUDE.md` por área, glosario y `.claude/` | 🟢 | Mantenib. | M | ✅ Hecho | Juan Mesa | — | ✅ |
 | [ ] | F-27 | Exigir auth en `GET schedules/{id}/reservations` (expone nombre y documento de pasajeros) — ver §6.4 | 🟠 | Seguridad | S | ⬜ Pendiente | — | — | ⬜ |
@@ -180,9 +180,9 @@
 | 🔴 Crítico | 1 | 0 | 0 | 1 |
 | 🟠 Alto | 8 | 5 | 0 | 3 |
 | 🟡 Medio | 14 | 13 | 0 | 1 |
-| 🟢 Bajo | 9 | 8 | 0 | 1 |
-| **Total** | **32** | **26** | **0** | **6** |
-| **% Completado** | | | | **19%** |
+| 🟢 Bajo | 9 | 7 | 0 | 2 |
+| **Total** | **32** | **25** | **0** | **7** |
+| **% Completado** | | | | **22%** |
 
 ### 6.4 Hallazgos posteriores (2026-11-17)
 
