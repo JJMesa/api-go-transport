@@ -39,5 +39,5 @@ Luego de la configuración previa de las cadenas de conexión, se puede proceder
 
 ## Data semilla ##
 
-Luego de implementar la migracion, se cuenta con un script que inserta la data semilla, el mismo se encuentra en la carpeta llamada ```GoTransport.Script.Sql``` en la cual hay dos scripts de semilla, se debe ejecutar el script con nombre ```INSERT_SEED``` para asegurar un correcto funcionamiento y tambien se encuentra el script opcional llamado ```INSERT_SEED_COLOMBIA``` que inserta los datos de departamentos y ciudades de Colombia
+Luego de implementar la migracion, se cuenta con un script que inserta la data semilla, el mismo se encuentra en la carpeta ```database/seed``` en la cual hay dos scripts de semilla, se debe ejecutar el script con nombre ```INSERT_SEED``` para asegurar un correcto funcionamiento y tambien se encuentra el script opcional llamado ```INSERT_SEED_COLOMBIA``` que inserta los datos de departamentos y ciudades de Colombia
 
