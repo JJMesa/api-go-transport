@@ -24,6 +24,10 @@ public class ApiPaths
 
     public static readonly string CitiesFullPath = $"{BaseUrl}{CitiesPath}";
 
+    public static readonly string SchedulesPath = "/schedules";
+
+    public static readonly string SchedulesFullPath = $"{BaseUrl}{SchedulesPath}";
+
     public static readonly string ReservationsPath = "/reservations";
 
     public static readonly string ReservationsFullPath = $"{BaseUrl}{ReservationsPath}";

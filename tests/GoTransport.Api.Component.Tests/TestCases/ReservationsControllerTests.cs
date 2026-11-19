@@ -2,6 +2,7 @@ using System.Net;
 using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Commons;
+using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Wrappers;
 using Newtonsoft.Json;
 
@@ -12,6 +13,36 @@ public class ReservationsControllerTests : ComponentTest
     public ReservationsControllerTests(CustomWebApplicationFactory factory) : base(factory)
     {
     }
+
+    #region GetByScheduleAsync
+
+    [Fact]
+    public async Task GetByScheduleAsync_Ok()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonPagedResponse<List<ReservationDto>>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(2, actual?.Data?.Count);
+    }
+
+    [Fact]
+    public async Task GetByScheduleAsync_WithoutAuthentication_Unauthorized()
+    {
+        // Act
+        var apiResponse = await Client.GetAsync($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, apiResponse.StatusCode);
+        Assert.DoesNotContain("1000123456", jsonResponse);
+    }
+
+    #endregion GetByScheduleAsync
 
     #region DeleteAsync
 
