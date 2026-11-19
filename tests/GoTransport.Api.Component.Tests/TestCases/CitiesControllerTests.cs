@@ -7,6 +7,7 @@ using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Wrappers;
+using GoTransport.Domain.Entities.Bas;
 using Newtonsoft.Json;
 
 namespace GoTransport.Api.Component.Tests.TestCases;
@@ -376,6 +377,25 @@ public class CitiesControllerTests : ComponentTest
         Assert.Equal(HttpStatusCode.Created, actualCreation.HttpCode);
         Assert.NotNull(actualUpdate?.Data);
         Assert.Equal(cityUpdateDto.Description, actualUpdate.Data?.Description);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_AsSignedInUser_StampsUpdateUser()
+    {
+        // Arrange — the seeded City was created by the system user
+        int cityId = Utils.DefaultId;
+        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
+        var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PutAsync($"{ApiPaths.CitiesFullPath}/{cityId}", contentRequest);
+        var city = FindInDatabase<City>(cityId);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(Constants.ApplicationUser, city?.CreationUser);
+        Assert.Equal(TestAuthHandler.TestUserId, city?.UpdateUser);
     }
 
     [Fact]

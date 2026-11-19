@@ -33,7 +33,6 @@ public class ReservationsController : ControllerBase
     }
 
     //GET: api/v1/schedules/ABCD-1234-A1B2-C3D4/reservations
-    [AllowAnonymous]
     [HttpGet("/api/v{version:apiVersion}/schedules/{scheduleId:guid}/[controller]")]
     public async Task<ActionResult<JsonResponse<IEnumerable<ReservationDto>>>> GetByScheduleAsync(Guid scheduleId, [FromQuery] ReservationParameters parameters, CancellationToken cancellationToken)
     {

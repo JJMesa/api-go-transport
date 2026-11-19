@@ -4,12 +4,12 @@
 
 ## Contents
 
-- `audit/INFORME_AUDITORIA.md` — technical audit (June 2026, Spanish). §6.2 is the improvement plan (`F-01`…): the source of truth for what to work on and what each commit references. §6.3 summarizes progress; §6.4 holds the evidence for findings added after the audit.
+- `audit/TECHNICAL_AUDIT.md` — technical audit (baseline June 2026, re-assessed November 2026). §3 compares the dimension scores; §5 holds the findings (`A-xx`: open, resolved, no longer applicable) with their evidence; §7.2 is the improvement plan (`F-xx`), the source of truth for what to work on and what each commit references; §7.3 summarizes progress.
 - `adr/` — architecture decision records, created with the first one (format from the `domain-modeling` skill).
 
 ## Conventions
 
-- Update a plan item's row (✔, Estado, Responsable, Verificado) and the §6.3 counts in the same commit that implements it — the `implement-plan-item` skill does this.
-- The audit is written in Spanish; new rows and findings follow the document's language and table format.
+- Update a plan item's row (✔, Status, Owner, Verified), move its findings to §5.2, and recount §7.3 in the same commit that implements it — the `implement-plan-item` skill does this.
+- The audit is written in English. Finding (`A-xx`) and plan (`F-xx`) IDs are stable and never renumbered: new ones continue the sequence, and an obsolete plan item is marked ❌ Won't do with its reason.
 - Record an ADR only for a decision that is hard to reverse, surprising without context, and the result of a real trade-off.
 - Domain terms belong in `/GLOSSARY.md`.
