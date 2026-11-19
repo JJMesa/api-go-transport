@@ -22,7 +22,7 @@
   2. Engineering hygiene that now exists: structured logging, health checks, DI validated at startup, 121 isolated green tests.
   3. Extreme consistency across the 12 resource services, plus documentation that keeps it that way: per-area `CLAUDE.md` files, a glossary and a tracked plan.
 - **Top 3 urgent risks:**
-  1. 🔴 **Every Reservation cancellation fails with a 500** (A-36 → F-28).
+  1. 🔴 **Every Reservation cancellation fails with a 500** (A-36 → F-28). *Resolved on 2026-11-19.*
   2. 🟠 **Known-vulnerable runtime and packages:** `net6.0` is out of support, and so are .NET 8 and 9 since 2026-11-10. High-severity advisories affect transitive packages (A-06, A-42 → F-06, F-34).
   3. 🟠 **Personal data and access control:**
      - The Passenger list of any Schedule is anonymous (A-35).
@@ -113,16 +113,13 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 
 #### 🔴 Critical
 
-- **A-36 — Every Reservation cancellation fails** *(baseline 🟠 → 🔴: the operation never succeeds)*.
-  - **Evidence:** `src/GoTransport.Application/Services/ReservationService.cs:96` loads the Reservation with `GetByIdAsync` (no `Include`). `:110` then reads `reservation.Schedule.ArrivalTime`. There is no lazy loading, so `Schedule` is `null` → `NullReferenceException` → 500 for every existing Reservation.
-  - **Why tests miss it:** the unit test passes because `ReservationBuilderMother` pre-loads `Schedule`.
-  - **Recommendation:** load through a specification that includes `Schedule`. → **F-28**
+None open. A-36 was resolved by F-28 (see §5.2).
 
 #### 🟠 High
 
 - **A-06 — Runtime out of support.** All 7 projects target `net6.0` (EOL 2024-11-12). The planned target, `net8.0`, also lost support on 2026-11-10. Retarget to **`net10.0`** (LTS). → **F-06**
 - **A-04 — Thin test coverage** *(partial)*.
-  - Unit tests cover 5 of 14 service classes; component tests cover 1 of 12 controllers (`CitiesControllerTests`).
+  - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete only).
   - Detailed test gaps are in A-63. → **F-55**
 - **A-35 — Anonymous endpoint returns Passenger names and document numbers.**
   - **Evidence:** `src/GoTransport.Api/Controllers/v1/ReservationsController.cs:36` puts `[AllowAnonymous]` on `GET api/v1/schedules/{scheduleId}/reservations`, which returns `PassengerFirstName`, `PassengerLastName` and `PassengerIdentification`. This is personal data under Colombia's Ley 1581 de 2012.
@@ -294,6 +291,7 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 | A-15 | 🟡 `CacheKey.Manufacturers` collided with `IdentificationTypes` | QW-4 (`fbca271`) |
 | A-20 | 🟡 No health checks | F-04 (`4e2df23`): `/health` with a database check (see A-65 for its exposure) |
 | A-28 | 🟢 Admin credential versioned in the seed | F-24 (`801b35c`). The first administrator now comes from `AdminBootstrap`. Databases seeded with the old script must still rotate that password. |
+| A-36 | 🔴 Every Reservation cancellation failed with a 500 | F-28 / QW-6 (`[Fix] Load the Schedule when cancelling a Reservation`). `DeleteAsync` now loads the Reservation through `ReservationSpecification`, which includes `Schedule`. Component tests over the real pipeline cover an upcoming Trip (204), a past travel date (400) and an unknown id (404). |
 
 ### 5.3 No longer applicable
 
@@ -422,7 +420,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | QW-3 | Inject `ILogger` into `ErrorHandlerMiddleware` and stop reading the body | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-4 | Fix `CacheKey.Manufacturers = "manufacturersList"` | 🟡 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-5 | Identity lockout + `CheckPasswordSignInAsync(lockoutOnFailure: true)` | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | QW-6 | Load `Schedule` before the "trip passed" check in `DeleteAsync` (F-28) | 🔴 | ⬜ Open | — | — | ⬜ |
+| [x] | QW-6 | Load `Schedule` before the "trip passed" check in `DeleteAsync` (F-28) | 🔴 | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | QW-7 | Require auth on `GET schedules/{id}/reservations` (F-27) | 🟠 | ⬜ Open | — | — | ⬜ |
 | [ ] | QW-8 | Always stamp `UpdateUser` on modified entities (F-33) | 🟠 | ⬜ Open | — | — | ⬜ |
 | [ ] | QW-9 | Pin patched versions of the vulnerable packages (F-34) | 🟠 | ⬜ Open | — | — | ⬜ |
@@ -460,7 +458,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [ ] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` + versioned API explorer in Swagger (A-34) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-26 | Reorganize the repo into `src/` `tests/` `docs/` `database/` with a `CLAUDE.md` per area, glossary and `.claude/` | 🟢 | Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-27 | Require auth on `GET schedules/{id}/reservations` (A-35) | 🟠 | Security | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
@@ -497,12 +495,12 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
-| 🔴 Critical | 2 | 1 | 0 | 1 |
+| 🔴 Critical | 2 | 0 | 0 | 2 |
 | 🟠 High | 13 | 10 | 0 | 3 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **52** | **0** | **7** |
-| **% Completed** | | | | **12%** |
+| **Total** | **59** | **51** | **0** | **8** |
+| **% Completed** | | | | **14%** |
 
 ---
 

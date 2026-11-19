@@ -296,7 +296,8 @@ public class ReservationServiceTests
         // Arrange
         var reservationId = Guid.NewGuid();
         var reservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(1));
-        _reservationRepositoryMock.Setup(x => x.GetByIdAsync(reservationId, It.IsAny<CancellationToken>())).ReturnsAsync(reservation);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
 
         // Act
         var actual = await _reservationService.DeleteAsync(reservationId);
@@ -312,7 +313,8 @@ public class ReservationServiceTests
     {
         // Arrange
         var reservationId = Guid.NewGuid();
-        _reservationRepositoryMock.Setup(x => x.GetByIdAsync(reservationId, It.IsAny<CancellationToken>())).ReturnsAsync((Reservation)null!);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Reservation)null!);
 
         // Act
         var actual = await _reservationService.DeleteAsync(reservationId);
@@ -329,7 +331,8 @@ public class ReservationServiceTests
         // Arrange
         var reservationId = Guid.NewGuid();
         var pastReservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(-1));
-        _reservationRepositoryMock.Setup(x => x.GetByIdAsync(reservationId, It.IsAny<CancellationToken>())).ReturnsAsync(pastReservation);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(pastReservation);
 
         // Act
         var actual = await _reservationService.DeleteAsync(reservationId);

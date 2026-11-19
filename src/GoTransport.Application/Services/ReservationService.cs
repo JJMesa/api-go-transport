@@ -93,7 +93,8 @@ internal class ReservationService : IReservationService
 
     public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)
     {
-        var reservation = await _reservationRepository.GetByIdAsync(id);
+        // The "trip passed" check reads the Schedule, so load it with the Reservation.
+        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id));
         if (reservation is null) return ResponseBuilder<bool?>.NotFound();
 
         if (IsReservationDatePassed(reservation))
