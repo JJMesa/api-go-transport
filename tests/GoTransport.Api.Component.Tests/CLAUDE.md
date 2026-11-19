@@ -15,6 +15,7 @@
 - Add new seed rows in `DatabaseSeeder`; keep their ids consistent with `Utils.DefaultId`. Seeded `Guid` ids (the Schedule and the upcoming/past Reservations) are public fields on `DatabaseSeeder`; reference them from tests instead of copying literals.
 - One test class per controller (`<Controller>Tests`). Prefer these tests for anything that depends on what EF actually loads: unit-test mocks hand back fully built entities and cannot catch a missing `Include`.
 - Build URLs from the `ApiPaths` constants.
+- To assert on state the DTOs don't expose (e.g. the audit columns), read the row back with `FindInDatabase<TEntity>(keys)` from `ComponentTest`. Signed-in requests run as `TestAuthHandler.TestUserId`; seeded rows are stamped with the `SISTEMA` system user.
 
 ## Gotchas
 

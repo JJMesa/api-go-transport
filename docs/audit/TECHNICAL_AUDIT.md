@@ -125,10 +125,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - **Evidence:** `ReservationService.cs:68` counts with `ReservationSpecification.cs:28`, which filters by `ScheduleId` only.
   - Because a Schedule recurs daily, it becomes "full" for ever after `Capacity` Reservations on any dates.
   - The count-then-insert also runs with no transaction or lock, so two concurrent bookings can both take the last place. → **F-29**
-- **A-41 — "Last modified by" never changes** *(new)*.
-  - **Evidence:** `src/GoTransport.Persistence/Contexts/ApplicationDbContext.cs:48` stamps `Modified` entries with `UpdateUser ??= username`. A row loaded from the database already holds a value (NOT NULL), so the assignment never runs.
-  - **Impact:** every audited row keeps its creator as last modifier.
-  - **Fix:** `entry.Entity.UpdateUser = username;` → **F-33**
 - **A-42 — Vulnerable packages in the dependency closure** *(new)*.
   - **Evidence** (`dotnet list package --vulnerable --include-transitive`):
 
@@ -289,6 +285,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-20 | 🟡 No health checks | F-04 (`4e2df23`): `/health` with a database check (see A-65 for its exposure) |
 | A-28 | 🟢 Admin credential versioned in the seed | F-24 (`801b35c`). The first administrator now comes from `AdminBootstrap`. Databases seeded with the old script must still rotate that password. |
 | A-35 | 🟠 Anonymous endpoint returned Passenger names and document numbers | F-27 / QW-7 (`[Fix] Require authentication on the per-Schedule Reservation list`). `GET schedules/{scheduleId}/reservations` no longer has `[AllowAnonymous]`, so the controller's `[Authorize]` applies. Component tests pin 401 without credentials (and no Passenger data in the body) and 200 when signed in. Role-based access to Reservations stays open as F-46. |
+| A-41 | 🟠 "Last modified by" never changed | F-33 / QW-8 (`[Fix] Stamp the current user as UpdateUser on every update`). `ApplicationDbContext.SaveChangesAsync` now overwrites `UpdateUser` on `Modified` entries instead of `??=`. A component test updates a seeded City as a signed-in user and reads the row back: `CreationUser` stays `SISTEMA`, `UpdateUser` becomes the signed-in user. Rows updated before the fix still show their creator as last modifier. |
 | A-36 | 🔴 Every Reservation cancellation failed with a 500 | F-28 / QW-6 (`[Fix] Load the Schedule when cancelling a Reservation`). `DeleteAsync` now loads the Reservation through `ReservationSpecification`, which includes `Schedule`. Component tests over the real pipeline cover an upcoming Trip (204), a past travel date (400) and an unknown id (404). |
 
 ### 5.3 No longer applicable
@@ -346,9 +343,9 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
   - Constraints that business rules rely on must live in the database (unique indexes), and multi-step writes need a transaction.
 
   ```csharp
-  // Current (ApplicationDbContext.SaveChangesAsync, Modified branch)
+  // At re-assessment (ApplicationDbContext.SaveChangesAsync, Modified branch)
   entry.Entity.UpdateUser ??= username;
-  // Recommended
+  // Recommended — applied by F-33
   entry.Entity.UpdateUser = username;
   ```
 
@@ -420,7 +417,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | QW-5 | Identity lockout + `CheckPasswordSignInAsync(lockoutOnFailure: true)` | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-6 | Load `Schedule` before the "trip passed" check in `DeleteAsync` (F-28) | 🔴 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-7 | Require auth on `GET schedules/{id}/reservations` (F-27) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | QW-8 | Always stamp `UpdateUser` on modified entities (F-33) | 🟠 | ⬜ Open | — | — | ⬜ |
+| [x] | QW-8 | Always stamp `UpdateUser` on modified entities (F-33) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | QW-9 | Pin patched versions of the vulnerable packages (F-34) | 🟠 | ⬜ Open | — | — | ⬜ |
 | [ ] | QW-10 | Reject inactive users at login (F-35) | 🟠 | ⬜ Open | — | — | ⬜ |
 | [ ] | QW-11 | Return the travel date in `ReservationDto` (F-37) | 🟠 | ⬜ Open | — | — | ⬜ |
@@ -461,7 +458,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [ ] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ⬜ Open | — | — | ⬜ |
@@ -494,11 +491,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 9 | 0 | 4 |
+| 🟠 High | 13 | 8 | 0 | 5 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **50** | **0** | **9** |
-| **% Completed** | | | | **15%** |
+| **Total** | **59** | **49** | **0** | **10** |
+| **% Completed** | | | | **17%** |
 
 ---
 

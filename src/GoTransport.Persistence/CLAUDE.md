@@ -22,7 +22,7 @@ SQL Server with `Modern_Spanish_CI_AS` collation. Tables are prefixed by area �
 
 ### Auditing
 
-`ApplicationDbContext.SaveChangesAsync` stamps `IsActive` (true on insert), `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser` on every `IAuditableEntity`. The user comes from the JWT `NameIdentifier` claim, falling back to `"SISTEMA"`; timestamps are Colombia local time (UTC−5) despite the helper's name, `ToPacificStandardTime()` (it uses the Windows zone id `SA Pacific Standard Time`; F-53). Only the async overload stamps — the sync `SaveChanges` does not (F-13). Known bug: on updates `UpdateUser ??= username` never overwrites the creator, so "last modified by" is wrong until F-33 lands.
+`ApplicationDbContext.SaveChangesAsync` stamps `IsActive` (true on insert), `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser` on every `IAuditableEntity`. The user comes from the JWT `NameIdentifier` claim, falling back to `"SISTEMA"`; timestamps are Colombia local time (UTC−5) despite the helper's name, `ToPacificStandardTime()` (it uses the Windows zone id `SA Pacific Standard Time`; F-53). On insert the creation and update fields use `??=`, so a value the caller set (e.g. in seeds) is kept; on update `UpdateUser` is always overwritten with the current user. Only the async overload stamps — the sync `SaveChanges` does not (F-13).
 
 ### Migrations
 
