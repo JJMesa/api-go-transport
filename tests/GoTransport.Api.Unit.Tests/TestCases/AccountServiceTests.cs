@@ -9,6 +9,7 @@ using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using JsonWebTokenHandler = Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler;
 using Moq;
@@ -29,7 +30,7 @@ public class AccountServiceTests
         var jwtSettingsMock = new Mock<IOptionsSnapshot<JwtSettings>>();
         jwtSettingsMock.Setup(x => x.Value).Returns(AccountBuilderMother.JwtSettings());
 
-        _accountService = new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object);
+        _accountService = new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object, NullLogger<AccountService>.Instance);
     }
 
     #region LoginAsync
@@ -203,7 +204,7 @@ public class AccountServiceTests
     }
 
     [Fact]
-    public async Task LoginAsync_ShouldReturnTooManyRequestsWhenAccountIsLockedOut()
+    public async Task LoginAsync_ShouldAnswerALockedOutAccountLikeWrongCredentials()
     {
         // Arrange
         var user = AccountBuilderMother.UserEntity();
@@ -214,9 +215,10 @@ public class AccountServiceTests
         var actual = await _accountService.LoginAsync(AccountBuilderMother.UserLoginDtoOk());
 
         // Assert
-        Assert.Equal(HttpStatusCode.TooManyRequests, actual.HttpCode);
+        // Same answer as an unknown email, so lockout does not reveal that the account exists.
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
         Assert.Null(actual.Data);
-        Assert.Contains(ErrorMessages.UserLockedOut, actual.Errors!);
+        Assert.Contains(ErrorMessages.InvalidCredentials, actual.Errors!);
     }
 
     #endregion LoginAsync
@@ -301,7 +303,7 @@ public class AccountServiceTests
     {
         var jwtSettingsMock = new Mock<IOptionsSnapshot<JwtSettings>>();
         jwtSettingsMock.Setup(x => x.Value).Returns(settings);
-        return new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object);
+        return new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object, NullLogger<AccountService>.Instance);
     }
 
     private User ArrangeSuccessfulLogin()

@@ -10,6 +10,7 @@ using GoTransport.Application.Settings;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.App;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
@@ -21,14 +22,17 @@ internal class AccountService : IAccountService
     private readonly UserManager<User> _userManager;
     private readonly SignInManager<User> _signInManager;
     private readonly JwtSettings _jwtSettings;
+    private readonly ILogger<AccountService> _logger;
 
     public AccountService(UserManager<User> userManager
         , SignInManager<User> signInManager
-        , IOptionsSnapshot<JwtSettings> jwtSettings)
+        , IOptionsSnapshot<JwtSettings> jwtSettings
+        , ILogger<AccountService> logger)
     {
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtSettings = jwtSettings.Value;
+        _logger = logger;
     }
 
     public async Task<JsonResponse<UserTokenDto>> LoginAsync(UserLoginDto userLogin)
@@ -39,7 +43,14 @@ internal class AccountService : IAccountService
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, userLogin.Password, lockoutOnFailure: true);
 
-        if (signInResult.IsLockedOut) return ResponseBuilder<UserTokenDto>.TooManyRequests(ErrorMessages.UserLockedOut);
+        // A locked-out account gets the same answer as an unknown one, so lockout cannot be used to find out
+        // which emails are registered. Operators see it in the log instead.
+        if (signInResult.IsLockedOut)
+        {
+            _logger.LogWarning("Sign-in refused: user {UserId} is locked out.", user.Id);
+            return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
+        }
+
         if (!signInResult.Succeeded) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
 
         var token = await GenerateToken(user);

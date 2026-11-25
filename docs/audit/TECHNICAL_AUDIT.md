@@ -141,9 +141,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-50 — Uniqueness rules have no database constraint** *(new)*.
   - The migration has only two unique indexes, both on Identity tables (`APP_ROLE`, `APP_USER`).
   - Duplicate checks for Department and City description, the Route origin–destination pair and the license plate are check-then-insert in code, so concurrent requests can insert duplicates. → **F-42**
-- **A-53 — Login enumeration and lockout abuse** *(new)*.
-  - An unknown email returns 400 at once; a known one returns 429 after 5 failures (`AccountService.cs:37-43`).
-  - There is no rate limiting, so anyone can confirm accounts and keep the administrator locked out with 5 requests every 15 minutes. → **F-45**
 - **A-58 — Validators disagree with the database; paging input is not range-checked** *(new)*.
   - City names allow 128 characters (`CityCreationValidator.cs:13`) for a `varchar(32)` column (`CityConfiguration.cs:24-25`).
   - Department has no validators at all.
@@ -233,6 +230,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-57 | 🟡 Database errors mapped to the wrong status; cancellations became 400 | F-49 (`[Fix] Map database errors and cancellations to the right status codes`). `ExceptionResponseMapper` (used by `ErrorHandlerMiddleware`) maps SQL Server 547 and 2601/2627 to 409, exhausted retries and transient faults to 503 with `Retry-After`, other SQL errors to 500, and a cancellation by the client to 499 without a body (logged as Information). A cancellation the client did not ask for is a 500. The unused `KeyNotFoundException` branch is gone. |
 | A-65 | 🟡 Anonymous `/health` exposed error text | F-57 (`[Fix] Keep health check details for Administrators and split the probes`). `/health/live` runs no checks, `/health/ready` (and `/health`) runs the tagged database check, and both answer anonymous callers with the overall status only. Check names, durations and errors are served by `/health/details` to Administrators. `HealthChecksTests` covers all four endpoints. |
 | A-51 | 🟡 Passenger lookup by document number: string id, prefix match, national ID in the URL | F-43 (`[Fix] Look Passengers up by exact Reservation id with the document in the body`). `POST reservations/{id:guid}/passenger-lookup` binds a `Guid`, matches it exactly (primary-key seek) together with the document number, and takes the document number from a JSON body (`PassengerLookupDto`, validated), so it never appears in a URL or in the request and error logs. The old `GET .../person/{passengerIdentification}/details` route is gone. |
+| A-53 | 🟡 Login enumeration and lockout abuse | F-45 (`[Fix] Rate-limit sign-in and answer locked accounts like unknown ones`). A locked-out account now gets the same `400 InvalidCredentials` as an unknown email (the lockout is logged instead), and `POST account/login` is limited to 10 attempts a minute per client IP (`429` in the envelope, `Retry-After: 60`). A distributed attacker can still lock an account out; the limit only slows one source down. |
 
 ### 5.3 No longer applicable
 
@@ -418,7 +416,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-42 | Unique indexes backing the duplicate checks (A-50) | 🟡 | Data | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-43 | Exact `Guid` lookup for Passenger details; move the document number out of the URL path (A-51) | 🟡 | Security/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-45 | Rate-limit login; uniform response for unknown and locked accounts (A-53) | 🟡 | Security | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-45 | Rate-limit login; uniform response for unknown and locked accounts (A-53) | 🟡 | Security | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -440,10 +438,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 16 | 0 | 14 | 1 |
+| 🟡 Medium | 31 | 15 | 0 | 15 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **26** | **0** | **32** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **55%** | |
+| **Total** | **59** | **25** | **0** | **33** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **57%** | |
 
 ---
 

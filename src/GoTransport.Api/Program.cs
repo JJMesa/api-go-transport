@@ -36,6 +36,7 @@ try
 
     builder.Services.AddJwtAuthentication();
     builder.Services.AddAuthorizationResponses();
+    builder.Services.AddRateLimitingConfiguration();
 
     builder.Services.AddCorsConfiguration();
 
@@ -67,6 +68,8 @@ try
     app.UseAuthentication();
 
     app.UseAuthorization();
+
+    app.UseRateLimiter();
 
     app.MapControllers();
 

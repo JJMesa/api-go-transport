@@ -37,7 +37,7 @@ Each entity has an `internal static class <Entity>MappingExtensions` with up to 
 
 ### Responses
 
-Every service method returns `JsonResponse<T>` or `JsonPagedResponse<T>`, built with the static `ResponseBuilder<T>` factory: `.Ok`, `.OkPaged`, `.Created`, `.NoContent`, `.NotFound`, `.BadRequest`, `.Conflict`, `.Unauthorized`, `.TooManyRequests` (locked-out logins). Each wrapper carries an `HttpCode`. Return the matching `ResponseBuilder` result for expected business failures; message texts live in `Commons/ErrorMessages.cs`.
+Every service method returns `JsonResponse<T>` or `JsonPagedResponse<T>`, built with the static `ResponseBuilder<T>` factory: `.Ok`, `.OkPaged`, `.Created`, `.NoContent`, `.NotFound`, `.BadRequest`, `.Conflict`, `.Unauthorized`, `.TooManyRequests` (rate-limited sign-ins), `.Forbidden`. Each wrapper carries an `HttpCode`. Return the matching `ResponseBuilder` result for expected business failures; message texts live in `Commons/ErrorMessages.cs`.
 
 ### Validation
 

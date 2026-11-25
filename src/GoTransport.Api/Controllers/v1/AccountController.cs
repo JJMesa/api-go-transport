@@ -1,9 +1,11 @@
 ﻿using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Dtos.Account;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace GoTransport.Api.Controllers.v1;
 
@@ -21,6 +23,7 @@ public class AccountController : ControllerBase
 
     //POST: api/v1/account/login
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitingExtensions.LoginPolicy)]
     [HttpPost("login")]
     public async Task<ActionResult<JsonResponse<UserTokenDto>>> Login([FromBody] UserLoginDto userLoginDto)
     {
