@@ -145,7 +145,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - **Type mismatch:** `GET reservations/{id:guid}/person/{passengerIdentification}/details` binds `id` as `string` (`ReservationsController.cs:47`).
   - **Full scan:** the lookup compares `ReservationId.ToString().StartsWith(id)` (`ReservationSpecification.cs:21`), so it cannot use an index.
   - **Personal data in logs:** the national ID travels in the URL path, so Serilog request logging and the error middleware write it to log files kept for 7 days. → **F-43**
-- **A-52 — Weak password policy** *(new)*. Identity password options are never set (`src/GoTransport.Persistence/RegisterLayerExtensions.cs:31`), and `UserCreationValidator` mirrors a 6-character minimum. That includes the bootstrap administrator. → **F-44**
 - **A-53 — Login enumeration and lockout abuse** *(new)*.
   - An unknown email returns 400 at once; a known one returns 429 after 5 failures (`AccountService.cs:37-43`).
   - There is no rate limiting, so anyone can confirm accounts and keep the administrator locked out with 5 requests every 15 minutes. → **F-45**
@@ -243,6 +242,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-29 | 🟢 `iat` written with `ToLongDateString()` | F-07 (same commit). The token descriptor sets `IssuedAt`, so `iat` is a numeric date like `nbf` and `exp`. |
 | A-09 | 🟡 One role per token (`roleList.First()`) | F-08 (`[Fix] Put every Role of a User in the token`). `GenerateToken` adds one `ClaimTypes.Role` claim per Role, and none for a User without Roles (it used to add an empty one). |
 | A-54 | 🟡 Reservations needed a login but no Role; unknown roles were accepted | F-46 (`[Fix] Limit Reservations to Administrators and Operators`). `ReservationsController` requires `Administrador` or `Operario`. `RoleService.AssignRolesToUser` fails for an unknown role, and `UserService` checks the role before creating or updating a user (400 `UnknownRole`). `TestAuthHandler` now signs in with any Role or none, and component tests pin 200 for an Operator and 403 without a Role. |
+| A-52 | 🟡 Weak password policy (Identity defaults, 6-character validator) | F-44 (`[Fix] Require strong passwords through one shared policy`). `Application/Commons/PasswordPolicy` (12+ characters, 6 distinct, upper, lower, digit, symbol) is applied to Identity's options, so it covers every stored password including the bootstrap administrator's, and `UserCreationValidator` reports the same rules on input. Existing passwords keep working until they are changed. |
 
 ### 5.3 No longer applicable
 
@@ -427,7 +427,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-41 | Detail specifications with `Include`s for get-by-id and create responses (A-49) | 🟡 | Data/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-42 | Unique indexes backing the duplicate checks (A-50) | 🟡 | Data | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-43 | Exact `Guid` lookup for Passenger details; move the document number out of the URL path (A-51) | 🟡 | Security/API | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-45 | Rate-limit login; uniform response for unknown and locked accounts (A-53) | 🟡 | Security | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ⬜ Open | — | — | ⬜ |
@@ -450,10 +450,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 23 | 0 | 7 | 1 |
+| 🟡 Medium | 31 | 22 | 0 | 8 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **33** | **0** | **25** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **43%** | |
+| **Total** | **59** | **32** | **0** | **26** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **45%** | |
 
 ---
 

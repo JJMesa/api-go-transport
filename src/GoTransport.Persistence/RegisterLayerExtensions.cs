@@ -1,4 +1,5 @@
-﻿using GoTransport.Application.Interfaces.Base;
+﻿using GoTransport.Application.Commons;
+using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Persistence.Contexts;
@@ -30,6 +31,7 @@ public static class RegisterLayerExtensions
 
         services.AddDefaultIdentity<User>(options =>
             {
+                PasswordPolicy.Apply(options.Password);
                 options.Lockout.AllowedForNewUsers = true;
                 options.Lockout.MaxFailedAccessAttempts = lockoutSettings.MaxFailedAccessAttempts;
                 options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockoutSettings.LockoutTimeInMinutes);

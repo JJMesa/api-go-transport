@@ -38,7 +38,7 @@ Supply settings through User Secrets or environment variables — the committed 
 - `ConnectionStrings:DefaultConnection` — SQL Server connection string
 - `CachingSettings`: `SlidingExpiration`, `AbsoluteExpiration` (minutes)
 - `LockoutSettings`: `MaxFailedAccessAttempts`, `LockoutTimeInMinutes` (defaults 5 / 15)
-- `AdminBootstrap`: `Email`, `Password` (optional `FirstName`, `LastName`) — creates the first `Administrador` at startup when none exists; set it only in User Secrets / environment, and remove it once the administrator exists
+- `AdminBootstrap`: `Email`, `Password` (optional `FirstName`, `LastName`) — creates the first `Administrador` at startup when none exists; the password must meet `Application/Commons/PasswordPolicy` (12+ characters, 6 distinct, upper, lower, digit, symbol) or startup stops; set it only in User Secrets / environment, and remove it once the administrator exists
 - `Serilog` section drives logging: Console + daily rolling file at `Logs/gotransport-*.log` under this project (7-day retention).
 
 `appsettings.ComponentTesting.json` holds dummy JWT/caching values for the component tests. Developers keep local edits to `appsettings.json`; commit only intended changes to it.
