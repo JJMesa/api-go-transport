@@ -35,5 +35,5 @@ Create them with `dotnet ef migrations add <Name> --project src/GoTransport.Pers
 
 - No lazy loading: a navigation is `null` unless the specification `Include`s it.
 - `EnableRetryOnFailure` makes a transaction opened outside the execution strategy throw. Open transactions only through `IUnitOfWork`.
-- Deletes are hard deletes through `RepositoryBase` (F-23 covers soft delete).
+- Deletes are hard deletes through `RepositoryBase`, except a Reservation, which `DELETE` cancels (`IsActive = false`) so the record stays. Catalog rows referenced by other rows cannot be hard-deleted: SQL error 547 answers 409.
 - EF Core 10 on `net10.0`; versions are central in `Directory.Packages.props` — see `.claude/rules/csproj.md` before touching packages.

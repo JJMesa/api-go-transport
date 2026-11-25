@@ -78,7 +78,9 @@ internal class ReservationService : IReservationService
         return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
             var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id), cancellationToken);
-            if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
+
+            // A cancelled Reservation is kept for the record but can no longer change.
+            if (reservation is null || reservation.IsActive != true) return ResponseBuilder<ReservationDto>.NotFound();
 
             if (HasTripEnded(reservation.ReservationDate, reservation.Schedule))
                 return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.ReservationDatePassed);
@@ -100,12 +102,15 @@ internal class ReservationService : IReservationService
     {
         // The "trip passed" check reads the Schedule, so load it with the Reservation.
         var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id), cancellationToken);
-        if (reservation is null) return ResponseBuilder<bool?>.NotFound();
+        if (reservation is null || reservation.IsActive != true) return ResponseBuilder<bool?>.NotFound();
 
         if (HasTripEnded(reservation.ReservationDate, reservation.Schedule))
             return ResponseBuilder<bool?>.BadRequest(ErrorMessages.ReservationDatePassed);
 
-        await _reservationRepository.DeleteAsync(reservation, cancellationToken);
+        // A cancellation keeps the Reservation on record as inactive. Only active Reservations count
+        // against Capacity, so its place on the Trip is free again.
+        reservation.IsActive = false;
+        await _reservationRepository.UpdateAsync(reservation, cancellationToken);
         return ResponseBuilder<bool?>.NoContent();
     }
 

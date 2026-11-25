@@ -293,16 +293,35 @@ public class ReservationsControllerTests : ComponentTest
     #region DeleteAsync
 
     [Fact]
-    public async Task DeleteAsync_UpcomingTrip_NoContent()
+    public async Task DeleteAsync_UpcomingTrip_CancelsAndKeepsTheReservation()
     {
         // Act
         await AddAuthorization();
         var apiResponse = await Client.DeleteAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
         var apiResponseGet = await Client.GetAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(await apiResponseGet.Content.ReadAsStringAsync(), JsonSettings);
+        var deleteAgain = await Client.DeleteAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
+
+        // Assert: the cancelled Reservation stays on record, inactive, and cannot be cancelled twice
+        Assert.Equal(HttpStatusCode.NoContent, apiResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, apiResponseGet.StatusCode);
+        Assert.False(actual?.Data?.IsActive);
+        Assert.Equal(HttpStatusCode.NotFound, deleteAgain.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_FreesThePlaceOnTheTrip()
+    {
+        // Arrange: fill the upcoming Trip (one seeded Reservation + one booking = Capacity 2)
+        await AddAuthorization();
+        await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
+
+        // Act
+        await Client.DeleteAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
+        var rebook = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
 
         // Assert
-        Assert.Equal(HttpStatusCode.NoContent, apiResponse.StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, apiResponseGet.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, rebook.StatusCode);
     }
 
     [Fact]

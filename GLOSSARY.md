@@ -56,6 +56,10 @@ _Avoid_: Seats, seating
 A place on a Trip held for exactly one Passenger.
 _Avoid_: Booking, ticket
 
+**Cancellation**:
+Ending a Reservation before its Trip. The Reservation stays on record as inactive and can no longer change, and its place on the Trip is free again.
+_Avoid_: Deletion, refund
+
 **Passenger**:
 The person who travels on a Trip, identified on the Reservation by name and identification document. Passengers never sign in; staff create Reservations on their behalf.
 _Avoid_: Customer, client, traveler

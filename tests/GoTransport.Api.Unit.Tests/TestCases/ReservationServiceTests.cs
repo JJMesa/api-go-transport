@@ -391,7 +391,7 @@ public class ReservationServiceTests
     #region DeleteAsync
 
     [Fact]
-    public async Task DeleteAsync_ShouldDeleteReservationAndReturnNoContent()
+    public async Task DeleteAsync_ShouldCancelTheReservationInsteadOfDeletingIt()
     {
         // Arrange
         var reservationId = Guid.NewGuid();
@@ -405,7 +405,43 @@ public class ReservationServiceTests
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
         Assert.Null(actual.Data);
-        _reservationRepositoryMock.Verify(x => x.DeleteAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.False(reservation.IsActive);
+        _reservationRepositoryMock.Verify(x => x.UpdateAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+        _reservationRepositoryMock.Verify(x => x.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldReturnNotFoundForACancelledReservation()
+    {
+        // Arrange
+        var reservation = ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1));
+        reservation.IsActive = false;
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+
+        // Act
+        var actual = await _reservationService.DeleteAsync(reservation.ReservationId, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
+        _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnNotFoundForACancelledReservation()
+    {
+        // Arrange
+        var reservation = ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1));
+        reservation.IsActive = false;
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+
+        // Act
+        var actual = await _reservationService.UpdateAsync(reservation.ReservationId,
+            ReservationBuilderMother.ReservationUpdateDtoOk(reservation.ReservationId, reservation.ScheduleId), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
     }
 
     [Fact]
