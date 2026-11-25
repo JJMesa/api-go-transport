@@ -9,7 +9,7 @@
 
 ## 1. Executive summary
 
-> **Status on 2026-11-24:** the improvement plan is done: 61 of its 62 items, with F-14 superseded by F-38 (§7.3). Every finding is resolved (§5.2) or no longer applicable (§5.3), including the three (A-71…A-73) that a CRAP / coverage analysis opened the same day; CI now gates on coverage and CRAP (F-62). The scores below are those of the 2026-11-17 re-assessment; re-assess before relying on them (§8).
+> **Status on 2026-11-24:** 61 of the 67 plan items are done, with F-14 superseded by F-38 (§7.3). The three findings of the first CRAP / coverage analysis (A-71…A-73) are resolved and CI now gates on coverage and CRAP (F-62). Re-running that analysis afterwards opened four small findings (A-74…A-77, §5.1; plan items F-63…F-66), the main one being that the transaction behind the Capacity check is not tested on a relational database (A-74). A review of the shared test-utilities project added A-78 (F-67). The scores below are those of the 2026-11-17 re-assessment; re-assess before relying on them (§8).
 
 - **Overall score: 5.6 / 10 — Acceptable** (baseline 6.0).
 - **Why the score dropped although seven plan items were done:**
@@ -58,7 +58,7 @@
 | Test suite | `dotnet test` ran 121 tests, all green. |
 | Package scan | `dotnet list package --vulnerable --include-transitive` produced the A-42 results. |
 | .NET support dates | Confirmed against the Microsoft .NET Blog. |
-| Coverage / CRAP (2026-11-24) | Both suites (187 unit + 132 component tests, all green) run with `coverage.runsettings` (OpenCover, which carries cyclomatic complexity), merged with ReportGenerator. **Line 93.1%** (2,748 of 2,951), **branch 71.3%** (267 of 374), **method 94.4%** (321 of 340), but only 60% of methods are fully covered (204 of 340). CRAP = complexity × (1 − coverage)², computed per method from the merged Cobertura: **no method above 30**, two in the 5–30 band (both 6.0), 19 methods at 0% line coverage and 48 with some uncovered lines. See A-71…A-73. |
+| Coverage / CRAP (2026-11-24) | Both suites (187 unit + 132 component tests, all green) run with `coverage.runsettings` (OpenCover, which carries cyclomatic complexity), merged with ReportGenerator. **Line 93.1%** (2,748 of 2,951), **branch 71.3%** (267 of 374), **method 94.4%** (321 of 340), but only 60% of methods are fully covered (204 of 340). CRAP = complexity × (1 − coverage)², computed per method from the merged Cobertura: **no method above 30**, two in the 5–30 band (both 6.0), 19 methods at 0% line coverage and 48 with some uncovered lines. See A-71…A-73. **Re-run after F-60…F-62:** 217 unit + 143 component tests, all green; **line 97.4%**, **branch 79.1%** (296 of 374), **method 99.7%** (339 of 340), 64% of methods fully covered (218 of 340), no method above CRAP 5 with the §2 formula. The remaining gaps are A-74 and A-75. |
 
 Items marked *(inferred)* were reasoned from the code but not executed.
 
@@ -114,7 +114,15 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 
 ### 5.1 Open findings
 
-Every finding of the baseline and the re-assessment, A-70 (found while closing F-55) and A-71…A-73 (from the CRAP analysis of 2026-11-24, §2) is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. No finding is open. New findings continue the sequence at A-74.
+Every finding of the baseline and the re-assessment, A-70 (found while closing F-55) and A-71…A-73 (from the CRAP analysis of 2026-11-24, §2) is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. A-74…A-77 were found by re-running the coverage analysis after F-60…F-62. None is high-risk by CRAP (no method is above the gate's limit of 30); they matter because of what they leave unverified. A-78 comes from a review, the same day, of whether the shared test-utilities project is still useful. New findings continue the sequence at A-79.
+
+| ID | Sev. | Finding | Evidence | Plan item |
+|---|:--:|---|---|---|
+| A-74 | 🟡 | **The transaction that keeps Capacity atomic never runs against a relational database.** `UnitOfWork.ExecuteInTransactionAsync` is what makes the Capacity check and insert of a Reservation atomic (A-37, A-44) and the User + Role creation all-or-nothing (A-11), yet its relational branch has no test: `Serializable` isolation, commit or rollback by `commitWhen`, the retry that clears the change tracker, and a nested call joining the open transaction. Unit tests use `InlineUnitOfWork`, which only records the isolation level asked for, and the component tests run on EF InMemory, which has no transactions and takes the early-return branch. | Merged coverage of `GoTransport.Persistence.Repositories.UnitOfWork.ExecuteInTransactionAsync`: complexity 4, 20% of lines, 50% of branches; CRAP 12.2 with the gate's formula (13.6 on the Release build the gate runs on, per A-73), the highest in the solution. The component tests already run SQLite (`RelationalSpecificationTests`), so commit, rollback, retry and nesting can be pinned there. SQLite does not reproduce SQL Server's `Serializable` range locks: the oversell race itself needs SQL Server (Testcontainers, §8). | F-63 |
+| A-75 | 🟢 | **Small branches that no test runs.** The remaining uncovered lines of the application and API code, each a rule or response that could change unnoticed: the successful get-by-id of a Point and of a User; the URL/body id mismatch (400) of Point and Schedule updates; the duplicate-description 409 of City create and update; the failed security-stamp update of `UserService.UpdateAsync`; the `Ascending` and `Descending` ordering of the paged Users, Reservations, Vehicles, Routes, Points and Departments (only the default and the City ordering run); the `IsActive` filter of the Vehicle, City, Point, Department and Route filters and the `ScheduleId` filter of `ReservationSpecification`; and in `ErrorHandlerMiddleware` the response-already-started path and the `Retry-After: 5` header of a 503 (the mapping to 503 is tested, the header is not). The `Program` lines left are the Development-only Swagger registration and are expected. | `PointService` lines 49 and 67, `CityService` 50 and 71, `UserService` 47 and 91, `ScheduleService` 52, the `Paged*Specification` ordering switches (e.g. `PagedUserSpecification` 18 and 23), `VehicleFilter` 19, `CityFilter` 21, `ReservationSpecification` 30, `ErrorHandlerMiddleware` 43–46 and 60. For scale, the whole solution has 74 uncovered lines and 78 uncovered branches (of 374) in the merged report. | F-64 |
+| A-76 | 🟢 | **Dead constructor.** `PaginationParameters(int pageNumber, int pageSize)` has no caller in `src/` or `tests/`; it is the only method at 0% coverage. The paging parameters are filled by model binding through the parameterless constructor and the clamping setters (F-50). | `src/GoTransport.Application/Parameters/PaginationParameters.cs:31`. Same kind as A-32. | F-65 |
+| A-77 | 🟢 | **The coverage gate mis-ranks methods and never flags a method of unknown complexity.** coverlet writes `complexity="NaN"` for ten property accessors (e.g. `HttpCurrentUser.UserId`, `PaginationParameters.PageNumber`/`PageSize`). In `tools/coverage/coverage_gate.py` their CRAP is NaN, and sorting a list that contains NaN gives an arbitrary order: the "Highest CRAP scores" table of the run summary can leave out the real highest (on the merged report of 2026-11-24 it lists 10.0 as the top while `UnitOfWork.ExecuteInTransactionAsync` scores 12.2). The pass/fail decision is not affected, since it filters instead of sorting, but a NaN method can never be an offender (`NaN > 30` is false). | `tools/coverage/coverage_gate.py`, `methods.sort(reverse=True)` over scores computed from `float(method.get("complexity", 1) or 1)`, which keeps the string `"NaN"`. Reproduced on `coverage/Cobertura.xml` (340 methods, 10 with NaN complexity). | F-66 |
+| A-78 | 🟢 | **The shared test-utilities project no longer shares anything.** `GoTransport.Api.Test.Utilities` exists for helpers that both suites use, but no member is used by both in the same sense: `ApiPaths` is used only by the component tests; `AccountBuilderMother`, `DepartmentBuilderMother` and `ReservationBuilderMother` only by the unit tests; `CityBuilderMother` is split (the unit tests use `CityParameters`, the component tests `CityCreationDtoOk` and `CityUpdateDtoOk`); `Utils.DefaultId` is an arbitrary id in the unit tests but must equal a seeded row in the component tests, which ties `DatabaseSeeder` to a constant in another project. `ResponseBuilder` and `Utils.StandarPageSize` have no caller. The project still costs a third test project in the solution and in every build, an entry in the coverage exclusions, and a `new-crud-resource` step that tells authors to add helpers there. | Usage counted on 2026-11-24 across `tests/GoTransport.Api.Unit.Tests` and `tests/GoTransport.Api.Component.Tests`; `DatabaseSeeder` doc comment ("Ids match the values exposed through `Utils.DefaultId`"); `GoTransport.sln`, `coverage.runsettings` (`[*.Test.Utilities]*`), `.claude/skills/new-crud-resource/SKILL.md` step 3, `tests/CLAUDE.md`. | F-67 |
 
 ### 5.2 Resolved since the baseline
 
@@ -396,6 +404,11 @@ Every finding of the baseline and the re-assessment, A-70 (found while closing F
 | [x] | F-60 | Unit-test the uncovered write paths: `RouteService.UpdateAsync`, `VehicleService.CreateAsync`/`UpdateAsync` (duplicate license plate), `RoleService.AssignRolesToUser`/`RoleExistsAsync` (unknown Role), and the uncovered branches of `UserService.CreateAsync`, `UserFilter` and `ReservationFilter` (A-71) | 🟡 | Testing | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-61 | Component tests for the success path (201 + `Location`, 200) of create/update in Departments, Routes (update), Schedules, Users and Vehicles (A-72) | 🟢 | Testing | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-62 | Use `coverage.runsettings` in CI, publish the ReportGenerator report with its Risk Hotspots, fail on a method with CRAP above 30 and on line coverage below 80% / branch below 60% (A-73) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
+| [ ] | F-63 | Test `UnitOfWork.ExecuteInTransactionAsync` on SQLite (commit when `commitWhen` is true, rollback otherwise, retry with a clean change tracker, nested call joins the open transaction); keep the `Serializable` oversell race for a SQL Server run (A-74) | 🟡 | Testing/Data | S | ⬜ Open | — | — | ⬜ |
+| [ ] | F-64 | Cover the remaining small branches: Point and User get-by-id, URL/body id mismatch (Point, Schedule), City duplicate 409, failed security-stamp update, paged ordering and `IsActive` / `ScheduleId` filters, 503 `Retry-After` and the response-already-started path (A-75) | 🟢 | Testing | S | ⬜ Open | — | — | ⬜ |
+| [ ] | F-65 | Remove the unused `PaginationParameters(int, int)` constructor (A-76) | 🟢 | Quality | S | ⬜ Open | — | — | ⬜ |
+| [ ] | F-66 | Make `coverage_gate.py` treat a NaN or missing complexity as 1 so the ranking is reliable, and add a small test of the script against a sample report (A-77) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [ ] | F-67 | Remove `GoTransport.Api.Test.Utilities`: move `ApiPaths` and the City creation/update data to the component tests and the other mothers to the unit tests, take the component tests' ids from `DatabaseSeeder`, delete `ResponseBuilder` and `StandarPageSize`, and update the solution, `coverage.runsettings`, `tests/CLAUDE.md`, the README and the `new-crud-resource` skill (A-78) | 🟢 | Testing | S | ⬜ Open | — | — | ⬜ |
 
 ### 7.3 Progress summary
 
@@ -403,10 +416,10 @@ Every finding of the baseline and the re-assessment, A-70 (found while closing F
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 32 | 0 | 0 | 31 | 1 |
-| 🟢 Low | 15 | 0 | 0 | 15 | 0 |
-| **Total** | **62** | **0** | **0** | **61** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **100%** | |
+| 🟡 Medium | 33 | 1 | 0 | 31 | 1 |
+| 🟢 Low | 19 | 4 | 0 | 15 | 0 |
+| **Total** | **67** | **5** | **0** | **61** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **92%** (61 ÷ 66) | |
 
 ---
 
