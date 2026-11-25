@@ -24,15 +24,7 @@ public class ReservationsController : ControllerBase
         _reservationService = reservationService;
     }
 
-    //GET: api/v1/reservations/all
-    [HttpGet("all")]
-    public async Task<ActionResult<JsonResponse<IEnumerable<ReservationDto>>>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        var response = await _reservationService.GetAllAsync(cancellationToken);
-        return StatusCode((int)response.HttpCode, response);
-    }
-
-    //GET: api/v1/schedules/ABCD-1234-A1B2-C3D4/reservations
+    //GET: api/v1/schedules/ABCD-1234-A1B2-C3D4/reservations?travelDate=2026-12-24
     [HttpGet("/api/v{version:apiVersion}/schedules/{scheduleId:guid}/[controller]")]
     public async Task<ActionResult<JsonResponse<IEnumerable<ReservationDto>>>> GetByScheduleAsync(Guid scheduleId, [FromQuery] ReservationParameters parameters, CancellationToken cancellationToken)
     {

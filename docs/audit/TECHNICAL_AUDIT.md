@@ -120,13 +120,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-04 — Thin test coverage** *(partial)*.
   - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete and the per-Schedule list only).
   - Detailed test gaps are in A-63. → **F-55**
-- **A-46 — `GET reservations/all` is unbounded and cached** *(new)*.
-  - **Evidence:**
-    - `ReservationsController.cs:28` exposes the endpoint.
-    - `ReservationService.cs:32-41` loads every active Reservation ever made, with no paging, and stores the list in `IMemoryCache`, which has no size limit.
-  - **Who can call it:** any signed-in user, whatever their role.
-  - **Impact:** memory and latency grow with booking history, and personal data sits in the cache. → **F-38**
-
 #### 🟡 Medium
 
 - **A-08 — Two different JWT keys.**
@@ -138,10 +131,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
   - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
-- **A-13 — `ReservationService.GetAllAsync` loads no navigations** *(partial)*. The `NullReferenceException` is gone (mappings are null-safe), but `Schedule` and `IdentificationType` come back `null` and are cached that way (`ReservationService.cs:34-38`). → **F-14**
 - **A-16 — The cache is never invalidated.** `CacheService.Remove` (`src/GoTransport.Application/Services/CacheService.cs:40`) has no callers. → **F-10**
 - **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
-- **A-18 — `IServiceBase` covers only 5 of 14 service interfaces** (Department, Point, Reservation, Route, Vehicle). CRUD-like City, Schedule and User do not use it. → **F-18**
+- **A-18 — `IServiceBase` covers only 4 of 14 service interfaces** (Department, Point, Route, Vehicle). CRUD-like City, Schedule and User do not use it, and Reservation left it when F-38 removed its unbounded `GetAllAsync`. → **F-18**
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
@@ -259,10 +251,13 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-37 | 🟠 Capacity counted per Schedule, not per Trip, and not atomically | F-29 (`[Fix] Count Capacity per Trip inside a serializable transaction`). `CreateAsync` counts the active Reservations on the Trip (`TripReservationSpecification`: Schedule + travel date) and inserts inside `IUnitOfWork.ExecuteInTransactionAsync` with `Serializable`, so a concurrent booking waits or deadlocks and is retried instead of overselling. A migration replaces the `SCHEDULE_ID` index with (`SCHEDULE_ID`, `RESERVATION_DATE`) to keep those range locks to one Trip. Travel dates are stored without a time part. |
 | A-38 | 🟡 An unknown `ScheduleId` gave 500 instead of 404 | F-30 (`[Fix] Answer 404 for a Reservation on an unknown Schedule`). `CreateAsync` loads the Schedule with its Vehicle (`ScheduleSpecification`) and returns 404 with `ErrorMessages.InvalidSchedule` when it does not exist. The unused `VehicleSpecification(scheduleId)` is gone. |
 | A-44 | 🟠 Updating a Reservation bypassed the Trip rules | F-36 (`[Fix] Apply the Trip rules when a Reservation moves`). When an update changes the Schedule or the travel date, the target Trip must exist (404), must not have taken place (400 `TravelDatePassed`) and must have a free place, not counting the Reservation itself (409), all under the same `Serializable` transaction as a booking. Editing a Reservation without moving it skips the Capacity check. New bookings now also reject a Trip that has already taken place. |
+| A-46 | 🟠 `GET reservations/all` was unbounded and cached | F-38 (`[Fix] Replace the unbounded Reservation list with a per-Trip filter`). The endpoint and `ReservationService.GetAllAsync` are gone, and Reservations are no longer cached. To list one Trip, `GET schedules/{scheduleId}/reservations` takes an optional `travelDate`, paged like the rest of that list. |
 
 ### 5.3 No longer applicable
 
-None. Every baseline finding is either resolved (§5.2) or still present (§5.1).
+| ID | Finding | Why |
+|---|---|---|
+| A-13 | 🟡 `ReservationService.GetAllAsync` loaded no navigations and cached them as `null` | F-38 removed `GetAllAsync` and the `reservations/all` endpoint, so there is nothing left to fix; F-14 is marked Won't do. |
 
 ---
 
@@ -411,7 +406,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) | 🟡 | Data | S | ⬜ Open | — | — | ⬜ |
+| [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) — *superseded by F-38, which removed `GetAllAsync`* | 🟡 | Data | S | ❌ Won't do | Juan Mesa | — | ✅ |
 | [ ] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ⬜ Open | — | — | ⬜ |
@@ -435,7 +430,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-40 | Build paged and count specifications from one shared filter (A-48) | 🟡 | Patterns | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-41 | Detail specifications with `Include`s for get-by-id and create responses (A-49) | 🟡 | Data/API | S | ⬜ Open | — | — | ⬜ |
@@ -460,14 +455,14 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 
 ### 7.3 Progress summary
 
-| Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
-|---|:--:|:--:|:--:|:--:|
-| 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 1 | 0 | 12 |
-| 🟡 Medium | 31 | 29 | 0 | 2 |
-| 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **41** | **0** | **18** |
-| **% Completed** | | | | **31%** |
+| Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done | ❌ Won't do |
+|---|:--:|:--:|:--:|:--:|:--:|
+| 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
+| 🟠 High | 13 | 0 | 0 | 13 | 0 |
+| 🟡 Medium | 31 | 28 | 0 | 2 | 1 |
+| 🟢 Low | 13 | 11 | 0 | 2 | 0 |
+| **Total** | **59** | **39** | **0** | **19** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **33%** | |
 
 ---
 

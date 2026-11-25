@@ -33,6 +33,32 @@ public class ReservationsControllerTests : ComponentTest
     }
 
     [Fact]
+    public async Task GetByScheduleAsync_WithTravelDate_ReturnsOnlyThatTrip()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync(
+            $"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}?travelDate={DatabaseSeeder.UpcomingTravelDate:yyyy-MM-dd}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonPagedResponse<List<ReservationDto>>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(new[] { DatabaseSeeder.UpcomingReservationId }, actual!.Data!.Select(reservation => reservation.ReservationId));
+        Assert.Contains("\"totalItems\":1", apiResponse.Headers.GetValues(Constants.PaginationHeader).Single(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task GetAllAsync_IsGone_NotFound()
+    {
+        // The unbounded, cached list of every Reservation was removed (F-38).
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.ReservationsFullPath}/all");
+
+        Assert.Equal(HttpStatusCode.NotFound, apiResponse.StatusCode);
+    }
+
+    [Fact]
     public async Task GetByScheduleAsync_ReturnsTheTravelDates()
     {
         // Act

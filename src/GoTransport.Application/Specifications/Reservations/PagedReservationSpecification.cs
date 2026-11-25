@@ -45,6 +45,12 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
         if (parameters.IsActive.HasValue)
             Query.Where(schedule => schedule.IsActive == parameters.IsActive);
 
+        if (parameters.TravelDate.HasValue)
+        {
+            var travelDate = parameters.TravelDate.Value.Date;
+            Query.Where(reservation => reservation.ReservationDate == travelDate);
+        }
+
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
         Query.Select(reservation => new ReservationDto

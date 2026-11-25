@@ -19,29 +19,15 @@ internal class ReservationService : IReservationService
 {
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Schedule> _scheduleRepository;
-    private readonly ICacheService<Reservation> _cacheService;
     private readonly IUnitOfWork _unitOfWork;
 
     public ReservationService(IRepository<Reservation> reservationRepository
         , IRepository<Schedule> scheduleRepository
-        , ICacheService<Reservation> cacheService
         , IUnitOfWork unitOfWork)
     {
         _reservationRepository = reservationRepository;
         _scheduleRepository = scheduleRepository;
-        _cacheService = cacheService;
         _unitOfWork = unitOfWork;
-    }
-
-    public async Task<JsonResponse<IEnumerable<ReservationDto>>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        var reservations = _cacheService.Get(CacheKey.Reservations);
-        if (reservations is null)
-        {
-            reservations = await _reservationRepository.ListAsync(new ReservationSpecification(), cancellationToken);
-            _cacheService.Set(CacheKey.Reservations, reservations);
-        }
-        return ResponseBuilder<IEnumerable<ReservationDto>>.Ok(reservations.Select(reservation => reservation.ToDto()).ToList());
     }
 
     public async Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken)

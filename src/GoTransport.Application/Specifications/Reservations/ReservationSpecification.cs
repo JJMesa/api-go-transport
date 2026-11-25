@@ -7,14 +7,6 @@ namespace GoTransport.Application.Specifications.Reservations;
 
 public class ReservationSpecification : Specification<Reservation>
 {
-    public ReservationSpecification()
-    {
-        Query.Where(reservation => reservation.IsActive!.Value);
-
-        Query.OrderBy(reservation => reservation.PassengerFirstName)
-            .ThenBy(reservation => reservation.PassengerLastName);
-    }
-
     public ReservationSpecification(string reservationId, string personId)
     {
         Query.Where(reservation =>
@@ -65,5 +57,11 @@ public class ReservationSpecification : Specification<Reservation>
 
         if (parameters.IsActive.HasValue)
             Query.Where(schedule => schedule.IsActive == parameters.IsActive);
+
+        if (parameters.TravelDate.HasValue)
+        {
+            var travelDate = parameters.TravelDate.Value.Date;
+            Query.Where(reservation => reservation.ReservationDate == travelDate);
+        }
     }
 }

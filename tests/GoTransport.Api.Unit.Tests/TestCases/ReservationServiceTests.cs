@@ -18,7 +18,6 @@ public class ReservationServiceTests
 {
     private readonly Mock<IRepository<Reservation>> _reservationRepositoryMock;
     private readonly Mock<IRepository<Schedule>> _scheduleRepositoryMock;
-    private readonly Mock<ICacheService<Reservation>> _cacheServiceMock;
     private readonly InlineUnitOfWork _unitOfWork;
     private readonly IReservationService _reservationService;
 
@@ -26,49 +25,9 @@ public class ReservationServiceTests
     {
         _reservationRepositoryMock = new Mock<IRepository<Reservation>>();
         _scheduleRepositoryMock = new Mock<IRepository<Schedule>>();
-        _cacheServiceMock = new Mock<ICacheService<Reservation>>();
         _unitOfWork = new InlineUnitOfWork();
-        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _scheduleRepositoryMock.Object, _cacheServiceMock.Object, _unitOfWork);
+        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _scheduleRepositoryMock.Object, _unitOfWork);
     }
-
-    #region GetAllAsync
-
-    [Fact]
-    public async Task GetAllAsync_ShouldQueryRepositoryAndPopulateCache_OnCacheMiss()
-    {
-        // Arrange
-        var reservations = new List<Reservation> { ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1)) };
-        _cacheServiceMock.Setup(x => x.Get(CacheKey.Reservations)).Returns((List<Reservation>?)null);
-        _reservationRepositoryMock.Setup(x => x.ListAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(reservations);
-
-        // Act
-        var actual = await _reservationService.GetAllAsync(CancellationToken.None);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
-        Assert.True(actual.Data?.Count() > 0);
-        _reservationRepositoryMock.Verify(x => x.ListAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()), Times.Once);
-        _cacheServiceMock.Verify(x => x.Set(CacheKey.Reservations, It.IsAny<List<Reservation>>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task GetAllAsync_ShouldReturnCachedData_WithoutQueryingRepository_OnCacheHit()
-    {
-        // Arrange
-        var reservations = new List<Reservation> { ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1)) };
-        _cacheServiceMock.Setup(x => x.Get(CacheKey.Reservations)).Returns(reservations);
-
-        // Act
-        var actual = await _reservationService.GetAllAsync(CancellationToken.None);
-
-        // Assert
-        Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
-        _reservationRepositoryMock.Verify(x => x.ListAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()), Times.Never);
-        _cacheServiceMock.Verify(x => x.Set(It.IsAny<string>(), It.IsAny<List<Reservation>>()), Times.Never);
-    }
-
-    #endregion GetAllAsync
 
     #region GetByScheduleAsync
 
