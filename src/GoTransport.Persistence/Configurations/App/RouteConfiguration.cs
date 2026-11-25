@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class RouteConfiguration : BaseEntityConfiguration<Route>
+internal sealed class RouteConfiguration : BaseEntityConfiguration<Route>
 {
     public override void Configure(EntityTypeBuilder<Route> builder)
     {

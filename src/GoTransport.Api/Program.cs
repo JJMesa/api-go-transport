@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Globalization;
 using GoTransport.Api.Extensions;
 using GoTransport.Api.Security;
 using GoTransport.Application;
@@ -7,7 +8,7 @@ using GoTransport.Persistence;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
+    .WriteTo.Console(formatProvider: CultureInfo.InvariantCulture)
     .CreateBootstrapLogger();
 
 try

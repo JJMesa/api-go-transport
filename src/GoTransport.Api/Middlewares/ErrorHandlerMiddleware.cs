@@ -8,6 +8,12 @@ namespace GoTransport.Api.Middlewares;
 
 public class ErrorHandlerMiddleware
 {
+    private static readonly JsonSerializerOptions SerializerOptions = new()
+    {
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
     private readonly RequestDelegate _next;
     private readonly ILogger<ErrorHandlerMiddleware> _logger;
 
@@ -62,12 +68,7 @@ public class ErrorHandlerMiddleware
             TraceId = CorrelationIdMiddleware.Get(context)
         };
 
-        var result = JsonSerializer.Serialize(jsonResponse,
-            new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-            });
+        var result = JsonSerializer.Serialize(jsonResponse, SerializerOptions);
         await response.WriteAsync(result);
     }
 }

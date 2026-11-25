@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GoTransport.Persistence.Repositories;
 
-internal class UnitOfWork : IUnitOfWork
+internal sealed class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
 

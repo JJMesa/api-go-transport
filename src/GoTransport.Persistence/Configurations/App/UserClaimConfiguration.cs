@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class UserClaimConfiguration : BaseEntityConfiguration<UserClaim>
+internal sealed class UserClaimConfiguration : BaseEntityConfiguration<UserClaim>
 {
     public override void Configure(EntityTypeBuilder<UserClaim> builder)
     {

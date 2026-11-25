@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class UserTokenConfiguration : BaseEntityConfiguration<UserToken>
+internal sealed class UserTokenConfiguration : BaseEntityConfiguration<UserToken>
 {
     public override void Configure(EntityTypeBuilder<UserToken> builder)
     {

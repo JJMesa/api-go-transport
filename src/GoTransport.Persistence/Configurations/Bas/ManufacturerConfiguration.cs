@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.Bas;
 
-internal class ManufacturerConfiguration : BaseEntityConfiguration<Manufacturer>
+internal sealed class ManufacturerConfiguration : BaseEntityConfiguration<Manufacturer>
 {
     public override void Configure(EntityTypeBuilder<Manufacturer> builder)
     {

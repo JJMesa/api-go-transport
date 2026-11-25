@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class PointConfiguration : BaseEntityConfiguration<Point>
+internal sealed class PointConfiguration : BaseEntityConfiguration<Point>
 {
     public override void Configure(EntityTypeBuilder<Point> builder)
     {

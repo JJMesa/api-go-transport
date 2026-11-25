@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class VehicleConfiguration : BaseEntityConfiguration<Vehicle>
+internal sealed class VehicleConfiguration : BaseEntityConfiguration<Vehicle>
 {
     public override void Configure(EntityTypeBuilder<Vehicle> builder)
     {

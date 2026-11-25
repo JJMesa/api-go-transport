@@ -1,4 +1,5 @@
-﻿using GoTransport.Application.Builders;
+﻿using System.Globalization;
+using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Extensions;
@@ -75,7 +76,7 @@ internal class UserService : IUserService
         if (id != userUpdateDto.UserId)
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var user = await _userManager.FindByIdAsync(id.ToString());
+        var user = await _userManager.FindByIdAsync(id.ToString(CultureInfo.InvariantCulture));
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
 
         if (!await _roleService.RoleExistsAsync(userUpdateDto.RoleId, cancellationToken))

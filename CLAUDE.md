@@ -28,14 +28,15 @@ Each area has its own `CLAUDE.md`, loaded when you work inside it; this file hol
 | `tests/` | xUnit unit and component tests plus shared test utilities |
 | `docs/` | Audit report with the improvement plan; ADRs under `docs/adr/` |
 | `database/` | SQL seed scripts (the schema itself comes from EF Core migrations) |
-| `.github/workflows/` | CI (`ci.yml`): Release build, both test suites, and a gate on High/Critical vulnerable packages, on pushes to `master`/`Dev` and on pull requests |
+| `.github/workflows/` | CI (`ci.yml`): Release build with warnings as errors, both test suites, and a gate on High/Critical vulnerable packages, on pushes to `master`/`Dev` and on pull requests |
+| `.editorconfig` | Code style and analyzer severities, enforced by every build; deliberate exceptions carry a comment |
 | `.claude/` | Shared Claude Code settings, path-scoped `rules/`, and the `new-crud-resource` and `implement-plan-item` skills |
 | `GLOSSARY.md` | Domain vocabulary (imported above) |
 
 ## Common commands
 
 ```bash
-# Build the whole solution
+# Build the whole solution (CI also treats warnings as errors: add -warnaserror to check locally)
 dotnet build GoTransport.sln
 
 # Run the API (needs configuration — see src/GoTransport.Api/CLAUDE.md; Swagger at https://localhost:7046/swagger, probes at /health/live and /health/ready)

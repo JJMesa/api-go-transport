@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class ReservationConfiguration : BaseEntityConfiguration<Reservation>
+internal sealed class ReservationConfiguration : BaseEntityConfiguration<Reservation>
 {
     public override void Configure(EntityTypeBuilder<Reservation> builder)
     {

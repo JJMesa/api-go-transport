@@ -8,7 +8,7 @@ namespace GoTransport.Persistence.Repositories;
 /// The one repository: Ardalis RepositoryBase over ApplicationDbContext. Queries go through specifications;
 /// the DbContext is not exposed.
 /// </summary>
-internal class BaseRepository<TEntity> : RepositoryBase<TEntity>, IRepository<TEntity> where TEntity : class
+internal sealed class BaseRepository<TEntity> : RepositoryBase<TEntity>, IRepository<TEntity> where TEntity : class
 {
     public BaseRepository(ApplicationDbContext context) : base(context)
     {

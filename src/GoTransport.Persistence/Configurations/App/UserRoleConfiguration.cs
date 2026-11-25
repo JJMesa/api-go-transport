@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class UserRoleConfiguration : BaseEntityConfiguration<UserRole>
+internal sealed class UserRoleConfiguration : BaseEntityConfiguration<UserRole>
 {
     public override void Configure(EntityTypeBuilder<UserRole> builder)
     {

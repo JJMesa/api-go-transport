@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.Bas;
 
-internal class CityConfiguration : BaseEntityConfiguration<City>
+internal sealed class CityConfiguration : BaseEntityConfiguration<City>
 {
     public override void Configure(EntityTypeBuilder<City> builder)
     {

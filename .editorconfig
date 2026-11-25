@@ -1,0 +1,78 @@
+root = true
+
+# ---------------------------------------------------------------------------------------------
+# All files
+# ---------------------------------------------------------------------------------------------
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,props,targets,csproj,xml}]
+indent_size = 2
+
+# The seed scripts are Windows-1252 (see database/CLAUDE.md); do not re-encode them.
+[database/**.sql]
+charset = unset
+
+# ---------------------------------------------------------------------------------------------
+# C#
+# ---------------------------------------------------------------------------------------------
+[*.cs]
+indent_size = 4
+
+# Code style, enforced in the build (EnforceCodeStyleInBuild)
+csharp_style_namespace_declarations = file_scoped:warning
+csharp_using_directive_placement = outside_namespace:warning
+dotnet_sort_system_directives_first = true
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_prefer_braces = when_multiline:suggestion
+
+# Naming: interfaces start with I; private fields are _camelCase
+dotnet_naming_rule.interfaces_start_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_start_with_i.style = prefix_i
+dotnet_naming_rule.interfaces_start_with_i.severity = warning
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_style.prefix_i.required_prefix = I
+dotnet_naming_style.prefix_i.capitalization = pascal_case
+
+dotnet_naming_rule.private_fields_underscore.symbols = private_fields
+dotnet_naming_rule.private_fields_underscore.style = underscore_camel
+dotnet_naming_rule.private_fields_underscore.severity = warning
+dotnet_naming_symbols.private_fields.applicable_kinds = field
+dotnet_naming_symbols.private_fields.applicable_accessibilities = private
+dotnet_naming_symbols.private_fields.required_modifiers = readonly
+dotnet_naming_style.underscore_camel.required_prefix = _
+dotnet_naming_style.underscore_camel.capitalization = camel_case
+
+# Analyzers (AnalysisLevel latest-recommended). Rules turned down here are deliberate:
+# CA1000: ResponseBuilder<T>.Ok(...) and friends are the project's response convention (src/CLAUDE.md).
+dotnet_diagnostic.CA1000.severity = none
+# CA1716: ICacheService.Get/Set clash only with Visual Basic keywords; the API is C#-only.
+dotnet_diagnostic.CA1716.severity = none
+# CA1848/CA1873: LoggerMessage delegates pay off on hot paths; these logs are on error and startup paths.
+dotnet_diagnostic.CA1848.severity = suggestion
+dotnet_diagnostic.CA1873.severity = suggestion
+
+# ---------------------------------------------------------------------------------------------
+# Generated code: EF Core migrations
+# ---------------------------------------------------------------------------------------------
+[src/GoTransport.Persistence/Migrations/**.cs]
+generated_code = true
+csharp_style_namespace_declarations = block_scoped:none
+
+# ---------------------------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------------------------
+[tests/**.cs]
+# Test names read Method_ShouldOutcome (tests/CLAUDE.md).
+dotnet_diagnostic.CA1707.severity = none
+# Tests hold services by their interface on purpose.
+dotnet_diagnostic.CA1859.severity = none
+# ComponentTest exposes Client and JsonSettings to its subclasses.
+dotnet_diagnostic.CA1051.severity = none
+# Test data is culture-neutral literals.
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1310.severity = none

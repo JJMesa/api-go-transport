@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Globalization;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
@@ -84,7 +85,7 @@ internal class AccountService : IAccountService
         {
             Subject = new ClaimsIdentity(new ClaimsIdentity(new[]
             {
-                new Claim(UserCustomClaims.Id, user.Id.ToString(), ClaimValueTypes.Integer64),
+                new Claim(UserCustomClaims.Id, user.Id.ToString(CultureInfo.InvariantCulture), ClaimValueTypes.Integer64),
                 new Claim(UserCustomClaims.FirstName, user.FirstName),
                 new Claim(UserCustomClaims.LastName, user.LastName),
                 new Claim(UserCustomClaims.SecurityStamp, user.SecurityStamp ?? string.Empty),

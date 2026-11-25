@@ -9,6 +9,8 @@
 
 ## 1. Executive summary
 
+> **Status on 2026-11-24:** the whole improvement plan is done: 58 of 59 items, with F-14 superseded by F-38 (§7.3). Every finding is resolved (§5.2) or no longer applicable (§5.3). The scores below are those of the 2026-11-17 re-assessment; re-assess before relying on them (§8).
+
 - **Overall score: 5.6 / 10 — Acceptable** (baseline 6.0).
 - **Why the score dropped although seven plan items were done:**
   - The fixes are real: anonymous reservation writes, brute-force login, zero observability, non-reproducible component tests and the seeded admin credential are all gone, and the testing, observability and maintainability scores rose.
@@ -111,16 +113,7 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 
 ### 5.1 Open findings
 
-#### 🔴 Critical
-
-None open. A-36 was resolved by F-28 (see §5.2).
-
-#### 🟠 High
-
-#### 🟡 Medium
-
-- **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
-#### 🟢 Low
+None. Every finding of the baseline and the re-assessment, and A-70 (found while closing F-55), is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. New findings continue the sequence at A-71.
 
 ### 5.2 Resolved since the baseline
 
@@ -195,6 +188,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-04 | 🟠 Thin test coverage | F-55 (`[Test] Close the test gaps: role matrix, JWT round trip, validators, relational specifications`) and the tests added with every item since: 187 unit tests (services, mappings, specifications, validators, time rules) and 132 component tests, including `AuthorizationMatrixTests`, which calls every controller endpoint as anonymous, no-Role, Operator and Administrador callers. Services without a unit test class (Point, Route, Vehicle and the catalogs) are covered through their endpoints. |
 | A-63 | 🟡 Test gaps that let defects through | F-55 (same commit). `AuthorizationMatrixTests` holds every endpoint to an access table (401/403 for each caller kind); `JwtRoundTripTests` logs in through the real endpoint and presents the token to the real JWT handler (role claims, a deactivated user, a tampered token); `ValidatorRulesTests` covers the remaining validators; `RelationalSpecificationTests` runs the specifications on SQLite, which found A-70. The Reservation Object Mother no longer hides missing `Include`s: those are pinned by component tests over the real pipeline. |
 | A-70 | 🟠 *(new, found by F-55)* Every paged search failed on a relational database | F-55 (same commit). The `Search` selectors were written as `x => $"{x.Property}"`, a `string.Format` call that SQL cannot translate, so searching Users, Vehicles, Routes or Reservations threw on SQL Server; EF InMemory evaluated it in memory, so no test noticed. The selectors now use the property itself, and the relational specification tests pin the translation. |
+| A-22 | 🟡 No `.editorconfig`, analyzers or CI | F-11 (CI) and F-12 (`[Feature] Enforce analyzers and code style, with warnings as errors in CI`). `.editorconfig` sets the code style (file-scoped namespaces, usings outside the namespace, `I`/`_camelCase` naming) and the analyzer severities, each lowered rule with its reason; `Directory.Build.props` turns on `AnalysisLevel` `latest-recommended` and `EnforceCodeStyleInBuild`, and `TreatWarningsAsErrors` when `CI=true`. The findings it raised were fixed: internal Persistence types sealed, a cached `JsonSerializerOptions`, culture-invariant formatting. Migrations are marked generated code. |
 
 ### 5.3 No longer applicable
 
@@ -347,7 +341,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) — *superseded by F-38, which removed `GetAllAsync`* | 🟡 | Data | S | ❌ Won't do | Juan Mesa | — | ✅ |
 | [x] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ✅ Done | Juan Mesa | — | ✅ |
@@ -402,10 +396,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 1 | 0 | 29 | 1 |
+| 🟡 Medium | 31 | 0 | 0 | 30 | 1 |
 | 🟢 Low | 13 | 0 | 0 | 13 | 0 |
-| **Total** | **59** | **1** | **0** | **57** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **98%** | |
+| **Total** | **59** | **0** | **0** | **58** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **100%** | |
 
 ---
 
