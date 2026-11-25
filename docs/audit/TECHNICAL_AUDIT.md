@@ -126,7 +126,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
 - **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
-- **A-18 — `IServiceBase` covers only 4 of 14 service interfaces** (Department, Point, Route, Vehicle). CRUD-like City, Schedule and User do not use it, and Reservation left it when F-38 removed its unbounded `GetAllAsync`. → **F-18**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
@@ -210,6 +209,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-30 | 🟢 Typos | F-20 (`[Refactor] Fix the Ruote typos, drop dead code and align conventions`). `RuoteParameters.cs` is `RouteParameters.cs`, and the `ruote`/`ruoteId` identifiers and `IsDuplicarePoints` are now `route`, `routeId` and `IsDuplicateRouteAsync`. The `LICENCE_PLATE` column keeps its persisted name. |
 | A-32 | 🟢 Dead code | F-20 (same commit). Removed: the empty `Exceptions/` folder, `ValidateAndThrowArgumentException`, `SerializeWithCamelCase`, `ErrorMessages.ConflictValidators` and `RoleSpecification(User)`. The `KeyNotFoundException` branch (F-49) and the singleton `TokenValidationParameters` (F-07) went earlier. |
 | A-68 | 🟢 Inconsistent conventions | F-20 (same commit). `CityService` is `internal` like the other services, `Metadata` takes (page number, page size, total items) in one order through `Create`, the services no longer rewrite their input DTOs (the mappings trim the free text they copy), and the controllers write the `Pagination` header through one `AddPaginationHeader` helper. |
+| A-18 | 🟡 `IServiceBase` covered only 4 of 14 service interfaces | F-18 (`[Refactor] Remove IServiceBase; each service interface declares its own methods`). The resources differ too much for one base (no "all" list for Reservations, per-Department Cities, per-Route Schedules, Users without delete), so `IServiceBase` is gone and the Department, Point, Route and Vehicle interfaces declare their methods explicitly, like the other ten. |
 
 ### 5.3 No longer applicable
 
@@ -368,7 +368,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ⬜ Open | — | — | ⬜ |
@@ -417,10 +417,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 9 | 0 | 21 | 1 |
+| 🟡 Medium | 31 | 8 | 0 | 22 | 1 |
 | 🟢 Low | 13 | 3 | 0 | 10 | 0 |
-| **Total** | **59** | **12** | **0** | **46** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **79%** | |
+| **Total** | **59** | **11** | **0** | **47** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **81%** | |
 
 ---
 

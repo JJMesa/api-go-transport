@@ -6,7 +6,7 @@
 
 | Folder | Holds |
 |---|---|
-| `Services/`, `Interfaces/` | One `I<Entity>Service` / `<Entity>Service` pair per resource; `Interfaces/Base/` declares `IRepository<T>` and `IServiceBase` |
+| `Services/`, `Interfaces/` | One `I<Entity>Service` / `<Entity>Service` pair per resource; `Interfaces/Base/` declares `IRepository<T>` and `IUnitOfWork` |
 | `Dtos/<Entity>/`, `Mappings/` | `<Entity>Dto` / `CreationDto` / `UpdateDto` and their `<Entity>MappingExtensions` |
 | `Validators/<Entity>/` | FluentValidation `<Entity>CreationValidator` / `<Entity>UpdateValidator` |
 | `Specifications/<Entities>/`, `Parameters/` | Ardalis query objects (folder name is plural) and paging/filter inputs |
