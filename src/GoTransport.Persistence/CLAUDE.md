@@ -8,7 +8,7 @@
 - `Configurations/{App,Bas}/` — one `IEntityTypeConfiguration` per entity; `Configurations/Common/BaseEntityConfiguration<T>` maps the audit columns once.
 - `Migrations/` — EF Core migrations, the source of truth for the schema.
 - `Repositories/BaseRepository.cs` — open-generic `IRepository<T>` on Ardalis `RepositoryBase`.
-- `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory.
+- `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory. `UnitOfWorkTests` in the component tests (granted `InternalsVisibleTo`) pins its relational behaviour on SQLite: commit or rollback by `commitWhen`, rollback on an exception, the isolation level, a nested call joining the open transaction, and a retry starting with a clean change tracker.
 - `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity's EF Core stores, repository and unit-of-work registration. No HTTP types: the DbContext gets the user from `ICurrentUser`.
 
 ## Dependencies

@@ -9,11 +9,9 @@ using GoTransport.Application.Specifications.Routes;
 using GoTransport.Application.Specifications.Users;
 using GoTransport.Application.Specifications.Vehicles;
 using GoTransport.Domain.Entities.App;
-using GoTransport.Domain.Interfaces;
 using GoTransport.Persistence.Contexts;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace GoTransport.Api.Component.Tests.TestCases;
 
@@ -32,11 +30,7 @@ public sealed class RelationalSpecificationTests : IDisposable
     {
         _connection = new SqliteConnection("DataSource=:memory:");
         _connection.Open();
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>().UseSqlite(_connection).Options;
-        _context = new SqliteApplicationDbContext(options);
-        _context.Database.EnsureCreated();
-        DatabaseSeeder.Seed(_context);
-        _context.ChangeTracker.Clear();
+        _context = SqliteApplicationDbContext.CreateSeeded(_connection);
     }
 
     [Fact]
@@ -157,41 +151,5 @@ public sealed class RelationalSpecificationTests : IDisposable
     {
         _context.Dispose();
         _connection.Dispose();
-    }
-
-    private sealed class NoSignedInUser : ICurrentUser
-    {
-        public string? UserId => null;
-    }
-
-    /// <summary>
-    /// The production model with the SQL Server details SQLite cannot create: the database collation,
-    /// varchar(max) columns and identity keys typed int/bigint (SQLite auto-increments only INTEGER).
-    /// Everything else (tables, keys, indexes, queries) is the real model.
-    /// </summary>
-    private sealed class SqliteApplicationDbContext : ApplicationDbContext
-    {
-        public SqliteApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options, new NoSignedInUser(), TimeProvider.System)
-        {
-        }
-
-        protected override void OnModelCreating(ModelBuilder builder)
-        {
-            base.OnModelCreating(builder);
-
-            builder.Model.RemoveAnnotation("Relational:Collation");
-            foreach (var property in builder.Model.GetEntityTypes().SelectMany(entity => entity.GetProperties()))
-            {
-                if (property.GetColumnType()?.Contains("(max)") == true)
-                    property.SetColumnType("TEXT");
-            }
-
-            foreach (var key in builder.Model.GetEntityTypes().Select(entity => entity.FindPrimaryKey()).OfType<IMutableKey>())
-            {
-                if (key.Properties is [{ ClrType: var type } single] && (type == typeof(int) || type == typeof(long)))
-                    single.SetColumnType("INTEGER");
-            }
-        }
     }
 }

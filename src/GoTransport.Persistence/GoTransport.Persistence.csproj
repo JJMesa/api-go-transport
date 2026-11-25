@@ -10,4 +10,8 @@
     <ProjectReference Include="..\GoTransport.Domain\GoTransport.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="GoTransport.Api.Component.Tests" />
+  </ItemGroup>
+
 </Project>
