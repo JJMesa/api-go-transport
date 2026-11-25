@@ -2,6 +2,7 @@
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Schedule;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Mappings;
@@ -37,7 +38,7 @@ internal class ScheduleService : IScheduleService
     public async Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto scheduleCreation)
     {
         var schedule = scheduleCreation.ToEntity();
-        schedule.Duration = schedule.ArrivalTime - schedule.DepartureTime;
+        schedule.Duration = ScheduleExtensions.TripDuration(schedule.DepartureTime, schedule.ArrivalTime);
 
         await _scheduleRepository.AddAsync(schedule);
 
@@ -53,7 +54,7 @@ internal class ScheduleService : IScheduleService
         if (schedule is null) return ResponseBuilder<ScheduleDto>.NotFound();
 
         scheduleUpdate.ApplyTo(schedule);
-        schedule.Duration = schedule.ArrivalTime - schedule.DepartureTime;
+        schedule.Duration = ScheduleExtensions.TripDuration(schedule.DepartureTime, schedule.ArrivalTime);
 
         await _scheduleRepository.UpdateAsync(schedule);
 

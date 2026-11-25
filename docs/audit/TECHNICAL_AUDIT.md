@@ -137,7 +137,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
-- **A-39 — Overnight Schedules.** `Duration = Arrival − Departure` turns negative (`ScheduleService.cs:40,56`), and the "trip passed" check uses `ReservationDate + ArrivalTime` (`ReservationService.cs:110`). → **F-31**
 - **A-47 — The Route destination search uses the origin text** *(new)*.
   - `PagedRouteSpecification.cs:21-24` and `RouteSpecification.cs:30-33` search the destination with `OriginPointSearchCriteria`. All four `Search` calls share search group 1, so they are OR-ed.
   - **Impact:** a destination-only search on the anonymous route finder becomes `LIKE '%%'`. → **F-39**
@@ -252,6 +251,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-38 | 🟡 An unknown `ScheduleId` gave 500 instead of 404 | F-30 (`[Fix] Answer 404 for a Reservation on an unknown Schedule`). `CreateAsync` loads the Schedule with its Vehicle (`ScheduleSpecification`) and returns 404 with `ErrorMessages.InvalidSchedule` when it does not exist. The unused `VehicleSpecification(scheduleId)` is gone. |
 | A-44 | 🟠 Updating a Reservation bypassed the Trip rules | F-36 (`[Fix] Apply the Trip rules when a Reservation moves`). When an update changes the Schedule or the travel date, the target Trip must exist (404), must not have taken place (400 `TravelDatePassed`) and must have a free place, not counting the Reservation itself (409), all under the same `Serializable` transaction as a booking. Editing a Reservation without moving it skips the Capacity check. New bookings now also reject a Trip that has already taken place. |
 | A-46 | 🟠 `GET reservations/all` was unbounded and cached | F-38 (`[Fix] Replace the unbounded Reservation list with a per-Trip filter`). The endpoint and `ReservationService.GetAllAsync` are gone, and Reservations are no longer cached. To list one Trip, `GET schedules/{scheduleId}/reservations` takes an optional `travelDate`, paged like the rest of that list. |
+| A-39 | 🟡 Overnight Schedules got a negative `Duration` and the wrong "trip passed" moment | F-31 (`[Fix] Support Schedules that arrive the next day`). `ScheduleExtensions.TripDuration` counts an arrival at or before the departure as next-day, and `ArrivalOn(travelDate)` gives the real arrival, used by every "Trip has taken place" check. The Schedule validators accept 00:00 and reject an arrival equal to the departure. A negative `time` value could never be saved, so no stored row needs fixing. |
 
 ### 5.3 No longer applicable
 
@@ -423,7 +423,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -459,10 +459,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 28 | 0 | 2 | 1 |
+| 🟡 Medium | 31 | 27 | 0 | 3 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 | 0 |
-| **Total** | **59** | **39** | **0** | **19** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **33%** | |
+| **Total** | **59** | **38** | **0** | **20** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **34%** | |
 
 ---
 

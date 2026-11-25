@@ -3,6 +3,7 @@ using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Mappings;
@@ -133,5 +134,5 @@ internal class ReservationService : IReservationService
         reservationsCount >= vehicleCapacity;
 
     private static bool HasTripEnded(DateTime travelDate, Schedule schedule) =>
-        travelDate.Date + schedule.ArrivalTime < DateTime.Now;
+        schedule.ArrivalOn(travelDate) < DateTime.Now;
 }
