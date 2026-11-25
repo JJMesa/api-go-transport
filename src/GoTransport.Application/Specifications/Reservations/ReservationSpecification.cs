@@ -7,12 +7,15 @@ namespace GoTransport.Application.Specifications.Reservations;
 
 public class ReservationSpecification : Specification<Reservation>
 {
-    public ReservationSpecification(string reservationId, string personId)
+    /// <summary>
+    /// The Reservation with this id, only if it belongs to the Passenger with this document number.
+    /// An exact key match, so the lookup uses the primary key instead of scanning the table.
+    /// </summary>
+    public ReservationSpecification(Guid reservationId, string passengerIdentification)
     {
         Query.Where(reservation =>
-            reservation.ReservationId.ToString().StartsWith(reservationId) &&
-            reservation.PassengerIdentification == personId
-        );
+            reservation.ReservationId == reservationId &&
+            reservation.PassengerIdentification == passengerIdentification);
     }
 
     public ReservationSpecification(Guid? scheduleId = null, Guid? reservationId = null)

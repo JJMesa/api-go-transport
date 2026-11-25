@@ -19,5 +19,8 @@ public interface IReservationService
 
     Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ReservationDto>> GetDetailsByPerson(string id, string passengerIdentification, CancellationToken cancellationToken);
+    /// <summary>
+    /// The Reservation with this id, if it belongs to the Passenger with this document number.
+    /// </summary>
+    Task<JsonResponse<ReservationDto>> GetByPassengerAsync(Guid id, string passengerIdentification, CancellationToken cancellationToken);
 }

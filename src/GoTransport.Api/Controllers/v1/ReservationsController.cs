@@ -34,11 +34,12 @@ public class ReservationsController : ControllerBase
         return StatusCode((int)response.HttpCode, response);
     }
 
-    //GET: /api/v1/reservations/A5D7/person/1000123456
-    [HttpGet("{id:guid}/person/{passengerIdentification}/details")]
-    public async Task<ActionResult<JsonResponse<ReservationDto>>> GetDetailsByPerson(string id, string passengerIdentification, CancellationToken cancellationToken)
+    //POST: api/v1/reservations/ABCD-1234-A1B2-C3D4/passenger-lookup  { "passengerIdentification": "1000123456" }
+    // A POST so the document number travels in the body, never in the URL that request logs record.
+    [HttpPost("{id:guid}/passenger-lookup")]
+    public async Task<ActionResult<JsonResponse<ReservationDto>>> GetByPassengerAsync(Guid id, [FromBody] PassengerLookupDto passengerLookup, CancellationToken cancellationToken)
     {
-        var response = await _reservationService.GetDetailsByPerson(id, passengerIdentification, cancellationToken);
+        var response = await _reservationService.GetByPassengerAsync(id, passengerLookup.PassengerIdentification, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 

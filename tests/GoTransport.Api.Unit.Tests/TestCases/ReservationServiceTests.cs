@@ -54,10 +54,10 @@ public class ReservationServiceTests
 
     #endregion GetByScheduleAsync
 
-    #region GetDetailsByPerson
+    #region GetByPassengerAsync
 
     [Fact]
-    public async Task GetDetailsByPerson_ShouldReturnReservationWhenFound()
+    public async Task GetByPassengerAsync_ShouldReturnReservationWhenFound()
     {
         // Arrange
         var reservation = ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1));
@@ -65,7 +65,7 @@ public class ReservationServiceTests
             .ReturnsAsync(reservation);
 
         // Act
-        var actual = await _reservationService.GetDetailsByPerson(reservation.ReservationId.ToString(), reservation.PassengerIdentification, CancellationToken.None);
+        var actual = await _reservationService.GetByPassengerAsync(reservation.ReservationId, reservation.PassengerIdentification, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -74,21 +74,21 @@ public class ReservationServiceTests
     }
 
     [Fact]
-    public async Task GetDetailsByPerson_ShouldReturnNotFoundWhenMissing()
+    public async Task GetByPassengerAsync_ShouldReturnNotFoundWhenMissing()
     {
         // Arrange
         _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Reservation)null!);
 
         // Act
-        var actual = await _reservationService.GetDetailsByPerson(Guid.NewGuid().ToString(), "000", CancellationToken.None);
+        var actual = await _reservationService.GetByPassengerAsync(Guid.NewGuid(), "000", CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
         Assert.Null(actual.Data);
     }
 
-    #endregion GetDetailsByPerson
+    #endregion GetByPassengerAsync
 
     #region GetByIdAsync
 

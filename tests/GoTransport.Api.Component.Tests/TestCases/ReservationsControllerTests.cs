@@ -116,6 +116,48 @@ public class ReservationsControllerTests : ComponentTest
 
     #endregion GetByScheduleAsync
 
+    #region GetByPassengerAsync
+
+    [Fact]
+    public async Task GetByPassengerAsync_WithTheRightDocument_Ok()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}/passenger-lookup",
+            JsonContent(new PassengerLookupDto { PassengerIdentification = "1000123456" }));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(DatabaseSeeder.UpcomingReservationId, actual?.Data?.ReservationId);
+    }
+
+    [Fact]
+    public async Task GetByPassengerAsync_WithAnotherDocument_NotFound()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}/passenger-lookup",
+            JsonContent(new PassengerLookupDto { PassengerIdentification = "999" }));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, apiResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByPassengerAsync_WithAnIdPrefix_NotFound()
+    {
+        // The old lookup matched any Reservation whose id started with the given text.
+        await AddAuthorization();
+        var idPrefix = DatabaseSeeder.UpcomingReservationId.ToString()[..8];
+        var apiResponse = await Client.GetAsync($"{ApiPaths.ReservationsFullPath}/{idPrefix}/person/1000123456/details");
+
+        Assert.Equal(HttpStatusCode.NotFound, apiResponse.StatusCode);
+    }
+
+    #endregion GetByPassengerAsync
+
     #region GetByIdAsync
 
     [Fact]

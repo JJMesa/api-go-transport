@@ -39,7 +39,7 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<IEnumerable<ReservationDto>>.OkPaged(reservations, metadata);
     }
 
-    public async Task<JsonResponse<ReservationDto>> GetDetailsByPerson(string id, string passengerIdentification, CancellationToken cancellationToken)
+    public async Task<JsonResponse<ReservationDto>> GetByPassengerAsync(Guid id, string passengerIdentification, CancellationToken cancellationToken)
     {
         var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(id, passengerIdentification), cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
