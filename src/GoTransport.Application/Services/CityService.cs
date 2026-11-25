@@ -51,6 +51,9 @@ public class CityService : ICityService
         var city = cityCreation.ToEntity();
         await _cityRepository.AddAsync(city);
 
+        // Reload with the Department, so the response has the same shape as a get-by-id.
+        city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(city.CityId)) ?? city;
+
         return ResponseBuilder<CityDto>.Created(city.ToDto());
     }
 

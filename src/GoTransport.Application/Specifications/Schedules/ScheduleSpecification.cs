@@ -16,10 +16,15 @@ public class ScheduleSpecification : Specification<Schedule>
         Query.Include(schedule => schedule.Route!.DestinationPoint.City);
     }
 
+    /// <summary>
+    /// One Schedule with its Vehicle and Route, as the detail response and the Reservation rules need them.
+    /// </summary>
     public ScheduleSpecification(Guid scheduleId)
     {
         Query.Where(schedule => schedule.ScheduleId.Equals(scheduleId));
 
         Query.Include(schedule => schedule.Vehicle.Manufacturer);
+        Query.Include(schedule => schedule.Route.OriginPoint.City);
+        Query.Include(schedule => schedule.Route.DestinationPoint.City);
     }
 }

@@ -57,6 +57,9 @@ internal class PointService : IPointService
         var point = pointCreation.ToEntity();
         await _pointRepository.AddAsync(point);
 
+        // Reload with the City, so the response has the same shape as a get-by-id.
+        point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(point.PointId)) ?? point;
+
         return ResponseBuilder<PointDto>.Created(point.ToDto());
     }
 

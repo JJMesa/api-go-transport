@@ -48,7 +48,7 @@ internal class ReservationService : IReservationService
 
     public async Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var reservation = await _reservationRepository.GetByIdAsync(id, cancellationToken);
+        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationDetailSpecification(id), cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
         return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
@@ -63,6 +63,9 @@ internal class ReservationService : IReservationService
 
             var reservation = reservationCreation.ToEntity();
             await _reservationRepository.AddAsync(reservation);
+
+            // Reload with the navigations, so the response has the same shape as a get-by-id.
+            reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationDetailSpecification(reservation.ReservationId)) ?? reservation;
             return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
         }, IsolationLevel.Serializable);
 

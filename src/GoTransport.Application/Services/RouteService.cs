@@ -48,7 +48,7 @@ internal class RouteService : IRouteService
 
     public async Task<JsonResponse<RouteDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
+        var route = await _routeRepository.FirstOrDefaultAsync(new RouteDetailSpecification(id), cancellationToken);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
         return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
@@ -60,6 +60,9 @@ internal class RouteService : IRouteService
 
         var route = routeCreation.ToEntity();
         await _routeRepository.AddAsync(route);
+
+        // Reload with the navigations, so the response has the same shape as a get-by-id.
+        route = await _routeRepository.FirstOrDefaultAsync(new RouteDetailSpecification(route.RouteId)) ?? route;
 
         return ResponseBuilder<RouteDto>.Created(route.ToDto());
     }

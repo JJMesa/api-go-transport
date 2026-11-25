@@ -47,7 +47,7 @@ internal class VehicleService : IVehicleService
 
     public async Task<JsonResponse<VehicleDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        var vehicle = await _vehicleRepository.GetByIdAsync(id, cancellationToken);
+        var vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleDetailSpecification(id), cancellationToken);
         if (vehicle is null) return ResponseBuilder<VehicleDto>.NotFound();
 
         return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
@@ -60,6 +60,9 @@ internal class VehicleService : IVehicleService
 
         var vehicle = vehicleCreation.ToEntity();
         await _vehicleRepository.AddAsync(vehicle);
+
+        // Reload with the navigations, so the response has the same shape as a get-by-id.
+        vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleDetailSpecification(vehicle.VehicleId)) ?? vehicle;
 
         return ResponseBuilder<VehicleDto>.Created(vehicle.ToDto());
     }

@@ -97,7 +97,7 @@ public class ReservationServiceTests
     {
         // Arrange
         var reservation = ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), DateTime.Now.Date.AddDays(1));
-        _reservationRepositoryMock.Setup(x => x.GetByIdAsync(reservation.ReservationId, It.IsAny<CancellationToken>())).ReturnsAsync(reservation);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationDetailSpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(reservation);
 
         // Act
         var actual = await _reservationService.GetByIdAsync(reservation.ReservationId, CancellationToken.None);

@@ -30,7 +30,7 @@ internal class ScheduleService : IScheduleService
 
     public async Task<JsonResponse<ScheduleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var schedule = await _scheduleRepository.GetByIdAsync(id, cancellationToken);
+        var schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(id), cancellationToken);
         if (schedule is null) return ResponseBuilder<ScheduleDto>.NotFound();
         return ResponseBuilder<ScheduleDto>.Ok(schedule.ToDto());
     }
@@ -41,6 +41,9 @@ internal class ScheduleService : IScheduleService
         schedule.Duration = ScheduleExtensions.TripDuration(schedule.DepartureTime, schedule.ArrivalTime);
 
         await _scheduleRepository.AddAsync(schedule);
+
+        // Reload with the navigations, so the response has the same shape as a get-by-id.
+        schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(schedule.ScheduleId)) ?? schedule;
 
         return ResponseBuilder<ScheduleDto>.Created(schedule.ToDto());
     }

@@ -16,6 +16,10 @@ public class ReservationSpecification : Specification<Reservation>
         Query.Where(reservation =>
             reservation.ReservationId == reservationId &&
             reservation.PassengerIdentification == passengerIdentification);
+
+        Query.Include(reservation => reservation.Schedule.Route.OriginPoint.City);
+        Query.Include(reservation => reservation.Schedule.Route.DestinationPoint.City);
+        Query.Include(reservation => reservation.IdentificationType);
     }
 
     public ReservationSpecification(Guid? scheduleId = null, Guid? reservationId = null)

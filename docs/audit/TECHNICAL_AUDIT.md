@@ -135,9 +135,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-48 — Paged and count specifications are copy-pasted and have drifted** *(new)*.
   - `PagedCitySpecification` filters by `DepartmentId`; `CitySpecification(CityParameters)` does not. `CityService.GetAsync` therefore returns wrong `TotalItems`/`TotalPages` when filtering by Department.
   - All six paged/count pairs duplicate their filters. → **F-40**
-- **A-49 — The same DTO comes back in different shapes** *(new)*.
-  - Get-by-id uses `GetByIdAsync` with no `Include`, so navigations such as Points, Manufacturer and Schedule are `null` on detail endpoints but filled on paged ones.
-  - Evidence: `RouteService.cs:51`, `VehicleService.cs:50`, `ScheduleService.cs:32`, `ReservationService.cs:60`. → **F-41**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
   - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
   - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
@@ -225,6 +222,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-53 | 🟡 Login enumeration and lockout abuse | F-45 (`[Fix] Rate-limit sign-in and answer locked accounts like unknown ones`). A locked-out account now gets the same `400 InvalidCredentials` as an unknown email (the lockout is logged instead), and `POST account/login` is limited to 10 attempts a minute per client IP (`429` in the envelope, `Retry-After: 60`). A distributed attacker can still lock an account out; the limit only slows one source down. |
 | A-50 | 🟡 Uniqueness rules had no database constraint | F-42 (`[Fix] Back each duplicate check with a unique index`). A migration adds unique indexes on Department description, City (Department, description), Route (origin, destination) and Vehicle license plate; the composite ones replace the single-column foreign-key indexes. A concurrent duplicate now fails with SQL error 2601, answered as 409 since F-49. `DatabaseModelTests` checks the indexes on the EF model. The Colombia seed has no duplicate names within a Department. |
 | A-58 | 🟡 Validators disagreed with the database; paging input was not range-checked | F-50 (`[Fix] Align validators with the database columns and clamp the page number`). City descriptions are limited to the `varchar(32)` column, Department gets creation and update validators, Vehicle `Capacity` must be positive and the model year between 1950 and next year, and `PaginationParameters.PageNumber` is clamped in its setter, which model binding uses. `ValidatorColumnLimitsTests` covers each rule. |
+| A-49 | 🟡 The same DTO came back in different shapes | F-41 (`[Fix] Return detail and create responses with their navigations`). Get-by-id for Routes, Vehicles, Schedules and Reservations uses a detail specification with the `Include`s its DTO shows (`RouteDetailSpecification`, `VehicleDetailSpecification`, `ScheduleSpecification(id)`, `ReservationDetailSpecification`), and the create endpoints of those plus City and Point reload the new row through it. `DetailResponseShapeTests` checks the navigations over the real pipeline. |
 
 ### 5.3 No longer applicable
 
@@ -406,7 +404,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-40 | Build paged and count specifications from one shared filter (A-48) | 🟡 | Patterns | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-41 | Detail specifications with `Include`s for get-by-id and create responses (A-49) | 🟡 | Data/API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-41 | Detail specifications with `Include`s for get-by-id and create responses (A-49) | 🟡 | Data/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-42 | Unique indexes backing the duplicate checks (A-50) | 🟡 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-43 | Exact `Guid` lookup for Passenger details; move the document number out of the URL path (A-51) | 🟡 | Security/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -432,10 +430,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 13 | 0 | 17 | 1 |
+| 🟡 Medium | 31 | 12 | 0 | 18 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **23** | **0** | **35** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **60%** | |
+| **Total** | **59** | **22** | **0** | **36** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **62%** | |
 
 ---
 
