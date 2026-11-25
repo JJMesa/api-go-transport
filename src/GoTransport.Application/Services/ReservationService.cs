@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
@@ -15,7 +14,6 @@ using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class ReservationService : IReservationService
 {
     private readonly IRepository<Reservation> _reservationRepository;

@@ -1,5 +1,4 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Extensions;
@@ -15,7 +14,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class UserService : IUserService
 {
     private readonly UserManager<User> _userManager;

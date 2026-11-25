@@ -1,5 +1,4 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.IdentificationType;
 using GoTransport.Application.Interfaces;
@@ -10,7 +9,6 @@ using GoTransport.Domain.Entities.Bas;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class IdentificationTypeService : IIdentificationTypeService
 {
     private readonly IRepository<IdentificationType> _identificationTypeRepository;

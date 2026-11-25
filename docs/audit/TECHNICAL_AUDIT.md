@@ -143,8 +143,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
 #### 🟢 Low
 
-- **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
-- **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
 ### 5.2 Resolved since the baseline
 
 | ID | Finding | Resolved by |
@@ -207,6 +205,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-31 | 🟢 HTTP conventions | F-22 (`[Fix] Answer creates with 201 and Location, and duplicates with 409`). Every create answers 201 with a `Location` header (Reservations answered 200), and duplicates answer 409 like a full Trip. ProblemDetails is declined on purpose: [ADR 0001](../adr/0001-keep-the-json-response-envelope.md) keeps the `JsonResponse` envelope as the contract. The empty `Exceptions/` folder went with F-20. |
 | A-27 | 🟢 Hard deletes despite `IsActive` columns | F-23 (`[Feature] Cancel Reservations instead of deleting them`). Reservations are where history matters: `DELETE` now cancels (sets `IsActive = false`), the cancelled Reservation stays readable, cannot be updated or cancelled again (404), and its place on the Trip is free because only active Reservations count. Catalog rows keep hard deletes; one still referenced fails with SQL error 547 (409). The glossary gains Cancellation. |
 | A-62 | 🟡 No correlation id or tracing | F-54 (`[Feature] Correlate responses, logs and errors with one request id`). `CorrelationIdMiddleware` runs first and gives every request one id: the W3C trace id of its Activity (so an incoming `traceparent` links it to the caller's trace) or a safe caller-supplied `X-Correlation-Id`. The id is returned in the `X-Correlation-Id` header, added to every log line as `CorrelationId` (including the request log), and returned as `traceId` in unexpected-error bodies. No trace exporter is configured; adding OpenTelemetry later reuses the same trace ids. |
+| A-25 | 🟢 Reflection-based DI over `AppDomain` assemblies | F-15 (`[Refactor] Register services explicitly and hide the DbContext behind the repository`). `RegisterServices()` lists the 13 services with one `AddTransient` line each, and the `[Transient]`/`[Scoped]`/`[Singleton]` attributes are gone, so a forgotten registration fails startup validation by name instead of being skipped by a scan. |
+| A-26 | 🟢 Thin generic repository with an unused public `Context` | F-15 (same commit). `BaseRepository<T>` is `internal` and no longer exposes the `DbContext`; data access goes through `IRepository<T>` and specifications only. |
 
 ### 5.3 No longer applicable
 
@@ -362,7 +362,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) — *superseded by F-38, which removed `GetAllAsync`* | 🟡 | Data | S | ❌ Won't do | Juan Mesa | — | ✅ |
-| [ ] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
@@ -415,9 +415,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 6 | 0 | 24 | 1 |
-| 🟢 Low | 13 | 1 | 0 | 12 | 0 |
-| **Total** | **59** | **7** | **0** | **51** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **88%** | |
+| 🟢 Low | 13 | 0 | 0 | 13 | 0 |
+| **Total** | **59** | **6** | **0** | **52** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **90%** | |
 
 ---
 

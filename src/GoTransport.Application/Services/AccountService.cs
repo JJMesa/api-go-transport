@@ -1,6 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Account;
@@ -16,7 +15,6 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class AccountService : IAccountService
 {
     private readonly UserManager<User> _userManager;

@@ -1,8 +1,7 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Reflection;
 using FluentValidation;
 using FluentValidation.AspNetCore;
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
@@ -40,32 +39,24 @@ public static class RegisterLayerExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
+    /// <summary>
+    /// Every Application service, registered explicitly: a missing line fails startup validation
+    /// (ValidateOnBuild) with the interface's name, instead of a reflection scan skipping it silently.
+    /// </summary>
     public static void RegisterServices(this IServiceCollection services)
     {
-        Type scoped = typeof(ScopedAttribute);
-        Type singleton = typeof(SingletonAttribute);
-        Type transient = typeof(TransientAttribute);
-
-        var types = AppDomain.CurrentDomain.GetAssemblies()
-            .SelectMany(s => s.GetTypes())
-            .Where(p => p.IsDefined(scoped, true) || p.IsDefined(transient, true) || (p.IsDefined(singleton, true) && !p.IsInterface))
-            .Select(s => new
-            {
-                Service = s.GetInterface($"I{s.Name}"),
-                Implementation = s
-            })
-            .Where(x => x.Service != null);
-
-        foreach (var type in types)
-        {
-            if (type.Implementation.IsDefined(scoped, false))
-                services.AddScoped(type.Service!, type.Implementation);
-
-            if (type.Implementation.IsDefined(transient, false))
-                services.AddTransient(type.Service!, type.Implementation);
-
-            if (type.Implementation.IsDefined(singleton, false))
-                services.AddSingleton(type.Service!, type.Implementation);
-        }
+        services.AddTransient<IAccountService, AccountService>();
+        services.AddTransient<IAdminBootstrapService, AdminBootstrapService>();
+        services.AddTransient<ICityService, CityService>();
+        services.AddTransient<IDepartmentService, DepartmentService>();
+        services.AddTransient<IIdentificationTypeService, IdentificationTypeService>();
+        services.AddTransient<IManufacturerService, ManufacturerService>();
+        services.AddTransient<IPointService, PointService>();
+        services.AddTransient<IReservationService, ReservationService>();
+        services.AddTransient<IRoleService, RoleService>();
+        services.AddTransient<IRouteService, RouteService>();
+        services.AddTransient<IScheduleService, ScheduleService>();
+        services.AddTransient<IUserService, UserService>();
+        services.AddTransient<IVehicleService, VehicleService>();
     }
 }

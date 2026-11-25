@@ -1,4 +1,3 @@
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Enums;
@@ -13,7 +12,6 @@ using Microsoft.Extensions.Options;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class AdminBootstrapService : IAdminBootstrapService
 {
     private readonly UserManager<User> _userManager;

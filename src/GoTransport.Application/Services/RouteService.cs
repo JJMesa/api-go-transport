@@ -1,5 +1,4 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Route;
 using GoTransport.Application.Interfaces;
@@ -12,7 +11,6 @@ using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class RouteService : IRouteService
 {
     private readonly IRepository<Route> _routeRepository;

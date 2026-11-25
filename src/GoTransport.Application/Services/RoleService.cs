@@ -1,5 +1,4 @@
 ﻿using System.Data;
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Role;
@@ -13,7 +12,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class RoleService : IRoleService
 {
     private readonly UserManager<User> _userManager;

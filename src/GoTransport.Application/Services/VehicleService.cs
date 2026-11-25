@@ -1,5 +1,4 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Vehicle;
 using GoTransport.Application.Interfaces;
@@ -12,7 +11,6 @@ using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class VehicleService : IVehicleService
 {
     private readonly IRepository<Vehicle> _vehicleRepository;

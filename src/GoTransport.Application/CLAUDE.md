@@ -13,7 +13,7 @@
 | `Builders/`, `Wrappers/` | `ResponseBuilder<T>` and `JsonResponse` / `JsonPagedResponse` / `Metadata` |
 | `Commons/` | `ErrorMessages`, `Roles`, `CacheKey`, `Constants`, custom claim names |
 | `Settings/` | Options bound from configuration (`JwtSettings`, `CachingSettings`, `LockoutSettings`, `AdminBootstrapSettings`) |
-| `Attributes/`, `Extensions/` | DI lifecycle attributes; helpers such as `ToPacificStandardTime()` |
+| `Extensions/` | Helpers such as `ToPacificStandardTime()`, `ToContainsPattern()` and the Schedule time rules |
 
 ## Dependencies
 
@@ -21,9 +21,9 @@ References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAcc
 
 ## Conventions
 
-### Service registration (attribute-based DI)
+### Service registration
 
-Decorate the service class with `[Transient]`, `[Scoped]` or `[Singleton]`; `RegisterServices()` in `RegisterLayerExtensions.cs` reflectively registers it against the interface named `I{ClassName}`. The interface name **must** match the class name with an `I` prefix — otherwise the service is silently skipped and the host fails at startup (`ValidateOnBuild`). Service classes are `internal`.
+Register each service in `RegisterServices()` (`RegisterLayerExtensions.cs`) with one explicit line, e.g. `services.AddTransient<ICityService, CityService>();`. Services are transient and `internal`, paired with an `I{ClassName}` interface. A missing line fails startup validation (`ValidateOnBuild`) with the interface's name, which also fails every component test.
 
 ### Data access (repository + specification)
 
