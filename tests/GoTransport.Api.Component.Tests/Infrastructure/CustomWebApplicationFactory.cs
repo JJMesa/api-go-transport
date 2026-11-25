@@ -25,9 +25,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             ReplaceDatabaseWithInMemory(services);
-            ReplaceAuthenticationWithTestScheme(services);
+            if (UseTestAuthentication)
+                ReplaceAuthenticationWithTestScheme(services);
         });
     }
+
+    /// <summary>
+    /// True (the default) signs requests in through <see cref="TestAuthHandler"/>; false keeps the real JWT
+    /// bearer authentication, for the tests that issue and present real tokens.
+    /// </summary>
+    protected virtual bool UseTestAuthentication => true;
 
     /// <summary>
     /// Restores the in-memory database to the known seed data. Called once before each test so

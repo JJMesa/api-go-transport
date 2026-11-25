@@ -16,9 +16,9 @@ internal static class ReservationFilter
 
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
         {
-            query.Search(x => $"{x.PassengerFirstName}", parameters.SearchCriteria.ToContainsPattern());
-            query.Search(x => $"{x.PassengerLastName}", parameters.SearchCriteria.ToContainsPattern());
-            query.Search(x => $"{x.PassengerIdentification}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(x => x.PassengerFirstName, parameters.SearchCriteria.ToContainsPattern());
+            query.Search(x => x.PassengerLastName, parameters.SearchCriteria.ToContainsPattern());
+            query.Search(x => x.PassengerIdentification, parameters.SearchCriteria.ToContainsPattern());
         }
 
         if (parameters.IsActive.HasValue)

@@ -17,8 +17,8 @@ internal static class UserFilter
 
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
         {
-            query.Search(user => $"{user.FirstName}", parameters.SearchCriteria.ToContainsPattern());
-            query.Search(user => $"{user.LastName}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(user => user.FirstName, parameters.SearchCriteria.ToContainsPattern());
+            query.Search(user => user.LastName, parameters.SearchCriteria.ToContainsPattern());
         }
 
         if (parameters.IsActive.HasValue)

@@ -7,7 +7,7 @@
 | Project | Purpose |
 |---|---|
 | `GoTransport.Api.Unit.Tests` | Application services in isolation with mocked repositories/cache |
-| `GoTransport.Api.Component.Tests` | Real pipeline (routing, auth, validation, services, EF) over EF Core InMemory |
+| `GoTransport.Api.Component.Tests` | Real pipeline (routing, auth, validation, services, EF) over EF Core InMemory; specifications also on SQLite; real JWT round trip |
 | `GoTransport.Api.Test.Utilities` | Shared helpers (below) |
 
 ## Shared utilities (`GoTransport.Api.Test.Utilities`)

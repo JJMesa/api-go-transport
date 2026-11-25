@@ -13,7 +13,7 @@ internal static class VehicleFilter
     public static void Apply(ISpecificationBuilder<Vehicle> query, VehicleParameters parameters)
     {
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            query.Search(vehicle => $"{vehicle.LicensePlate}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(vehicle => vehicle.LicensePlate, parameters.SearchCriteria.ToContainsPattern());
 
         if (parameters.IsActive.HasValue)
             query.Where(vehicle => vehicle.IsActive == parameters.IsActive);

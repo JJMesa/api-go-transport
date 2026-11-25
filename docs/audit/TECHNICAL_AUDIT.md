@@ -117,16 +117,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 
 #### 🟠 High
 
-- **A-04 — Thin test coverage** *(partial)*.
-  - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete and the per-Schedule list only).
-  - Detailed test gaps are in A-63. → **F-55**
 #### 🟡 Medium
 
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
-- **A-63 — Test gaps that let defects through** *(new)*.
-  - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
-  - 6 of 18 validators have tests (User creation, City, Department and Vehicle limits); the Reservation, Route, Point and Schedule validators have none.
-  - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 #### 🟢 Low
 
 ### 5.2 Resolved since the baseline
@@ -199,6 +192,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-23 | 🟡 Domain depended on ASP.NET Core Identity's EF package | F-16 (same commit). Domain references `Microsoft.Extensions.Identity.Stores` (the Identity entity base types, no EF Core) and `Ardalis.Specification`; a test asserts Domain references no EF Core assembly. |
 | A-60 | 🟡 HTTP and Identity UI leaked into inner layers | F-52 (`[Refactor] Keep HTTP out of Application and Persistence and drop Identity's cookie UI`). `ApplicationDbContext` gets the user from Domain's `ICurrentUser`, implemented in the Api (`HttpCurrentUser`), so Persistence has no HTTP types; `UserService` lost its `[FromQuery]`; and `AddIdentityCore` (roles, sign-in manager) replaces `AddDefaultIdentity`, which registered cookie authentication and the Razor UI in a JWT-only API, so `Identity.UI` is gone. The envelope's `HttpStatusCode` stays on purpose (ADR 0001). `LayerDependencyTests` checks Persistence for HTTP references. |
 | A-64 | 🟡 Nullable annotations were defeated | F-56 (`[Refactor] Make IsActive a real bool and DTO navigations honestly nullable`). `IsActive` is a non-nullable `bool` that starts `true` (a migration fills old NULLs with 1 and makes the column NOT NULL, with no database default that could swallow an explicit false), removing every `IsActive!.Value` and `?? false`. DTO navigation properties are nullable, so the mappings use `?.ToDto()` without `!`, and `JsonResponse.Errors` is `IEnumerable<string>?` (null on success). Entity navigations keep EF's documented `= null!` for required relationships, and request DTO strings keep `= null!` until model binding fills them. |
+| A-04 | 🟠 Thin test coverage | F-55 (`[Test] Close the test gaps: role matrix, JWT round trip, validators, relational specifications`) and the tests added with every item since: 187 unit tests (services, mappings, specifications, validators, time rules) and 132 component tests, including `AuthorizationMatrixTests`, which calls every controller endpoint as anonymous, no-Role, Operator and Administrador callers. Services without a unit test class (Point, Route, Vehicle and the catalogs) are covered through their endpoints. |
+| A-63 | 🟡 Test gaps that let defects through | F-55 (same commit). `AuthorizationMatrixTests` holds every endpoint to an access table (401/403 for each caller kind); `JwtRoundTripTests` logs in through the real endpoint and presents the token to the real JWT handler (role claims, a deactivated user, a tampered token); `ValidatorRulesTests` covers the remaining validators; `RelationalSpecificationTests` runs the specifications on SQLite, which found A-70. The Reservation Object Mother no longer hides missing `Include`s: those are pinned by component tests over the real pipeline. |
+| A-70 | 🟠 *(new, found by F-55)* Every paged search failed on a relational database | F-55 (same commit). The `Search` selectors were written as `x => $"{x.Property}"`, a `string.Format` call that SQL cannot translate, so searching Users, Vehicles, Routes or Reservations threw on SQL Server; EF InMemory evaluated it in memory, so no test noticed. The selectors now use the property itself, and the relational specification tests pin the translation. |
 
 ### 5.3 No longer applicable
 
@@ -394,7 +390,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
+| [x] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -406,10 +402,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 2 | 0 | 28 | 1 |
+| 🟡 Medium | 31 | 1 | 0 | 29 | 1 |
 | 🟢 Low | 13 | 0 | 0 | 13 | 0 |
-| **Total** | **59** | **2** | **0** | **56** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **97%** | |
+| **Total** | **59** | **1** | **0** | **57** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **98%** | |
 
 ---
 

@@ -14,13 +14,13 @@
 
 - Test classes derive from `ComponentTest` (`IClassFixture<CustomWebApplicationFactory>`), whose constructor drops and re-seeds the database from `Infrastructure/DatabaseSeeder` before **each** test.
 - Add new seed rows in `DatabaseSeeder`; keep their ids consistent with `Utils.DefaultId`. Seeded `Guid` ids (the Schedule and the upcoming/past Reservations) are public fields on `DatabaseSeeder`; reference them from tests instead of copying literals.
-- One test class per controller (`<Controller>Tests`), plus `SwaggerDocumentTests`, which builds the OpenAPI document in-process. Prefer these tests for anything that depends on what EF actually loads: unit-test mocks hand back fully built entities and cannot catch a missing `Include`.
+- One test class per controller (`<Controller>Tests`), plus cross-cutting classes: `AuthorizationMatrixTests` (every endpoint × anonymous/no-Role/Operator/Administrador against the access table in `AccessOf`; a new endpoint is covered automatically, so add its access there), `JwtRoundTripTests` (real login and JWT bearer, through `JwtWebApplicationFactory`), `RelationalSpecificationTests` (specifications on in-memory SQLite), `SwaggerDocumentTests`, `LayerDependencyTests` and others. Prefer these tests for anything that depends on what EF actually loads: unit-test mocks hand back fully built entities and cannot catch a missing `Include`.
 - Build URLs from the `ApiPaths` constants.
 - To assert on state the DTOs don't expose (e.g. the audit columns), read the row back with `FindInDatabase<TEntity>(keys)` from `ComponentTest`. Signed-in requests run as `TestAuthHandler.TestUserId`; seeded rows are stamped with the `SISTEMA` system user.
 
 ## Gotchas
 
-- InMemory has neither FK enforcement nor the SQL Server collation: string filters are case- and accent-exact, and SQL Server errors can't be raised; `ExceptionResponseMapperTests` covers their status mapping by error number. Write tests whose outcome holds on both providers.
+- InMemory has neither FK enforcement nor the SQL Server collation, and it evaluates queries in memory, so an expression SQL cannot translate still passes there. String filters are case- and accent-exact, and SQL Server errors can't be raised (`ExceptionResponseMapperTests` covers their status mapping by error number). When a change touches a specification, add a case to `RelationalSpecificationTests`, which runs on SQLite. Write tests whose outcome holds on both providers.
 - The host validates DI at startup (`ValidateOnBuild`): one broken registration fails every test here at once — read the host exception, not the individual assertions.
 - Test classes run one at a time (`Infrastructure/TestParallelization.cs`). Every class boots its own host through `Program`, which assigns and freezes Serilog's static bootstrap logger; hosts built in parallel fail with "The logger is already frozen". Keep the assembly attribute when adding classes.
 - The Api project grants `InternalsVisibleTo` to this project.

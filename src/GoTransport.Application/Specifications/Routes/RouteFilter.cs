@@ -14,16 +14,16 @@ internal static class RouteFilter
     {
         if (!string.IsNullOrWhiteSpace(parameters.OriginPointSearchCriteria))
         {
-            query.Search(route => $"{route.OriginPoint.City.Description}", parameters.OriginPointSearchCriteria.ToContainsPattern());
-            query.Search(route => $"{route.OriginPoint.Detail}", parameters.OriginPointSearchCriteria.ToContainsPattern());
+            query.Search(route => route.OriginPoint.City.Description, parameters.OriginPointSearchCriteria.ToContainsPattern());
+            query.Search(route => route.OriginPoint.Detail, parameters.OriginPointSearchCriteria.ToContainsPattern());
         }
 
         // Search terms in the same group are OR-ed and groups are AND-ed: the origin matches its City or
         // Point, the destination matches its own, and both must hold when both are given.
         if (!string.IsNullOrWhiteSpace(parameters.DestinationPointSearchCriteria))
         {
-            query.Search(route => $"{route.DestinationPoint.City.Description}", parameters.DestinationPointSearchCriteria.ToContainsPattern(), group: 2);
-            query.Search(route => $"{route.DestinationPoint.Detail}", parameters.DestinationPointSearchCriteria.ToContainsPattern(), group: 2);
+            query.Search(route => route.DestinationPoint.City.Description, parameters.DestinationPointSearchCriteria.ToContainsPattern(), group: 2);
+            query.Search(route => route.DestinationPoint.Detail, parameters.DestinationPointSearchCriteria.ToContainsPattern(), group: 2);
         }
 
         if (parameters.IsActive.HasValue)
