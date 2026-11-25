@@ -28,7 +28,21 @@ public partial class ApplicationDbContext : IdentityDbContext<User, Role, long, 
         builder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = new CancellationToken())
+    // SaveChanges() and SaveChangesAsync(CancellationToken) both end in these two overloads, so every way of
+    // saving stamps the audit columns.
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        StampAuditColumns();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        StampAuditColumns();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void StampAuditColumns()
     {
         var username = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)?.ToString() ?? Constants.ApplicationUser;
 
@@ -51,7 +65,5 @@ public partial class ApplicationDbContext : IdentityDbContext<User, Role, long, 
                     break;
             }
         }
-
-        return base.SaveChangesAsync(cancellationToken);
     }
 }
