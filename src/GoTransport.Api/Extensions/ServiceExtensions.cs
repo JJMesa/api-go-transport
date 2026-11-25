@@ -93,6 +93,13 @@ public static class ServiceExtensions
                 }
             });
 
+            // XML comments of the controllers and of the DTOs they exchange.
+            foreach (var assembly in new[] { typeof(ServiceExtensions).Assembly, typeof(JwtSettings).Assembly })
+            {
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{assembly.GetName().Name}.xml");
+                if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+            }
+
             c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
             {
                 Name = "Authorization",

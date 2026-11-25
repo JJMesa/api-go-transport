@@ -29,6 +29,17 @@ public class SwaggerDocumentTests : ComponentTest
     }
 
     [Fact]
+    public void GetSwagger_ShowsTheXmlCommentsOfTheDtos()
+    {
+        // Act
+        var document = _factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
+
+        // Assert: ReservationDto.ReservationDate is documented as the travel date
+        var reservationDate = document.Components!.Schemas!["ReservationDto"].Properties!["reservationDate"];
+        Assert.Contains("travel date", reservationDate.Description);
+    }
+
+    [Fact]
     public void GetSwagger_DeclaresTheBearerScheme()
     {
         // Act

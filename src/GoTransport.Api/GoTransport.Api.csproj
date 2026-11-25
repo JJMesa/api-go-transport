@@ -4,6 +4,12 @@
     <UserSecretsId>6030de56-a4d6-4199-a490-754f2aa14966</UserSecretsId>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Swagger shows these XML comments; members without one stay undocumented (CS1591 off). -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="GoTransport.Api.Component.Tests" />
   </ItemGroup>

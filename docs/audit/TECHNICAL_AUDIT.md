@@ -157,7 +157,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - the empty `Exceptions/` folder;
   - `ValidateAndThrowArgumentException`;
   - unused specifications and `ErrorMessages`. → **F-20**
-- **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
 - **A-68 — Inconsistent conventions** *(new)*.
   - `CityService` is `public` while the other services are `internal`.
   - `Metadata` takes the same parameters in two different orders.
@@ -217,6 +216,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-16 | 🟡 The cache was never invalidated | F-10 (`[Fix] Drop cached catalogs on every write and keep them longer`). Department, Point, Route, Vehicle and City writes call `ICacheService.Remove` for every cached list they make stale (a Point or City write also drops the Route list, whose Routes embed them). With invalidation in place the committed TTLs rise from 1/1 to 30/120 minutes (sliding/absolute). `CatalogCacheTests` covers a create and a cross-list update over the real memory cache. |
 | A-19 | 🟡 No HSTS or security headers | F-17 (`[Fix] Restrict CORS to configured origins and add HSTS and security headers`). `UseHsts` runs outside Development, and `SecurityHeadersMiddleware` adds `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and a `default-src 'none'` content policy (Swagger UI excepted). `HttpHardeningTests` checks them. |
 | A-24 | 🟢 CORS `AllowAnyOrigin` | F-17 (same commit). Origins come from `Cors:AllowedOrigins`; with none configured, Development allows any origin and every other environment allows none. Component tests cover the unconfigured and configured cases. |
+| A-34 | 🟢 XML docs not exposed in Swagger; versioned API explorer missing | F-25 (`[Feature] Show XML comments in Swagger`). Api and Application generate their XML documentation (CS1591 off, so undocumented members stay optional) and Swagger includes both files. The versioned API explorer came with F-06. A Swagger test reads a DTO property description from the generated document. |
 
 ### 5.3 No longer applicable
 
@@ -382,7 +382,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-23 | Soft delete (`IsActive = false`) where the business requires it (A-27) | 🟢 | Data | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-24 | Remove test credentials from version control (A-28) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` + versioned API explorer in Swagger (A-34) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` + versioned API explorer in Swagger (A-34) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-26 | Reorganize the repo into `src/` `tests/` `docs/` `database/` with a `CLAUDE.md` per area, glossary and `.claude/` | 🟢 | Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-27 | Require auth on `GET schedules/{id}/reservations` (A-35) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -425,9 +425,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 9 | 0 | 21 | 1 |
-| 🟢 Low | 13 | 5 | 0 | 8 | 0 |
-| **Total** | **59** | **14** | **0** | **44** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **76%** | |
+| 🟢 Low | 13 | 4 | 0 | 9 | 0 |
+| **Total** | **59** | **13** | **0** | **45** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **78%** | |
 
 ---
 
