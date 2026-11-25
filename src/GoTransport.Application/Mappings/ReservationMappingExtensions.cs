@@ -12,6 +12,7 @@ internal static class ReservationMappingExtensions
     {
         ReservationId = reservation.ReservationId,
         Schedule = reservation.Schedule?.ToDto()!,
+        ReservationDate = reservation.ReservationDate,
         PassengerFirstName = reservation.PassengerFirstName,
         PassengerLastName = reservation.PassengerLastName,
         IdentificationType = reservation.IdentificationType?.ToDto()!,

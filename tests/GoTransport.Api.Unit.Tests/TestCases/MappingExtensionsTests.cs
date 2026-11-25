@@ -50,6 +50,20 @@ public class MappingExtensionsTests
     }
 
     [Fact]
+    public void ReservationToDto_ShouldMapTheTravelDate()
+    {
+        // Arrange
+        var travelDate = new DateTime(2026, 12, 24);
+        var reservation = new Reservation { ReservationId = Guid.NewGuid(), ReservationDate = travelDate };
+
+        // Act
+        var actual = reservation.ToDto();
+
+        // Assert
+        Assert.Equal(travelDate, actual.ReservationDate);
+    }
+
+    [Fact]
     public void ReservationToDto_ShouldMapWholeScheduleGraph()
     {
         // Arrange

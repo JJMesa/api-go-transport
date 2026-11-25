@@ -9,6 +9,11 @@ public class ReservationDto
 
     public ScheduleDto Schedule { get; set; } = null!;
 
+    /// <summary>
+    /// The travel date: the day of the Trip, which with the Schedule identifies it. Not the day the Reservation was made.
+    /// </summary>
+    public DateTime ReservationDate { get; set; }
+
     public string PassengerFirstName { get; set; } = null!;
 
     public string PassengerLastName { get; set; } = null!;

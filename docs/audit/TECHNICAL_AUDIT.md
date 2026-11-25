@@ -142,9 +142,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-44 — Updating a Reservation bypasses the Trip rules** *(new)*.
   - **Evidence:** `ReservationService.cs:89` calls `ReservationMappingExtensions.ApplyTo`, which overwrites `ScheduleId` and `ReservationDate` (`ReservationMappingExtensions.cs:36-37`). It checks neither Capacity on the target Trip nor that the new travel date is in the future.
   - **Impact:** an update can move a Passenger onto a full Trip or a past date. → **F-36**
-- **A-45 — Reservation responses omit the travel date** *(new)*.
-  - **Evidence:** `src/GoTransport.Application/Dtos/Reservation/ReservationDto.cs` has no `ReservationDate`, although create and update accept it.
-  - **Impact:** no read endpoint can tell a Passenger which day the Trip is. → **F-37**
 - **A-46 — `GET reservations/all` is unbounded and cached** *(new)*.
   - **Evidence:**
     - `ReservationsController.cs:28` exposes the endpoint.
@@ -283,6 +280,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-41 | 🟠 "Last modified by" never changed | F-33 / QW-8 (`[Fix] Stamp the current user as UpdateUser on every update`). `ApplicationDbContext.SaveChangesAsync` now overwrites `UpdateUser` on `Modified` entries instead of `??=`. A component test updates a seeded City as a signed-in user and reads the row back: `CreationUser` stays `SISTEMA`, `UpdateUser` becomes the signed-in user. Rows updated before the fix still show their creator as last modifier. |
 | A-36 | 🔴 Every Reservation cancellation failed with a 500 | F-28 / QW-6 (`[Fix] Load the Schedule when cancelling a Reservation`). `DeleteAsync` now loads the Reservation through `ReservationSpecification`, which includes `Schedule`. Component tests over the real pipeline cover an upcoming Trip (204), a past travel date (400) and an unknown id (404). |
 | A-43 | 🟠 Deactivated users kept signing in; role changes on update were ignored | F-35 / QW-10 (`[Fix] Retire the access of deactivated users and apply role changes`). Login answers an inactive account like an unknown one. `UserService.UpdateAsync` saves through `UserManager`, rotates the security stamp and applies `RoleId`. Tokens now carry the stamp, and `OnTokenValidated` rejects a token whose user is inactive or whose stamp has rotated, so existing tokens stop working at once. Tokens issued before the fix have no stamp claim and are rejected: every user signs in again once. |
+| A-45 | 🟠 Reservation responses omitted the travel date | F-37 / QW-11 (`[Fix] Return the travel date in Reservation responses`). `ReservationDto.ReservationDate` is filled by `ToDto` and by the `PagedReservationSpecification` projection, under the same name the create and update requests use. Component tests read it back from get-by-id and the per-Schedule list. |
 
 ### 5.3 No longer applicable
 
@@ -416,7 +414,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | QW-8 | Always stamp `UpdateUser` on modified entities (F-33) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | QW-9 | Pin patched versions of the vulnerable packages (F-34) | 🟠 | ⬜ Open | — | — | ⬜ |
 | [x] | QW-10 | Reject inactive users at login (F-35) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | QW-11 | Return the travel date in `ReservationDto` (F-37) | 🟠 | ⬜ Open | — | — | ⬜ |
+| [x] | QW-11 | Return the travel date in `ReservationDto` (F-37) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 
 ### 7.2 Full prioritized plan
 
@@ -458,7 +456,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [ ] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-40 | Build paged and count specifications from one shared filter (A-48) | 🟡 | Patterns | M | ⬜ Open | — | — | ⬜ |
@@ -487,11 +485,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 7 | 0 | 6 |
+| 🟠 High | 13 | 6 | 0 | 7 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **48** | **0** | **11** |
-| **% Completed** | | | | **19%** |
+| **Total** | **59** | **47** | **0** | **12** |
+| **% Completed** | | | | **20%** |
 
 ---
 

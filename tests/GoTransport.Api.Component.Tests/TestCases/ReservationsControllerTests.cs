@@ -31,6 +31,22 @@ public class ReservationsControllerTests : ComponentTest
     }
 
     [Fact]
+    public async Task GetByScheduleAsync_ReturnsTheTravelDates()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonPagedResponse<List<ReservationDto>>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(
+            new[] { DateTime.Today.AddDays(-7), DateTime.Today.AddDays(7) },
+            actual!.Data!.Select(reservation => reservation.ReservationDate).OrderBy(date => date));
+    }
+
+    [Fact]
     public async Task GetByScheduleAsync_WithoutAuthentication_Unauthorized()
     {
         // Act
@@ -43,6 +59,24 @@ public class ReservationsControllerTests : ComponentTest
     }
 
     #endregion GetByScheduleAsync
+
+    #region GetByIdAsync
+
+    [Fact]
+    public async Task GetByIdAsync_ReturnsTheTravelDate()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(DateTime.Today.AddDays(7), actual?.Data?.ReservationDate);
+    }
+
+    #endregion GetByIdAsync
 
     #region DeleteAsync
 

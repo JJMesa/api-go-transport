@@ -85,6 +85,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                     IsActive = reservation.Schedule.Route.IsActive!.Value
                 }
             },
+            ReservationDate = reservation.ReservationDate,
             PassengerFirstName = reservation.PassengerFirstName,
             PassengerLastName = reservation.PassengerLastName,
             IdentificationType = new IdentificationTypeDto
