@@ -1,6 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Text;
 using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
@@ -66,7 +65,6 @@ internal class AccountService : IAccountService
         var jwtHandler = new JwtSecurityTokenHandler();
         // Login looks the user up by email, so it is always set here.
         var email = user.Email ?? string.Empty;
-        var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
         var dateBase = DateTime.UtcNow;
         var expires = dateBase.Add(_jwtSettings.ExpiryTime);
 
@@ -80,12 +78,13 @@ internal class AccountService : IAccountService
                 new Claim(UserCustomClaims.SecurityStamp, user.SecurityStamp ?? string.Empty),
                 new Claim(JwtRegisteredClaimNames.Sub, email),
                 new Claim(JwtRegisteredClaimNames.Email, email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Iat, dateBase.ToLongDateString())
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             })),
+            // The handler writes iat, nbf and exp as numeric dates (seconds since the Unix epoch).
+            IssuedAt = dateBase,
             Expires = expires,
             NotBefore = dateBase,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256),
+            SigningCredentials = new SigningCredentials(_jwtSettings.CreateSigningKey(), SecurityAlgorithms.HmacSha256),
             Audience = _jwtSettings.TokenAudience,
             Issuer = _jwtSettings.TokenIssuer
         };

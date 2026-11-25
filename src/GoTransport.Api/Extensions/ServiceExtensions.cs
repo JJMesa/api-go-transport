@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Mime;
-using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Asp.Versioning;
@@ -13,7 +11,6 @@ using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 
 namespace GoTransport.Api.Extensions;
@@ -41,21 +38,7 @@ public static class ServiceExtensions
     public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var settings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
-        var key = new HMACSHA512(Encoding.UTF8.GetBytes(settings!.Secret));
-        var tokenValidationParameters = new TokenValidationParameters()
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key.Key),
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = settings.TokenIssuer,
-            ValidAudience = settings.TokenAudience,
-            RequireExpirationTime = true,
-            ValidateLifetime = true,
-            LifetimeValidator = (notBefore, expires, _, _) => DateTime.UtcNow >= notBefore && expires > DateTime.UtcNow
-        };
-
-        services.AddSingleton(tokenValidationParameters);
+        var tokenValidationParameters = settings!.CreateValidationParameters();
 
         services.AddAuthentication(opts =>
         {

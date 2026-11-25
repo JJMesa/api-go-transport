@@ -122,10 +122,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Detailed test gaps are in A-63. → **F-55**
 #### 🟡 Medium
 
-- **A-08 — Two different JWT keys.**
-  - Validation uses `new HMACSHA512(secret).Key` (`src/GoTransport.Api/Extensions/ServiceExtensions.cs:35`); signing uses the raw secret bytes with HS256 (`AccountService.cs:71`).
-  - They diverge for secrets over 128 bytes, and the `HMACSHA512` instance is never disposed.
-  - A custom `LifetimeValidator` (`ServiceExtensions.cs:46`) also removes all clock skew. → **F-07**
 - **A-09 — One role per token.** `AccountService.cs:96` uses `roleList.First()`. → **F-08**
 - **A-10 — No `AsNoTracking`** on entity reads (0 occurrences in `src/`). → **F-09**
 - **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
@@ -183,7 +179,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-62 — No correlation id or tracing** *(new)*. Error responses carry no trace id and logs have no request enrichment, so a client error cannot be matched to its log line. → **F-54**
 - **A-63 — Test gaps that let defects through** *(new)*.
   - Almost no authorization tests: one 401 test exists (the per-Schedule Reservation list, F-27), and `TestAuthHandler` can only produce an `Administrador`, so no 403/role test is possible.
-  - No JWT issue → validate round trip, which would catch A-08.
   - 0 of 14 validators are tested.
   - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
@@ -196,7 +191,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
 - **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
 - **A-27 — Hard deletes despite `IsActive` columns.** → **F-23**
-- **A-29 — `iat` claim** written with `ToLongDateString()`, which is not a numeric date (`AccountService.cs:67`). → **F-07**
 - **A-30 — Typos** *(partial: "transaporte" is gone)*. `RuoteParameters.cs`, `ruoteId`, `ruote` lambdas and `IsDuplicarePoints` remain. → **F-20**
 - **A-31 — HTTP conventions.**
   - No `Location` header, a custom `Pagination` header, no ProblemDetails.
@@ -206,8 +200,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - the empty `Exceptions/` folder;
   - the `KeyNotFoundException` branch;
   - `ValidateAndThrowArgumentException`;
-  - unused specifications and `ErrorMessages`;
-  - a singleton `TokenValidationParameters` that is never resolved. → **F-20**
+  - unused specifications and `ErrorMessages`. → **F-20**
 - **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
 - **A-67 — Specification query hygiene** *(new)*.
   - `col == p || p == null` filters (`CitySpecification`, `ReservationSpecification.cs:28`).
@@ -250,6 +243,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-39 | 🟡 Overnight Schedules got a negative `Duration` and the wrong "trip passed" moment | F-31 (`[Fix] Support Schedules that arrive the next day`). `ScheduleExtensions.TripDuration` counts an arrival at or before the departure as next-day, and `ArrivalOn(travelDate)` gives the real arrival, used by every "Trip has taken place" check. The Schedule validators accept 00:00 and reject an arrival equal to the departure. A negative `time` value could never be saved, so no stored row needs fixing. |
 | A-47 | 🟡 The Route destination search used the origin text | F-39 (`[Fix] Search Route destinations by the destination text`). Both Route specifications search the destination City and Point with `DestinationPointSearchCriteria` in search group 2, so origin and destination terms combine with AND. Component tests cover origin-only, destination-only and combined searches. |
 | A-40 | 🟢 A Route could have the same origin and destination Point | F-32 (`[Fix] Reject Routes whose origin and destination are the same Point`). Both Route validators require `DestinationPointId` to differ from `OriginPointId`, so create and update answer 400. |
+| A-08 | 🟡 Two different JWT keys; custom lifetime validator with no clock skew | F-07 (`[Fix] Sign and validate tokens with one key and standard lifetime rules`). `JwtSettings.CreateSigningKey()` is the only key, used to sign in `AccountService` and to validate through `JwtSettings.CreateValidationParameters()`, which uses the built-in lifetime check with a 30-second `ClockSkew`. A unit test issues a token and validates it with those parameters, including a secret over 128 bytes. The unused singleton `TokenValidationParameters` is gone. |
+| A-29 | 🟢 `iat` written with `ToLongDateString()` | F-07 (same commit). The token descriptor sets `IssuedAt`, so `iat` is a numeric date like `nbf` and `exp`. |
 
 ### 5.3 No longer applicable
 
@@ -397,7 +392,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-04 | Structured logging (`ILogger`/Serilog) + health checks | 🟠 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-05 | Isolate the database in component tests + broaden unit coverage | 🟠 | Testing | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-06 | Migrate to `net10.0` (LTS; `net8.0` also lost support on 2026-11-10) + `Directory.Build.props` + CPM; align package and test-stack versions, drop unused packages (A-06, A-33, A-66) | 🟠 | NuGet/Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ⬜ Open | — | — | ⬜ |
@@ -457,10 +452,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 26 | 0 | 4 | 1 |
+| 🟡 Medium | 31 | 25 | 0 | 5 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **36** | **0** | **22** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **38%** | |
+| **Total** | **59** | **35** | **0** | **23** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **40%** | |
 
 ---
 

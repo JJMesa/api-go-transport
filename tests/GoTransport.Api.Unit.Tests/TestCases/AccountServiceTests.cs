@@ -10,6 +10,7 @@ using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
+using JsonWebTokenHandler = Microsoft.IdentityModel.JsonWebTokens.JsonWebTokenHandler;
 using Moq;
 
 namespace GoTransport.Api.Unit.Tests.TestCases;
@@ -66,6 +67,54 @@ public class AccountServiceTests
         // Assert
         var token = new JwtSecurityTokenHandler().ReadJwtToken(actual.Data!.Token);
         Assert.Contains(token.Claims, claim => claim.Type == UserCustomClaims.SecurityStamp && claim.Value == user.SecurityStamp);
+    }
+
+    [Theory]
+    [InlineData(64)]
+    [InlineData(200)]
+    public async Task LoginAsync_ShouldIssueATokenThatTheApiValidationAccepts(int secretLength)
+    {
+        // Arrange: secrets over 128 bytes used to get a different validation key (A-08).
+        var settings = AccountBuilderMother.JwtSettings();
+        settings.Secret = new string('k', secretLength);
+        var service = CreateService(settings);
+        var user = ArrangeSuccessfulLogin();
+
+        // Act
+        var actual = await service.LoginAsync(AccountBuilderMother.UserLoginDtoOk());
+        var validation = await new JsonWebTokenHandler().ValidateTokenAsync(actual.Data!.Token, settings.CreateValidationParameters());
+
+        // Assert
+        Assert.True(validation.IsValid, validation.Exception?.Message);
+        Assert.Equal(user.Id.ToString(), validation.ClaimsIdentity.FindFirst(UserCustomClaims.Id)?.Value);
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldWriteANumericIssuedAt()
+    {
+        // Arrange
+        ArrangeSuccessfulLogin();
+
+        // Act
+        var actual = await _accountService.LoginAsync(AccountBuilderMother.UserLoginDtoOk());
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(actual.Data!.Token);
+
+        // Assert
+        var issuedAt = token.Claims.Single(claim => claim.Type == JwtRegisteredClaimNames.Iat).Value;
+        Assert.True(long.TryParse(issuedAt, out var seconds));
+        Assert.InRange(DateTimeOffset.FromUnixTimeSeconds(seconds), DateTimeOffset.UtcNow.AddMinutes(-1), DateTimeOffset.UtcNow.AddMinutes(1));
+    }
+
+    [Fact]
+    public void CreateValidationParameters_ShouldAllowOnlyASmallClockSkew()
+    {
+        // Act
+        var parameters = AccountBuilderMother.JwtSettings().CreateValidationParameters();
+
+        // Assert
+        Assert.Null(parameters.LifetimeValidator);
+        Assert.True(parameters.ValidateLifetime);
+        Assert.InRange(parameters.ClockSkew, TimeSpan.Zero, TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -216,6 +265,22 @@ public class AccountServiceTests
     #endregion IsTokenUserValidAsync
 
     #region Helpers
+
+    private AccountService CreateService(JwtSettings settings)
+    {
+        var jwtSettingsMock = new Mock<IOptionsSnapshot<JwtSettings>>();
+        jwtSettingsMock.Setup(x => x.Value).Returns(settings);
+        return new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object);
+    }
+
+    private User ArrangeSuccessfulLogin()
+    {
+        var user = AccountBuilderMother.UserEntity();
+        _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
+        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { Roles.Administrator });
+        _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, It.IsAny<string>(), true)).ReturnsAsync(SignInResult.Success);
+        return user;
+    }
 
     private static ClaimsPrincipal TokenPrincipal(long userId, string? securityStamp)
     {
