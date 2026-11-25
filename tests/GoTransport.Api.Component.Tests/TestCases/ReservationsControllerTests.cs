@@ -117,6 +117,24 @@ public class ReservationsControllerTests : ComponentTest
         Assert.Contains(ErrorMessages.VehicleFull, actual?.Errors!);
     }
 
+    [Fact]
+    public async Task CreateAsync_WithUnknownSchedule_NotFound()
+    {
+        // Arrange
+        var reservation = NewReservation(DateTime.Today.AddDays(14));
+        reservation.ScheduleId = Guid.NewGuid();
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(reservation));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, apiResponse.StatusCode);
+        Assert.Contains(ErrorMessages.InvalidSchedule, actual?.Errors!);
+    }
+
     #endregion CreateAsync
 
     #region DeleteAsync

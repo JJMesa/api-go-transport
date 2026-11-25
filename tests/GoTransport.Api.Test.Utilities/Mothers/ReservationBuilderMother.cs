@@ -20,7 +20,7 @@ public static class ReservationBuilderMother
         };
     }
 
-    public static Schedule ScheduleEntity(Guid? scheduleId = null, TimeSpan? arrivalTime = null)
+    public static Schedule ScheduleEntity(Guid? scheduleId = null, TimeSpan? arrivalTime = null, int capacity = 10)
     {
         return new Schedule
         {
@@ -28,6 +28,7 @@ public static class ReservationBuilderMother
             DepartureTime = new TimeSpan(8, 0, 0),
             ArrivalTime = arrivalTime ?? new TimeSpan(10, 0, 0),
             Duration = new TimeSpan(2, 0, 0),
+            Vehicle = new Vehicle { VehicleId = 1, LicensePlate = "ABC123", Capacity = capacity, IsActive = true },
             IsActive = true
         };
     }

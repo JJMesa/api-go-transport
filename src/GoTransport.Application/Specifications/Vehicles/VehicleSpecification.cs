@@ -14,13 +14,6 @@ public class VehicleSpecification : Specification<Vehicle>
         Query.OrderBy(vehicle => vehicle.LicensePlate);
     }
 
-    public VehicleSpecification(Guid scheduleId)
-    {
-        Query.Where(vehicle => vehicle.Schedules.Any(schedule => schedule.ScheduleId == scheduleId));
-
-        Query.Include(vehicle => vehicle.Manufacturer);
-    }
-
     public VehicleSpecification(VehicleParameters parameters)
     {
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))

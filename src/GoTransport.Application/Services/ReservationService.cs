@@ -8,7 +8,7 @@ using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Reservations;
-using GoTransport.Application.Specifications.Vehicles;
+using GoTransport.Application.Specifications.Schedules;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.App;
 
@@ -18,17 +18,17 @@ namespace GoTransport.Application.Services;
 internal class ReservationService : IReservationService
 {
     private readonly IRepository<Reservation> _reservationRepository;
-    private readonly IRepository<Vehicle> _vehicleRepository;
+    private readonly IRepository<Schedule> _scheduleRepository;
     private readonly ICacheService<Reservation> _cacheService;
     private readonly IUnitOfWork _unitOfWork;
 
     public ReservationService(IRepository<Reservation> reservationRepository
-        , IRepository<Vehicle> vehicleRepository
+        , IRepository<Schedule> scheduleRepository
         , ICacheService<Reservation> cacheService
         , IUnitOfWork unitOfWork)
     {
         _reservationRepository = reservationRepository;
-        _vehicleRepository = vehicleRepository;
+        _scheduleRepository = scheduleRepository;
         _cacheService = cacheService;
         _unitOfWork = unitOfWork;
     }
@@ -71,11 +71,14 @@ internal class ReservationService : IReservationService
         // or fails and is retried, instead of taking a place this count has already handed out.
         _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleSpecification(reservationCreation.ScheduleId));
+            var schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(reservationCreation.ScheduleId));
+            if (schedule is null)
+                return ResponseBuilder<ReservationDto>.NotFound(ErrorMessages.InvalidSchedule);
+
             var placesTaken = await _reservationRepository.CountAsync(
                 new TripReservationSpecification(reservationCreation.ScheduleId, reservationCreation.ReservationDate));
 
-            if (IsVehicleFull(placesTaken, vehicle!.Capacity))
+            if (IsVehicleFull(placesTaken, schedule.Vehicle.Capacity))
                 return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
 
             var reservation = reservationCreation.ToEntity();

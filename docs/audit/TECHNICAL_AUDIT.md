@@ -148,7 +148,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
-- **A-38 — An unknown `ScheduleId` gives 500 instead of 404.** `vehicle!.Capacity` at `ReservationService.cs:70`. → **F-30**
 - **A-39 — Overnight Schedules.** `Duration = Arrival − Departure` turns negative (`ScheduleService.cs:40,56`), and the "trip passed" check uses `ReservationDate + ArrivalTime` (`ReservationService.cs:110`). → **F-31**
 - **A-47 — The Route destination search uses the origin text** *(new)*.
   - `PagedRouteSpecification.cs:21-24` and `RouteSpecification.cs:30-33` search the destination with `OriginPointSearchCriteria`. All four `Search` calls share search group 1, so they are OR-ed.
@@ -261,6 +260,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-33 | 🟢 Conservative C# (no records, no primary constructors) | F-06 (same commit). The code now compiles as C# 14, so the language ceiling is gone; existing classes are not rewritten, and new code may use records and primary constructors. |
 | A-22 (CI part) | 🟡 No CI | F-11 (`[Feature] Add a CI workflow with tests and a vulnerable-package gate`). `.github/workflows/ci.yml` builds in Release, runs both suites with coverage, uploads the results, and fails on High/Critical advisories in the dependency closure. The `.editorconfig`/analyzer part stays open as F-12. |
 | A-37 | 🟠 Capacity counted per Schedule, not per Trip, and not atomically | F-29 (`[Fix] Count Capacity per Trip inside a serializable transaction`). `CreateAsync` counts the active Reservations on the Trip (`TripReservationSpecification`: Schedule + travel date) and inserts inside `IUnitOfWork.ExecuteInTransactionAsync` with `Serializable`, so a concurrent booking waits or deadlocks and is retried instead of overselling. A migration replaces the `SCHEDULE_ID` index with (`SCHEDULE_ID`, `RESERVATION_DATE`) to keep those range locks to one Trip. Travel dates are stored without a time part. |
+| A-38 | 🟡 An unknown `ScheduleId` gave 500 instead of 404 | F-30 (`[Fix] Answer 404 for a Reservation on an unknown Schedule`). `CreateAsync` loads the Schedule with its Vehicle (`ScheduleSpecification`) and returns 404 with `ErrorMessages.InvalidSchedule` when it does not exist. The unused `VehicleSpecification(scheduleId)` is gone. |
 
 ### 5.3 No longer applicable
 
@@ -429,7 +429,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-27 | Require auth on `GET schedules/{id}/reservations` (A-35) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -466,10 +466,10 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
 | 🟠 High | 13 | 2 | 0 | 11 |
-| 🟡 Medium | 31 | 30 | 0 | 1 |
+| 🟡 Medium | 31 | 29 | 0 | 2 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **43** | **0** | **16** |
-| **% Completed** | | | | **27%** |
+| **Total** | **59** | **42** | **0** | **17** |
+| **% Completed** | | | | **29%** |
 
 ---
 

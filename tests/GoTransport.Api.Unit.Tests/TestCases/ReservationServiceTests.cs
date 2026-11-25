@@ -8,7 +8,7 @@ using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Reservations;
-using GoTransport.Application.Specifications.Vehicles;
+using GoTransport.Application.Specifications.Schedules;
 using GoTransport.Domain.Entities.App;
 using Moq;
 
@@ -17,7 +17,7 @@ namespace GoTransport.Api.Unit.Tests.TestCases;
 public class ReservationServiceTests
 {
     private readonly Mock<IRepository<Reservation>> _reservationRepositoryMock;
-    private readonly Mock<IRepository<Vehicle>> _vehicleRepositoryMock;
+    private readonly Mock<IRepository<Schedule>> _scheduleRepositoryMock;
     private readonly Mock<ICacheService<Reservation>> _cacheServiceMock;
     private readonly InlineUnitOfWork _unitOfWork;
     private readonly IReservationService _reservationService;
@@ -25,10 +25,10 @@ public class ReservationServiceTests
     public ReservationServiceTests()
     {
         _reservationRepositoryMock = new Mock<IRepository<Reservation>>();
-        _vehicleRepositoryMock = new Mock<IRepository<Vehicle>>();
+        _scheduleRepositoryMock = new Mock<IRepository<Schedule>>();
         _cacheServiceMock = new Mock<ICacheService<Reservation>>();
         _unitOfWork = new InlineUnitOfWork();
-        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _vehicleRepositoryMock.Object, _cacheServiceMock.Object, _unitOfWork);
+        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _scheduleRepositoryMock.Object, _cacheServiceMock.Object, _unitOfWork);
     }
 
     #region GetAllAsync
@@ -175,8 +175,8 @@ public class ReservationServiceTests
         var scheduleId = Guid.NewGuid();
         var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(scheduleId);
 
-        _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 10 });
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(scheduleId, capacity: 10));
         _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
@@ -196,8 +196,8 @@ public class ReservationServiceTests
         var scheduleId = Guid.NewGuid();
         var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(scheduleId);
 
-        _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 5 });
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(scheduleId, capacity: 5));
         _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
@@ -216,14 +216,31 @@ public class ReservationServiceTests
     {
         // Arrange
         var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(Guid.NewGuid());
-        _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 10 });
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(creationDto.ScheduleId));
 
         // Act
         await _reservationService.CreateAsync(creationDto);
 
         // Assert
         Assert.Equal(new[] { IsolationLevel.Serializable }, _unitOfWork.Transactions);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnNotFoundForUnknownSchedule()
+    {
+        // Arrange
+        var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(Guid.NewGuid());
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Schedule)null!);
+
+        // Act
+        var actual = await _reservationService.CreateAsync(creationDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
+        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors);
+        _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion CreateAsync

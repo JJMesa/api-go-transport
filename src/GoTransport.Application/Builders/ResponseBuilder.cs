@@ -31,6 +31,11 @@ public static class ResponseBuilder<T>
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.NotFound, Ok = false, Errors = new List<string> { ErrorMessages.NotFound } };
     }
 
+    public static JsonResponse<T> NotFound(string error)
+    {
+        return new JsonResponse<T>() { HttpCode = HttpStatusCode.NotFound, Ok = false, Errors = new List<string> { error } };
+    }
+
     public static JsonResponse<T> BadRequest(string error)
     {
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.BadRequest, Ok = false, Errors = new List<string> { error } };
