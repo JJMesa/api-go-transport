@@ -137,6 +137,62 @@ public class ReservationsControllerTests : ComponentTest
 
     #endregion CreateAsync
 
+    #region UpdateAsync
+
+    [Fact]
+    public async Task UpdateAsync_ToAFullTrip_Conflict()
+    {
+        // Arrange: fill the upcoming Trip, then book another date to have a Reservation to move.
+        await AddAuthorization();
+        await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
+        var otherTrip = await CreateReservationAsync(DateTime.Today.AddDays(14));
+
+        // Act
+        var apiResponse = await Client.PutAsync($"{ApiPaths.ReservationsFullPath}/{otherTrip.ReservationId}",
+            JsonContent(UpdateOf(otherTrip.ReservationId, DatabaseSeeder.UpcomingTravelDate)));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, apiResponse.StatusCode);
+        Assert.Contains(ErrorMessages.VehicleFull, actual?.Errors!);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ToATripThatHasEnded_BadRequest()
+    {
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PutAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}",
+            JsonContent(UpdateOf(DatabaseSeeder.UpcomingReservationId, DateTime.Today.AddDays(-2))));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
+        Assert.Contains(ErrorMessages.TravelDatePassed, actual?.Errors!);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_OnAFullTripWithoutMoving_Ok()
+    {
+        // Arrange: the Reservation's own Trip is full, which must not block editing it.
+        await AddAuthorization();
+        await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
+
+        // Act
+        var apiResponse = await Client.PutAsync($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}",
+            JsonContent(UpdateOf(DatabaseSeeder.UpcomingReservationId, DatabaseSeeder.UpcomingTravelDate)));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal("Aisle seat", actual?.Data?.Detail);
+    }
+
+    #endregion UpdateAsync
+
     #region DeleteAsync
 
     [Fact]
@@ -191,6 +247,21 @@ public class ReservationsControllerTests : ComponentTest
         PassengerIdentification = "1000654321",
         Detail = "Window seat"
     };
+
+    private static ReservationUpdateDto UpdateOf(Guid reservationId, DateTime travelDate) => new()
+    {
+        ReservationId = reservationId,
+        ScheduleId = DatabaseSeeder.ScheduleId,
+        ReservationDate = travelDate,
+        Detail = "Aisle seat"
+    };
+
+    private async Task<ReservationDto> CreateReservationAsync(DateTime travelDate)
+    {
+        var apiResponse = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(travelDate)));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings)!.Data!;
+    }
 
     private static StringContent JsonContent(object body) =>
         new(JsonConvert.SerializeObject(body), Encoding.UTF8, MediaTypeNames.Application.Json);

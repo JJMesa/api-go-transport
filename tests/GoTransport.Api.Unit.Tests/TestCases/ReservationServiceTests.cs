@@ -227,6 +227,24 @@ public class ReservationServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ShouldReturnBadRequestForATripThatHasEnded()
+    {
+        // Arrange
+        var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(Guid.NewGuid());
+        creationDto.ReservationDate = DateTime.Now.Date.AddDays(-1);
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(creationDto.ScheduleId));
+
+        // Act
+        var actual = await _reservationService.CreateAsync(creationDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors);
+        _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task CreateAsync_ShouldReturnNotFoundForUnknownSchedule()
     {
         // Arrange
@@ -258,6 +276,8 @@ public class ReservationServiceTests
 
         _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(reservation);
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(scheduleId));
 
         // Act
         var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
@@ -266,6 +286,91 @@ public class ReservationServiceTests
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
         Assert.NotNull(actual.Data);
         _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Equal(new[] { IsolationLevel.Serializable }, _unitOfWork.Transactions);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnConflictWhenTheTargetTripIsFull()
+    {
+        // Arrange
+        var reservationId = Guid.NewGuid();
+        var targetScheduleId = Guid.NewGuid();
+        var reservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(1));
+        var updateDto = ReservationBuilderMother.ReservationUpdateDtoOk(reservationId, targetScheduleId);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(targetScheduleId, capacity: 3));
+        _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(3);
+
+        // Act
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.VehicleFull, actual.Errors);
+        _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnBadRequestWhenTheTargetTripHasEnded()
+    {
+        // Arrange
+        var reservationId = Guid.NewGuid();
+        var reservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(1));
+        var updateDto = ReservationBuilderMother.ReservationUpdateDtoOk(reservationId, reservation.ScheduleId);
+        updateDto.ReservationDate = DateTime.Now.Date.AddDays(-3);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation.Schedule);
+
+        // Act
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors);
+        _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnNotFoundForUnknownTargetSchedule()
+    {
+        // Arrange
+        var reservationId = Guid.NewGuid();
+        var reservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(1));
+        var updateDto = ReservationBuilderMother.ReservationUpdateDtoOk(reservationId, Guid.NewGuid());
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+        _scheduleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ScheduleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Schedule)null!);
+
+        // Act
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
+        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldNotRecountCapacityWhenStayingOnTheSameTrip()
+    {
+        // Arrange
+        var reservationId = Guid.NewGuid();
+        var reservation = ReservationBuilderMother.ReservationEntity(reservationId, DateTime.Now.Date.AddDays(1));
+        var updateDto = ReservationBuilderMother.ReservationUpdateDtoOk(reservationId, reservation.ScheduleId);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+
+        // Act
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
+        _reservationRepositoryMock.Verify(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]

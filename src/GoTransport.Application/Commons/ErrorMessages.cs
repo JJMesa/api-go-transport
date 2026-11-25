@@ -13,6 +13,7 @@ public static class ErrorMessages
     public const string DuplicatePlate = "Ya existe un vehículo con la misma placa.";
     public const string InvalidSchedule = "El horario en el cual intentas reservar no se encuentra disponible. Por favor, selecciona otro para continuar con el proceso.";
     public const string VehicleFull = "El horario en el cual intentas reservar ya no cuenta con asientos disponibles. Por favor, selecciona otro para continuar con el proceso.";
+    public const string TravelDatePassed = "The selected Trip has already taken place. Choose a later travel date or Schedule.";
     public const string ReservationDatePassed = "La fecha de la reserva ya ha pasado. No puedes eliminarla.";
     public const string DuplicateEmail = "El correo electrónico que proporcionaste ya se encuentra registrado.";
     public const string InternalServerError = "Ha ocurrido un error. Por favor nuevamente o reporte el inconveniente.";

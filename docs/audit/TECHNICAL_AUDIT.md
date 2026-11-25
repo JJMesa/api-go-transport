@@ -120,9 +120,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-04 — Thin test coverage** *(partial)*.
   - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete and the per-Schedule list only).
   - Detailed test gaps are in A-63. → **F-55**
-- **A-44 — Updating a Reservation bypasses the Trip rules** *(new)*.
-  - **Evidence:** `ReservationService.cs:89` calls `ReservationMappingExtensions.ApplyTo`, which overwrites `ScheduleId` and `ReservationDate` (`ReservationMappingExtensions.cs:36-37`). It checks neither Capacity on the target Trip nor that the new travel date is in the future.
-  - **Impact:** an update can move a Passenger onto a full Trip or a past date. → **F-36**
 - **A-46 — `GET reservations/all` is unbounded and cached** *(new)*.
   - **Evidence:**
     - `ReservationsController.cs:28` exposes the endpoint.
@@ -261,6 +258,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-22 (CI part) | 🟡 No CI | F-11 (`[Feature] Add a CI workflow with tests and a vulnerable-package gate`). `.github/workflows/ci.yml` builds in Release, runs both suites with coverage, uploads the results, and fails on High/Critical advisories in the dependency closure. The `.editorconfig`/analyzer part stays open as F-12. |
 | A-37 | 🟠 Capacity counted per Schedule, not per Trip, and not atomically | F-29 (`[Fix] Count Capacity per Trip inside a serializable transaction`). `CreateAsync` counts the active Reservations on the Trip (`TripReservationSpecification`: Schedule + travel date) and inserts inside `IUnitOfWork.ExecuteInTransactionAsync` with `Serializable`, so a concurrent booking waits or deadlocks and is retried instead of overselling. A migration replaces the `SCHEDULE_ID` index with (`SCHEDULE_ID`, `RESERVATION_DATE`) to keep those range locks to one Trip. Travel dates are stored without a time part. |
 | A-38 | 🟡 An unknown `ScheduleId` gave 500 instead of 404 | F-30 (`[Fix] Answer 404 for a Reservation on an unknown Schedule`). `CreateAsync` loads the Schedule with its Vehicle (`ScheduleSpecification`) and returns 404 with `ErrorMessages.InvalidSchedule` when it does not exist. The unused `VehicleSpecification(scheduleId)` is gone. |
+| A-44 | 🟠 Updating a Reservation bypassed the Trip rules | F-36 (`[Fix] Apply the Trip rules when a Reservation moves`). When an update changes the Schedule or the travel date, the target Trip must exist (404), must not have taken place (400 `TravelDatePassed`) and must have a free place, not counting the Reservation itself (409), all under the same `Serializable` transaction as a booking. Editing a Reservation without moving it skips the Capacity check. New bookings now also reject a Trip that has already taken place. |
 
 ### 5.3 No longer applicable
 
@@ -435,7 +433,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ⬜ Open | — | — | ⬜ |
@@ -465,11 +463,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 2 | 0 | 11 |
+| 🟠 High | 13 | 1 | 0 | 12 |
 | 🟡 Medium | 31 | 29 | 0 | 2 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **42** | **0** | **17** |
-| **% Completed** | | | | **29%** |
+| **Total** | **59** | **41** | **0** | **18** |
+| **% Completed** | | | | **31%** |
 
 ---
 
