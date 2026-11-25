@@ -368,3 +368,12 @@ CLAUDE.local.md
 
 # graphify knowledge-graph output (local, regenerated with /graphify)
 graphify-out/
+
+# IDE settings and local environment files
+.idea/
+.vscode/
+.env
+.env.*
+
+# Serilog file sink (src/GoTransport.Api/Logs)
+Logs/

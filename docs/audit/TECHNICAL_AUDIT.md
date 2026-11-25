@@ -169,8 +169,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - `Metadata` takes the same parameters in two different orders.
   - Services mutate input DTOs.
   - The `Pagination`-header code is repeated in 6 controllers. → **F-20**
-- **A-69 — Repository hygiene** *(new)*. `LICENSE.txt` still says `[year] [fullname]`, and `.gitignore` lacks `.idea/`, `.vscode/` and `.env`. → **F-59**
-
 ### 5.2 Resolved since the baseline
 
 | ID | Finding | Resolved by |
@@ -218,6 +216,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-49 | 🟡 The same DTO came back in different shapes | F-41 (`[Fix] Return detail and create responses with their navigations`). Get-by-id for Routes, Vehicles, Schedules and Reservations uses a detail specification with the `Include`s its DTO shows (`RouteDetailSpecification`, `VehicleDetailSpecification`, `ScheduleSpecification(id)`, `ReservationDetailSpecification`), and the create endpoints of those plus City and Point reload the new row through it. `DetailResponseShapeTests` checks the navigations over the real pipeline. |
 | A-48 | 🟡 Paged and count specifications were copy-pasted and had drifted | F-40 (`[Refactor] Build each page and its count from one shared filter`). Each of the seven paged/count pairs (Cities, Departments, Points, Reservations, Routes, Users, Vehicles) now calls one `<Entity>Filter.Apply`, and the count specifications no longer sort. The City count now honours `DepartmentId`, which a component test pins through the `Pagination` header. |
 | A-67 | 🟢 Specification query hygiene | F-58 (`[Refactor] Tidy specification filters and escape LIKE input`). Optional filters are added only when given (no `col == @p OR @p IS NULL`), the duplicate checks compare columns directly (the CI collation already ignores case, so `ToLower` only defeated the unique indexes), and every `Search` term goes through `ToContainsPattern()`, which escapes `%`, `_` and `[` so they match literally. |
+| A-69 | 🟢 Repository hygiene | F-59 (`[Refactor] Fill in the license holder and ignore IDE, env and log files`). `LICENSE.txt` names the copyright holder (2024, Juan Mesa) instead of the template placeholder, and `.gitignore` covers `.idea/`, `.vscode/`, `.env` files and the Serilog `Logs/` folder. |
 
 ### 5.3 No longer applicable
 
@@ -417,7 +416,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 
 ### 7.3 Progress summary
 
@@ -426,9 +425,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 11 | 0 | 19 | 1 |
-| 🟢 Low | 13 | 9 | 0 | 4 | 0 |
-| **Total** | **59** | **20** | **0** | **38** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **66%** | |
+| 🟢 Low | 13 | 8 | 0 | 5 | 0 |
+| **Total** | **59** | **19** | **0** | **39** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **67%** | |
 
 ---
 
