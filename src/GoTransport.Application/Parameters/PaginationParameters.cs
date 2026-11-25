@@ -27,10 +27,4 @@ public class PaginationParameters
         PageNumber = 1;
         PageSize = 10;
     }
-
-    public PaginationParameters(int pageNumber, int pageSize)
-    {
-        PageNumber = pageNumber;
-        PageSize = pageSize;
-    }
 }
