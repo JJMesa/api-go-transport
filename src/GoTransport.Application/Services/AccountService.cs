@@ -89,8 +89,9 @@ internal class AccountService : IAccountService
             Issuer = _jwtSettings.TokenIssuer
         };
 
-        var roles = await GetRolesToClaimsAsync(user);
-        tokenDescriptor.Subject.AddClaim(roles);
+        // One claim per role, so a User with several Roles is authorized for each of them.
+        var roles = await _userManager.GetRolesAsync(user);
+        tokenDescriptor.Subject.AddClaims(roles.Select(role => new Claim(ClaimTypes.Role, role)));
 
         var token = jwtHandler.CreateToken(tokenDescriptor);
         var jwtToken = jwtHandler.WriteToken(token);
@@ -100,16 +101,5 @@ internal class AccountService : IAccountService
             Token = jwtToken,
             Expires = expires.ToPacificStandardTime()
         };
-    }
-
-    private async Task<Claim> GetRolesToClaimsAsync(User user)
-    {
-        Claim roleClaimList = new(ClaimTypes.Role, "");
-        var roleList = await _userManager.GetRolesAsync(user);
-
-        if (!roleList.Any()) return roleClaimList;
-
-        roleClaimList = new Claim(ClaimTypes.Role, roleList.First());
-        return roleClaimList;
     }
 }

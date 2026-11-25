@@ -90,6 +90,37 @@ public class AccountServiceTests
     }
 
     [Fact]
+    public async Task LoginAsync_ShouldPutEveryRoleInTheToken()
+    {
+        // Arrange
+        var user = ArrangeSuccessfulLogin();
+        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string> { Roles.Administrator, Roles.Operator });
+
+        // Act
+        var actual = await _accountService.LoginAsync(AccountBuilderMother.UserLoginDtoOk());
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(actual.Data!.Token);
+
+        // Assert: JwtSecurityTokenHandler writes ClaimTypes.Role as the short "role" claim.
+        var roles = token.Claims.Where(claim => claim.Type == "role").Select(claim => claim.Value);
+        Assert.Equal(new[] { Roles.Administrator, Roles.Operator }, roles.OrderBy(role => role));
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldWriteNoRoleClaimForAUserWithoutRoles()
+    {
+        // Arrange
+        var user = ArrangeSuccessfulLogin();
+        _userManagerMock.Setup(x => x.GetRolesAsync(user)).ReturnsAsync(new List<string>());
+
+        // Act
+        var actual = await _accountService.LoginAsync(AccountBuilderMother.UserLoginDtoOk());
+        var token = new JwtSecurityTokenHandler().ReadJwtToken(actual.Data!.Token);
+
+        // Assert
+        Assert.DoesNotContain(token.Claims, claim => claim.Type == "role");
+    }
+
+    [Fact]
     public async Task LoginAsync_ShouldWriteANumericIssuedAt()
     {
         // Arrange

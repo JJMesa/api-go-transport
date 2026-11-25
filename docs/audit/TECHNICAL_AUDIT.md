@@ -122,7 +122,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Detailed test gaps are in A-63. → **F-55**
 #### 🟡 Medium
 
-- **A-09 — One role per token.** `AccountService.cs:96` uses `roleList.First()`. → **F-08**
 - **A-10 — No `AsNoTracking`** on entity reads (0 occurrences in `src/`). → **F-09**
 - **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
   - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
@@ -245,6 +244,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-40 | 🟢 A Route could have the same origin and destination Point | F-32 (`[Fix] Reject Routes whose origin and destination are the same Point`). Both Route validators require `DestinationPointId` to differ from `OriginPointId`, so create and update answer 400. |
 | A-08 | 🟡 Two different JWT keys; custom lifetime validator with no clock skew | F-07 (`[Fix] Sign and validate tokens with one key and standard lifetime rules`). `JwtSettings.CreateSigningKey()` is the only key, used to sign in `AccountService` and to validate through `JwtSettings.CreateValidationParameters()`, which uses the built-in lifetime check with a 30-second `ClockSkew`. A unit test issues a token and validates it with those parameters, including a secret over 128 bytes. The unused singleton `TokenValidationParameters` is gone. |
 | A-29 | 🟢 `iat` written with `ToLongDateString()` | F-07 (same commit). The token descriptor sets `IssuedAt`, so `iat` is a numeric date like `nbf` and `exp`. |
+| A-09 | 🟡 One role per token (`roleList.First()`) | F-08 (`[Fix] Put every Role of a User in the token`). `GenerateToken` adds one `ClaimTypes.Role` claim per Role, and none for a User without Roles (it used to add an empty one). |
 
 ### 5.3 No longer applicable
 
@@ -393,7 +393,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-05 | Isolate the database in component tests + broaden unit coverage | 🟠 | Testing | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-06 | Migrate to `net10.0` (LTS; `net8.0` also lost support on 2026-11-10) + `Directory.Build.props` + CPM; align package and test-stack versions, drop unused packages (A-06, A-33, A-66) | 🟠 | NuGet/Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -452,10 +452,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 25 | 0 | 5 | 1 |
+| 🟡 Medium | 31 | 24 | 0 | 6 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **35** | **0** | **23** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **40%** | |
+| **Total** | **59** | **34** | **0** | **24** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **41%** | |
 
 ---
 
