@@ -8,6 +8,7 @@ using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace GoTransport.Application;
 
@@ -21,12 +22,23 @@ public static class RegisterLayerExtensions
         services.AddMemoryCache();
         services.AddTransient(typeof(ICacheService<>), typeof(CacheService<>));
 
-        services.Configure<CachingSettings>(configuration.GetSection("CachingSettings"));
-        services.Configure<JwtSettings>(configuration.GetSection("JwtSettings"));
-        services.Configure<AdminBootstrapSettings>(configuration.GetSection("AdminBootstrap"));
+        // Invalid settings stop the host at startup instead of failing the first request that reads them.
+        AddValidatedSettings<CachingSettings>(services, configuration, "CachingSettings");
+        AddValidatedSettings<JwtSettings>(services, configuration, "JwtSettings");
+        AddValidatedSettings<LockoutSettings>(services, configuration, "LockoutSettings");
+        AddValidatedSettings<AdminBootstrapSettings>(services, configuration, "AdminBootstrap")
+            .Validate(settings => string.IsNullOrWhiteSpace(settings.Email) == string.IsNullOrWhiteSpace(settings.Password),
+                "AdminBootstrap needs both Email and Password, or neither.");
 
         services.RegisterServices();
     }
+
+    private static OptionsBuilder<TSettings> AddValidatedSettings<TSettings>(IServiceCollection services, IConfiguration configuration, string section)
+        where TSettings : class =>
+        services.AddOptions<TSettings>()
+            .Bind(configuration.GetSection(section))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
     public static void RegisterServices(this IServiceCollection services)
     {

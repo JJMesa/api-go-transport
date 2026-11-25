@@ -148,12 +148,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-53 — Login enumeration and lockout abuse** *(new)*.
   - An unknown email returns 400 at once; a known one returns 429 after 5 failures (`AccountService.cs:37-43`).
   - There is no rate limiting, so anyone can confirm accounts and keep the administrator locked out with 5 requests every 15 minutes. → **F-45**
-- **A-55 — Configuration precedence and validation** *(new)*.
-  - `Program.cs:23` adds User Secrets last in **every** environment, so they override environment variables. The component-test factory has to blank `AdminBootstrap` to cope.
-  - Settings are bound without validation: a zero cache TTL or a short JWT secret fails at runtime, not at startup. → **F-47**
-- **A-56 — Startup resilience** *(new)*.
-  - `UseSqlServer` has no `EnableRetryOnFailure` (`src/GoTransport.Persistence/RegisterLayerExtensions.cs:19`).
-  - The fatal `catch` in `Program.cs:76` only logs, so a failed start (including the admin bootstrap) exits with code 0 and orchestrators see a clean shutdown. → **F-48**
 - **A-57 — Database errors map to the wrong status** *(new)*.
   - `ErrorHandlerMiddleware` turns every `SqlException` inside a `DbUpdateException` into **400**. Codes other than 547/2601 get an "internal server error" text (`src/GoTransport.Api/Middlewares/ErrorHandlerMiddleware.cs:72-86`).
   - `TaskCanceledException` becomes 400 (`:51`). → **F-49**
@@ -243,6 +237,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-54 | 🟡 Reservations needed a login but no Role; unknown roles were accepted | F-46 (`[Fix] Limit Reservations to Administrators and Operators`). `ReservationsController` requires `Administrador` or `Operario`. `RoleService.AssignRolesToUser` fails for an unknown role, and `UserService` checks the role before creating or updating a user (400 `UnknownRole`). `TestAuthHandler` now signs in with any Role or none, and component tests pin 200 for an Operator and 403 without a Role. |
 | A-52 | 🟡 Weak password policy (Identity defaults, 6-character validator) | F-44 (`[Fix] Require strong passwords through one shared policy`). `Application/Commons/PasswordPolicy` (12+ characters, 6 distinct, upper, lower, digit, symbol) is applied to Identity's options, so it covers every stored password including the bootstrap administrator's, and `UserCreationValidator` reports the same rules on input. Existing passwords keep working until they are changed. |
 | A-59 | 🟡 Auth error bodies were PascalCase, and 403 was built by `Unauthorized(...)` | F-51 (`[Fix] Render 401 and 403 in the same envelope as every other response`). `EnvelopeAuthorizationResultHandler` writes 401 (`Unauthorized`) and 403 (`Forbidden`, a new `ResponseBuilder` method) with the controllers' JSON options, for any authentication scheme, replacing the JWT `OnAuthenticationFailed`/`OnChallenge`/`OnForbidden` events. Component tests assert both bodies. |
+| A-55 | 🟡 User Secrets overrode environment variables in every environment; settings were never validated | F-47 (`[Fix] Validate settings at startup and load User Secrets only in Development`). `Program.cs` no longer adds User Secrets itself: `WebApplication.CreateBuilder` loads them in `Development` only, below environment variables, so the component-test factory no longer blanks `AdminBootstrap`. JWT, caching, lockout and bootstrap settings are bound with data annotations and `ValidateOnStart`; JWT validation and Identity lockout read the validated options. `StartupValidationTests` pins a startup failure for each kind of bad value. |
+| A-56 | 🟡 No transient-fault retry; a failed start exited with code 0 | F-48 (same commit). SQL Server is registered with `EnableRetryOnFailure` (transactions already go through the execution strategy in `IUnitOfWork`). `Program.cs` logs a fatal startup error and rethrows it, so the process exits non-zero, while EF's design-time `HostAbortedException` is no longer logged as fatal. |
 
 ### 5.3 No longer applicable
 
@@ -430,8 +426,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-45 | Rate-limit login; uniform response for unknown and locked accounts (A-53) | 🟡 | Security | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ✅ Done | Juan Mesa | — | ✅ |
+| [x] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -450,10 +446,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 21 | 0 | 9 | 1 |
+| 🟡 Medium | 31 | 19 | 0 | 11 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **31** | **0** | **27** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **47%** | |
+| **Total** | **59** | **29** | **0** | **29** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **50%** | |
 
 ---
 

@@ -9,7 +9,7 @@
 - `Migrations/` — EF Core migrations, the source of truth for the schema.
 - `Repositories/BaseRepository.cs` — open-generic `IRepository<T>` on Ardalis `RepositoryBase`.
 - `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory.
-- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext`, Identity (lockout from `LockoutSettings`), repository registration.
+- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity (password policy, lockout from the validated `LockoutSettings` options), repository and unit-of-work registration.
 
 ## Dependencies
 
@@ -32,5 +32,6 @@ Create them with `dotnet ef migrations add <Name> --project src/GoTransport.Pers
 ## Gotchas
 
 - No lazy loading: a navigation is `null` unless the specification `Include`s it.
+- `EnableRetryOnFailure` makes a transaction opened outside the execution strategy throw. Open transactions only through `IUnitOfWork`.
 - Deletes are hard deletes through `RepositoryBase` (F-23 covers soft delete).
 - EF Core 10 on `net10.0`; versions are central in `Directory.Packages.props` — see `.claude/rules/csproj.md` before touching packages.

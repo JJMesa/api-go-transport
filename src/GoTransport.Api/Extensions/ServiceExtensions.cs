@@ -8,6 +8,7 @@ using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
 
 namespace GoTransport.Api.Extensions;
@@ -32,11 +33,8 @@ public static class ServiceExtensions
         });
     }
 
-    public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static void AddJwtAuthentication(this IServiceCollection services)
     {
-        var settings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
-        var tokenValidationParameters = settings!.CreateValidationParameters();
-
         services.AddAuthentication(opts =>
         {
             opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -47,7 +45,6 @@ public static class ServiceExtensions
         .AddJwtBearer(jwt =>
         {
             jwt.SaveToken = true;
-            jwt.TokenValidationParameters = tokenValidationParameters;
             jwt.Events = new JwtBearerEvents()
             {
                 // A well-signed token is still rejected once its user is deactivated or their security stamp rotates.
@@ -59,7 +56,15 @@ public static class ServiceExtensions
                 }
             };
         });
+
+        ConfigureTokenValidation(services);
     }
+
+    private static void ConfigureTokenValidation(IServiceCollection services) =>
+        // Built from the validated JwtSettings when first needed, so a missing section fails startup validation
+        // with a clear message instead of a NullReferenceException while registering services.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtSettings>>((jwt, settings) => jwt.TokenValidationParameters = settings.Value.CreateValidationParameters());
 
     public static void AddAuthorizationResponses(this IServiceCollection services)
     {

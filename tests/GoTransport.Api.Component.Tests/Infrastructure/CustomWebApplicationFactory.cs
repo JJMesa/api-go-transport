@@ -1,4 +1,3 @@
-using GoTransport.Application.Settings;
 using GoTransport.Persistence.Contexts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
@@ -27,7 +26,6 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         {
             ReplaceDatabaseWithInMemory(services);
             ReplaceAuthenticationWithTestScheme(services);
-            DisableAdminBootstrap(services);
         });
     }
 
@@ -70,18 +68,5 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             options.DefaultScheme = TestAuthHandler.SchemeName;
         })
         .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
-    }
-
-    /// <summary>
-    /// Program.cs also loads the developer's User Secrets, so blank the AdminBootstrap settings to keep
-    /// the startup administrator bootstrap from running against the empty in-memory database.
-    /// </summary>
-    private static void DisableAdminBootstrap(IServiceCollection services)
-    {
-        services.PostConfigure<AdminBootstrapSettings>(settings =>
-        {
-            settings.Email = string.Empty;
-            settings.Password = string.Empty;
-        });
     }
 }

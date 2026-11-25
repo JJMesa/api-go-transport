@@ -21,7 +21,7 @@ Each action calls the service and returns `return StatusCode((int)response.HttpC
 
 ### Composition (`Program.cs`)
 
-Everything composes through extension methods: `AddApplicationLayer` / `AddPersistenceLayer` plus the API-level `Add*Configuration` methods. `ValidateOnBuild` + `ValidateScopes` are on, so a missing or mis-scoped registration fails at startup — and therefore fails every component test. Right after `Build()`, `EnsureAdministratorAsync()` runs the administrator bootstrap and stops startup if it fails. `UseSerilogRequestLogging()` is deliberately the outermost middleware, ahead of `UseErrorHandlerMiddleware()`.
+Everything composes through extension methods: `AddApplicationLayer` / `AddPersistenceLayer` plus the API-level `Add*Configuration` methods. `ValidateOnBuild` + `ValidateScopes` are on, so a missing or mis-scoped registration fails at startup — and therefore fails every component test. Right after `Build()`, `EnsureAdministratorAsync()` runs the administrator bootstrap and stops startup if it fails. A fatal startup error is logged and rethrown, so the process exits non-zero; only EF's design-time `HostAbortedException` is let through. `UseSerilogRequestLogging()` is deliberately the outermost middleware, ahead of `UseErrorHandlerMiddleware()`.
 
 ### Errors, auth and logging
 
@@ -32,9 +32,9 @@ Everything composes through extension methods: `AddApplicationLayer` / `AddPersi
 
 ## Configuration
 
-Supply settings through User Secrets or environment variables — the committed `appsettings.json` ships empty:
+Supply settings through User Secrets (loaded in `Development` only) or environment variables, which take precedence — the committed `appsettings.json` ships empty. Every section below is bound with data-annotation validation and `ValidateOnStart` (`AddApplicationLayer`), so an invalid value stops startup with an `OptionsValidationException` naming it:
 
-- `JwtSettings`: `Secret` (≥50 chars, mixed characters), `ExpiryTime` (`HH:mm`), `TokenIssuer`, `TokenAudience`
+- `JwtSettings`: `Secret` (at least 32 bytes for HS256; 50+ mixed characters recommended), `ExpiryTime` (`HH:mm`, 1 minute to 7 days), `TokenIssuer`, `TokenAudience`
 - `ConnectionStrings:DefaultConnection` — SQL Server connection string
 - `CachingSettings`: `SlidingExpiration`, `AbsoluteExpiration` (minutes)
 - `LockoutSettings`: `MaxFailedAccessAttempts`, `LockoutTimeInMinutes` (defaults 5 / 15)

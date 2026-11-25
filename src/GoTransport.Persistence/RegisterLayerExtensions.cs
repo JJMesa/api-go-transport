@@ -4,9 +4,11 @@ using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Persistence.Contexts;
 using GoTransport.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace GoTransport.Persistence;
 
@@ -19,7 +21,9 @@ public static class RegisterLayerExtensions
         services.AddDbContext<ApplicationDbContext>(opt =>
             opt.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection")!,
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
+                // Retries transient SQL Server failures (including deadlock victims). Transactions must then run
+                // through the execution strategy, which IUnitOfWork does.
+                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName).EnableRetryOnFailure()
             )
         );
 
@@ -27,17 +31,21 @@ public static class RegisterLayerExtensions
 
         #region Configuracion identity
 
-        var lockoutSettings = configuration.GetSection("LockoutSettings").Get<LockoutSettings>() ?? new LockoutSettings();
-
         services.AddDefaultIdentity<User>(options =>
             {
                 PasswordPolicy.Apply(options.Password);
                 options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.MaxFailedAccessAttempts = lockoutSettings.MaxFailedAccessAttempts;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockoutSettings.LockoutTimeInMinutes);
             })
             .AddRoles<Role>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
+
+        // Read through the validated LockoutSettings options rather than straight from configuration.
+        services.AddOptions<IdentityOptions>()
+            .Configure<IOptions<LockoutSettings>>((options, lockout) =>
+            {
+                options.Lockout.MaxFailedAccessAttempts = lockout.Value.MaxFailedAccessAttempts;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockout.Value.LockoutTimeInMinutes);
+            });
 
         #endregion Configuracion identity
 
