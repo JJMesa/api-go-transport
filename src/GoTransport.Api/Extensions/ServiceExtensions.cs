@@ -1,9 +1,6 @@
 ﻿using System.Net;
-using System.Net.Mime;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Asp.Versioning;
-using GoTransport.Application.Builders;
+using GoTransport.Api.Middlewares;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Settings;
@@ -46,6 +43,7 @@ public static class ServiceExtensions
             opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             opts.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
         })
+        // 401 and 403 bodies are written by EnvelopeAuthorizationResultHandler, whatever the scheme.
         .AddJwtBearer(jwt =>
         {
             jwt.SaveToken = true;
@@ -58,66 +56,14 @@ public static class ServiceExtensions
                     var accountService = e.HttpContext.RequestServices.GetRequiredService<IAccountService>();
                     if (!await accountService.IsTokenUserValidAsync(e.Principal!))
                         e.Fail(ErrorMessages.Unauthorized);
-                },
-                // Disparador error en la autenticacion
-                OnAuthenticationFailed = e =>
-                {
-                    var endpoint = e.HttpContext.GetEndpoint();
-                    if (endpoint?.Metadata.GetMetadata<AllowAnonymousAttribute>() is not null)
-                    {
-                        e.Response.Headers.Clear();
-                        e.NoResult();
-                        return Task.CompletedTask;
-                    }
-
-                    e.NoResult();
-                    e.Response.ContentType = MediaTypeNames.Application.Json;
-                    e.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                    var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                    return e.Response.WriteAsync(result);
-                },
-                // Disparador error si no se tiene permiso
-                OnChallenge = e =>
-                {
-                    if (!e.Response.HasStarted)
-                    {
-                        e.HandleResponse();
-                        e.Response.ContentType = MediaTypeNames.Application.Json;
-                        e.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                        var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                        return e.Response.WriteAsync(result);
-                    }
-                    else
-                    {
-                        e.HandleResponse();
-                        return e.Response.WriteAsync(string.Empty);
-                    }
-                },
-                // Disparador error si no se esta verificado
-                OnForbidden = e =>
-                {
-                    e.Response.ContentType = MediaTypeNames.Application.Json;
-                    e.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                    var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                    return e.Response.WriteAsync(result);
                 }
             };
         });
+    }
+
+    public static void AddAuthorizationResponses(this IServiceCollection services)
+    {
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, EnvelopeAuthorizationResultHandler>();
     }
 
     public static void AddConventionConfiguration(this IServiceCollection services)

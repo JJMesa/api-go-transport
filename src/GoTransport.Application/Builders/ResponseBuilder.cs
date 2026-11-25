@@ -51,6 +51,11 @@ public static class ResponseBuilder<T>
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.Unauthorized, Ok = false, Errors = new List<string> { error } };
     }
 
+    public static JsonResponse<T> Forbidden(string error)
+    {
+        return new JsonResponse<T>() { HttpCode = HttpStatusCode.Forbidden, Ok = false, Errors = new List<string> { error } };
+    }
+
     public static JsonResponse<T> Conflict(string error)
     {
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.Conflict, Ok = false, Errors = new List<string> { error } };

@@ -84,6 +84,8 @@ public class ReservationsControllerTests : ComponentTest
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, apiResponse.StatusCode);
         Assert.DoesNotContain("1000123456", jsonResponse);
+        Assert.Contains("\"httpCode\":401", jsonResponse);
+        Assert.Contains($"\"errors\":[\"{ErrorMessages.Unauthorized}\"]", jsonResponse);
     }
 
     [Fact]
@@ -108,6 +110,8 @@ public class ReservationsControllerTests : ComponentTest
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, apiResponse.StatusCode);
         Assert.DoesNotContain("1000123456", jsonResponse);
+        Assert.Contains("\"httpCode\":403", jsonResponse);
+        Assert.Contains($"\"errors\":[\"{ErrorMessages.Forbidden}\"]", jsonResponse);
     }
 
     #endregion GetByScheduleAsync

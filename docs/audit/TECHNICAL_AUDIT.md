@@ -162,7 +162,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Department has no validators at all.
   - Vehicle `Capacity` only has `NotEmpty`, so negative values pass.
   - The `PageNumber` setter is not clamped (`PaginationParameters.cs:9`); only the constructor clamps. *(inferred)* `pageNumber=0` produces a negative `OFFSET`, so SQL Server returns 500. → **F-50**
-- **A-59 — Auth error bodies differ from the rest of the API** *(new)*. The JWT events serialize the envelope in PascalCase while everything else is camelCase, and `OnForbidden` sends a 403 status with a body built by `Unauthorized(...)` (`ServiceExtensions.cs:108-113`). → **F-51**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
   - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
   - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
@@ -243,6 +242,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-09 | 🟡 One role per token (`roleList.First()`) | F-08 (`[Fix] Put every Role of a User in the token`). `GenerateToken` adds one `ClaimTypes.Role` claim per Role, and none for a User without Roles (it used to add an empty one). |
 | A-54 | 🟡 Reservations needed a login but no Role; unknown roles were accepted | F-46 (`[Fix] Limit Reservations to Administrators and Operators`). `ReservationsController` requires `Administrador` or `Operario`. `RoleService.AssignRolesToUser` fails for an unknown role, and `UserService` checks the role before creating or updating a user (400 `UnknownRole`). `TestAuthHandler` now signs in with any Role or none, and component tests pin 200 for an Operator and 403 without a Role. |
 | A-52 | 🟡 Weak password policy (Identity defaults, 6-character validator) | F-44 (`[Fix] Require strong passwords through one shared policy`). `Application/Commons/PasswordPolicy` (12+ characters, 6 distinct, upper, lower, digit, symbol) is applied to Identity's options, so it covers every stored password including the bootstrap administrator's, and `UserCreationValidator` reports the same rules on input. Existing passwords keep working until they are changed. |
+| A-59 | 🟡 Auth error bodies were PascalCase, and 403 was built by `Unauthorized(...)` | F-51 (`[Fix] Render 401 and 403 in the same envelope as every other response`). `EnvelopeAuthorizationResultHandler` writes 401 (`Unauthorized`) and 403 (`Forbidden`, a new `ResponseBuilder` method) with the controllers' JSON options, for any authentication scheme, replacing the JWT `OnAuthenticationFailed`/`OnChallenge`/`OnForbidden` events. Component tests assert both bodies. |
 
 ### 5.3 No longer applicable
 
@@ -434,7 +434,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ⬜ Open | — | — | ⬜ |
@@ -450,10 +450,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 22 | 0 | 8 | 1 |
+| 🟡 Medium | 31 | 21 | 0 | 9 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **32** | **0** | **26** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **45%** | |
+| **Total** | **59** | **31** | **0** | **27** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **47%** | |
 
 ---
 

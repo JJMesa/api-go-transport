@@ -35,6 +35,7 @@ try
     builder.Services.AddCustomResponseFluentValidation();
 
     builder.Services.AddJwtAuthentication(configuration);
+    builder.Services.AddAuthorizationResponses();
 
     builder.Services.AddCorsConfiguration();
 
