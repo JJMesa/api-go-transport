@@ -143,7 +143,7 @@ public class ReservationServiceTests
         var actual = await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
+        Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
         Assert.NotNull(actual.Data);
         _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
     }

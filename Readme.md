@@ -119,7 +119,7 @@ Every response uses the same envelope, for example:
 { "httpCode": 200, "ok": true, "data": { } }
 ```
 
-Failed requests return `ok: false` with an `errors` list. Paged endpoints also return paging metadata in a `Pagination` response header.
+Failed requests return `ok: false` with an `errors` list: `400` for invalid input, `404` for an unknown id, `409` for a duplicate or a full Trip. Creates answer `201` with a `Location` header. Paged endpoints also return paging metadata in a `Pagination` response header. Why the API keeps this envelope rather than ProblemDetails: [ADR 0001](docs/adr/0001-keep-the-json-response-envelope.md).
 
 ## Tests
 

@@ -56,7 +56,7 @@ internal class VehicleService : IVehicleService
     public async Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation, CancellationToken cancellationToken)
     {
         if (await IsDuplicatePlate(vehicleCreation.LicensePlate, cancellationToken: cancellationToken))
-            return ResponseBuilder<VehicleDto>.BadRequest(ErrorMessages.DuplicatePlate);
+            return ResponseBuilder<VehicleDto>.Conflict(ErrorMessages.DuplicatePlate);
 
         var vehicle = vehicleCreation.ToEntity();
         await _vehicleRepository.AddAsync(vehicle, cancellationToken);

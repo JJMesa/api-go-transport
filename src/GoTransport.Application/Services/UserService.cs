@@ -49,7 +49,7 @@ internal class UserService : IUserService
     public async Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto, CancellationToken cancellationToken)
     {
         if (await IsDuplicateEmailAsync(userCreationDto.Email))
-            return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.DuplicateEmail);
+            return ResponseBuilder<UserDto>.Conflict(ErrorMessages.DuplicateEmail);
 
         if (!await _roleService.RoleExistsAsync(userCreationDto.RoleId, cancellationToken))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);

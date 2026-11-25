@@ -49,7 +49,7 @@ internal class CityService : ICityService
     public async Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto cityCreation, CancellationToken cancellationToken)
     {
         if (await IsDuplicateDescriptionAsync(cityCreation.Description, cityCreation.DepartmentId, cancellationToken: cancellationToken))
-            return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
+            return ResponseBuilder<CityDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         var city = cityCreation.ToEntity();
         await _cityRepository.AddAsync(city, cancellationToken);
@@ -70,7 +70,7 @@ internal class CityService : ICityService
         if (city is null) return ResponseBuilder<CityDto>.NotFound();
 
         if (await IsDuplicateDescriptionAsync(cityUpdateDto.Description, cityUpdateDto.DepartmentId, id, cancellationToken: cancellationToken))
-            return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
+            return ResponseBuilder<CityDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         cityUpdateDto.ApplyTo(city);
         await _cityRepository.UpdateAsync(city, cancellationToken);

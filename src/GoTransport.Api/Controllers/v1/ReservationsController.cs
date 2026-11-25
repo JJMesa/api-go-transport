@@ -56,6 +56,7 @@ public class ReservationsController : ControllerBase
     public async Task<ActionResult<JsonResponse<ReservationDto>>> CreateAsync([FromBody] ReservationCreationDto reservationCreationDto, CancellationToken cancellationToken)
     {
         var response = await _reservationService.CreateAsync(reservationCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.ReservationId);
         return StatusCode((int)response.HttpCode, response);
     }
 

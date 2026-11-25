@@ -147,10 +147,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
 - **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
 - **A-27 — Hard deletes despite `IsActive` columns.** → **F-23**
-- **A-31 — HTTP conventions.**
-  - No `Location` header, a custom `Pagination` header, no ProblemDetails.
-  - Creating a Reservation returns 200 while every other create returns 201 (`ReservationService.cs:75`).
-  - Duplicates return 400 but "vehicle full" returns 409. → **F-22**
 ### 5.2 Resolved since the baseline
 
 | ID | Finding | Resolved by |
@@ -210,6 +206,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-32 | 🟢 Dead code | F-20 (same commit). Removed: the empty `Exceptions/` folder, `ValidateAndThrowArgumentException`, `SerializeWithCamelCase`, `ErrorMessages.ConflictValidators` and `RoleSpecification(User)`. The `KeyNotFoundException` branch (F-49) and the singleton `TokenValidationParameters` (F-07) went earlier. |
 | A-68 | 🟢 Inconsistent conventions | F-20 (same commit). `CityService` is `internal` like the other services, `Metadata` takes (page number, page size, total items) in one order through `Create`, the services no longer rewrite their input DTOs (the mappings trim the free text they copy), and the controllers write the `Pagination` header through one `AddPaginationHeader` helper. |
 | A-18 | 🟡 `IServiceBase` covered only 4 of 14 service interfaces | F-18 (`[Refactor] Remove IServiceBase; each service interface declares its own methods`). The resources differ too much for one base (no "all" list for Reservations, per-Department Cities, per-Route Schedules, Users without delete), so `IServiceBase` is gone and the Department, Point, Route and Vehicle interfaces declare their methods explicitly, like the other ten. |
+| A-31 | 🟢 HTTP conventions | F-22 (`[Fix] Answer creates with 201 and Location, and duplicates with 409`). Every create answers 201 with a `Location` header (Reservations answered 200), and duplicates answer 409 like a full Trip. ProblemDetails is declined on purpose: [ADR 0001](../adr/0001-keep-the-json-response-envelope.md) keeps the `JsonResponse` envelope as the contract. The empty `Exceptions/` folder went with F-20. |
 
 ### 5.3 No longer applicable
 
@@ -372,7 +369,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-23 | Soft delete (`IsActive = false`) where the business requires it (A-27) | 🟢 | Data | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-24 | Remove test credentials from version control (A-28) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-25 | `GenerateDocumentationFile` + `IncludeXmlComments` + versioned API explorer in Swagger (A-34) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -418,9 +415,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 7 | 0 | 23 | 1 |
-| 🟢 Low | 13 | 3 | 0 | 10 | 0 |
-| **Total** | **59** | **10** | **0** | **48** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **83%** | |
+| 🟢 Low | 13 | 2 | 0 | 11 | 0 |
+| **Total** | **59** | **9** | **0** | **49** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **84%** | |
 
 ---
 

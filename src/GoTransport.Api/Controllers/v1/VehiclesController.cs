@@ -54,6 +54,7 @@ public class VehiclesController : ControllerBase
     public async Task<ActionResult<JsonResponse<VehicleDto>>> CreateAsync([FromBody] VehicleCreationDto vehicleCreationDto, CancellationToken cancellationToken)
     {
         var response = await _vehicleService.CreateAsync(vehicleCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.VehicleId);
         return StatusCode((int)response.HttpCode, response);
     }
 

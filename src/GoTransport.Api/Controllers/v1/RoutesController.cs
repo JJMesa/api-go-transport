@@ -55,6 +55,7 @@ public class RoutesController : ControllerBase
     public async Task<ActionResult<JsonResponse<RouteDto>>> CreateAsync([FromBody] RouteCreationDto routeCreationDto, CancellationToken cancellationToken)
     {
         var response = await _routeService.CreateAsync(routeCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.RouteId);
         return StatusCode((int)response.HttpCode, response);
     }
 

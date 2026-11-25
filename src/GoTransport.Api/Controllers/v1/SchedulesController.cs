@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Schedule;
 using GoTransport.Application.Interfaces;
@@ -43,6 +44,7 @@ public class SchedulesController : ControllerBase
     public async Task<ActionResult<JsonResponse<ScheduleDto>>> CreateAsync([FromBody] ScheduleCreationDto scheduleCreationDto, CancellationToken cancellationToken)
     {
         var response = await _scheduleService.CreateAsync(scheduleCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.ScheduleId);
         return StatusCode((int)response.HttpCode, response);
     }
 

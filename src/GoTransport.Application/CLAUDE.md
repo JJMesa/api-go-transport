@@ -37,7 +37,7 @@ Each entity has an `internal static class <Entity>MappingExtensions` with up to 
 
 ### Responses
 
-Every service method returns `JsonResponse<T>` or `JsonPagedResponse<T>`, built with the static `ResponseBuilder<T>` factory: `.Ok`, `.OkPaged`, `.Created`, `.NoContent`, `.NotFound`, `.BadRequest`, `.Conflict`, `.Unauthorized`, `.TooManyRequests` (rate-limited sign-ins), `.Forbidden`. Each wrapper carries an `HttpCode`. Return the matching `ResponseBuilder` result for expected business failures; message texts live in `Commons/ErrorMessages.cs`.
+Every service method returns `JsonResponse<T>` or `JsonPagedResponse<T>`, built with the static `ResponseBuilder<T>` factory: `.Ok`, `.OkPaged`, `.Created`, `.NoContent`, `.NotFound`, `.BadRequest`, `.Conflict`, `.Unauthorized`, `.TooManyRequests` (rate-limited sign-ins), `.Forbidden`. Each wrapper carries an `HttpCode`. Return the matching `ResponseBuilder` result for expected business failures: `.BadRequest` for invalid input, `.NotFound` for an unknown id, `.Conflict` for a duplicate or a rule against stored data (a full Trip), `.Created` for every create. Message texts live in `Commons/ErrorMessages.cs`. The envelope is the API contract on purpose (`docs/adr/0001-keep-the-json-response-envelope.md`).
 
 ### Validation
 

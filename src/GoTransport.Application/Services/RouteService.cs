@@ -55,7 +55,7 @@ internal class RouteService : IRouteService
     public async Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation, CancellationToken cancellationToken)
     {
         if (await IsDuplicateRouteAsync(routeCreation.OriginPointId, routeCreation.DestinationPointId, cancellationToken: cancellationToken))
-            return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
+            return ResponseBuilder<RouteDto>.Conflict(ErrorMessages.DuplicateRoute);
 
         var route = routeCreation.ToEntity();
         await _routeRepository.AddAsync(route, cancellationToken);
@@ -76,7 +76,7 @@ internal class RouteService : IRouteService
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
 
         if (await IsDuplicateRouteAsync(routeUpdate.OriginPointId, routeUpdate.DestinationPointId, id, cancellationToken: cancellationToken))
-            return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
+            return ResponseBuilder<RouteDto>.Conflict(ErrorMessages.DuplicateRoute);
 
 
         routeUpdate.ApplyTo(route);

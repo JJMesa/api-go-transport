@@ -196,7 +196,7 @@ public class DepartmentServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_ShouldReturnBadRequestForDuplicateDescription()
+    public async Task CreateAsync_ShouldReturnConflictForDuplicateDescription()
     {
         // Arrange
         var creationDto = DepartmentBuilderMother.DepartmentCreationDtoOk();
@@ -207,7 +207,7 @@ public class DepartmentServiceTests
         var actual = await _departmentService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
         Assert.Null(actual.Data);
         Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
         _departmentRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -276,7 +276,7 @@ public class DepartmentServiceTests
     }
 
     [Fact]
-    public async Task UpdateAsync_ShouldReturnBadRequestForDuplicateDescription()
+    public async Task UpdateAsync_ShouldReturnConflictForDuplicateDescription()
     {
         // Arrange
         int departmentId = Utils.DefaultId;
@@ -291,7 +291,7 @@ public class DepartmentServiceTests
         var actual = await _departmentService.UpdateAsync(departmentId, updateDto, CancellationToken.None);
 
         // Assert
-        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
         Assert.Null(actual.Data);
         Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
         _departmentRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()), Times.Never);

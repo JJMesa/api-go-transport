@@ -179,7 +179,7 @@ public class ReservationsControllerTests : ComponentTest
     #region CreateAsync
 
     [Fact]
-    public async Task CreateAsync_OnAnotherDateOfTheSchedule_Ok()
+    public async Task CreateAsync_OnAnotherDateOfTheSchedule_Created()
     {
         // Arrange: the seeded Schedule already has as many Reservations as the Vehicle has places, on two other dates.
         var travelDate = DateTime.Today.AddDays(14);
@@ -191,8 +191,9 @@ public class ReservationsControllerTests : ComponentTest
         var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, apiResponse.StatusCode);
         Assert.Equal(travelDate, actual?.Data?.ReservationDate);
+        Assert.Equal($"/api/v1/reservations/{actual!.Data!.ReservationId}", apiResponse.Headers.Location?.OriginalString);
     }
 
     [Fact]
@@ -208,7 +209,7 @@ public class ReservationsControllerTests : ComponentTest
         var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
 
         // Assert
-        Assert.Equal(HttpStatusCode.OK, lastPlace.StatusCode);
+        Assert.Equal(HttpStatusCode.Created, lastPlace.StatusCode);
         Assert.Equal(HttpStatusCode.Conflict, apiResponse.StatusCode);
         Assert.Contains(ErrorMessages.VehicleFull, actual?.Errors!);
     }

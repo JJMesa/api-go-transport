@@ -45,6 +45,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<JsonResponse<UserDto>>> Create([FromBody] UserCreationDto userCreationDto, CancellationToken cancellationToken)
     {
         var response = await _userService.CreateAsync(userCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.UserId);
         return StatusCode((int)response.HttpCode, response);
     }
 

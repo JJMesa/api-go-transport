@@ -54,6 +54,7 @@ public class CitiesController : ControllerBase
     public async Task<ActionResult<JsonResponse<CityDto>>> CreateAsync([FromBody] CityCreationDto cityCreationDto, CancellationToken cancellationToken)
     {
         var response = await _cityService.CreateAsync(cityCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.CityId);
         return StatusCode((int)response.HttpCode, response);
     }
 

@@ -55,7 +55,7 @@ internal class DepartmentService : IDepartmentService
     public async Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation, CancellationToken cancellationToken)
     {
         if (await IsDuplicateDescriptionAsync(departmentCreation.Description, cancellationToken: cancellationToken))
-            return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
+            return ResponseBuilder<DepartmentDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         var department = departmentCreation.ToEntity();
         await _departmentRepository.AddAsync(department, cancellationToken);
@@ -73,7 +73,7 @@ internal class DepartmentService : IDepartmentService
         if (department is null) return ResponseBuilder<DepartmentDto>.NotFound();
 
         if (await IsDuplicateDescriptionAsync(departmentUpdate.Description, id, cancellationToken: cancellationToken))
-            return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
+            return ResponseBuilder<DepartmentDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         departmentUpdate.ApplyTo(department);
         await _departmentRepository.UpdateAsync(department, cancellationToken);

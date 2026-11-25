@@ -54,6 +54,7 @@ public class DepartmentsController : ControllerBase
     public async Task<ActionResult<JsonResponse<DepartmentDto>>> CreateAsync([FromBody] DepartmentCreationDto departmentCreation, CancellationToken cancellationToken)
     {
         var response = await _departmentService.CreateAsync(departmentCreation, cancellationToken);
+        Response.AddLocationHeader(response, created => created.DepartmentId);
         return StatusCode((int)response.HttpCode, response);
     }
 

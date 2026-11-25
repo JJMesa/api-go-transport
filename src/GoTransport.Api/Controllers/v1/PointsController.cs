@@ -54,6 +54,7 @@ public class PointsController : ControllerBase
     public async Task<ActionResult<JsonResponse<PointDto>>> CreateAsync(PointCreationDto pointCreationDto, CancellationToken cancellationToken)
     {
         var response = await _pointService.CreateAsync(pointCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.PointId);
         return StatusCode((int)response.HttpCode, response);
     }
 
