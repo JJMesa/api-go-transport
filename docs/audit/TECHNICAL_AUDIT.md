@@ -164,10 +164,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - `ValidateAndThrowArgumentException`;
   - unused specifications and `ErrorMessages`. → **F-20**
 - **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
-- **A-67 — Specification query hygiene** *(new)*.
-  - `col == p || p == null` filters (`CitySpecification`, `ReservationSpecification.cs:28`).
-  - `ToLower()` on columns in the duplication specs, although the collation is already case-insensitive.
-  - Raw user input inside `LIKE` patterns, so `%` and `_` act as wildcards. → **F-58**
 - **A-68 — Inconsistent conventions** *(new)*.
   - `CityService` is `public` while the other services are `internal`.
   - `Metadata` takes the same parameters in two different orders.
@@ -221,6 +217,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-58 | 🟡 Validators disagreed with the database; paging input was not range-checked | F-50 (`[Fix] Align validators with the database columns and clamp the page number`). City descriptions are limited to the `varchar(32)` column, Department gets creation and update validators, Vehicle `Capacity` must be positive and the model year between 1950 and next year, and `PaginationParameters.PageNumber` is clamped in its setter, which model binding uses. `ValidatorColumnLimitsTests` covers each rule. |
 | A-49 | 🟡 The same DTO came back in different shapes | F-41 (`[Fix] Return detail and create responses with their navigations`). Get-by-id for Routes, Vehicles, Schedules and Reservations uses a detail specification with the `Include`s its DTO shows (`RouteDetailSpecification`, `VehicleDetailSpecification`, `ScheduleSpecification(id)`, `ReservationDetailSpecification`), and the create endpoints of those plus City and Point reload the new row through it. `DetailResponseShapeTests` checks the navigations over the real pipeline. |
 | A-48 | 🟡 Paged and count specifications were copy-pasted and had drifted | F-40 (`[Refactor] Build each page and its count from one shared filter`). Each of the seven paged/count pairs (Cities, Departments, Points, Reservations, Routes, Users, Vehicles) now calls one `<Entity>Filter.Apply`, and the count specifications no longer sort. The City count now honours `DepartmentId`, which a component test pins through the `Pagination` header. |
+| A-67 | 🟢 Specification query hygiene | F-58 (`[Refactor] Tidy specification filters and escape LIKE input`). Optional filters are added only when given (no `col == @p OR @p IS NULL`), the duplicate checks compare columns directly (the CI collation already ignores case, so `ToLower` only defeated the unique indexes), and every `Search` term goes through `ToContainsPattern()`, which escapes `%`, `_` and `[` so they match literally. |
 
 ### 5.3 No longer applicable
 
@@ -419,7 +416,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
 | [ ] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 
 ### 7.3 Progress summary
@@ -429,9 +426,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 11 | 0 | 19 | 1 |
-| 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **21** | **0** | **37** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **64%** | |
+| 🟢 Low | 13 | 9 | 0 | 4 | 0 |
+| **Total** | **59** | **20** | **0** | **38** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **66%** | |
 
 ---
 

@@ -1,4 +1,5 @@
 using Ardalis.Specification;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
@@ -12,7 +13,7 @@ internal static class VehicleFilter
     public static void Apply(ISpecificationBuilder<Vehicle> query, VehicleParameters parameters)
     {
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            query.Search(vehicle => $"{vehicle.LicensePlate}", $"%{parameters.SearchCriteria}%");
+            query.Search(vehicle => $"{vehicle.LicensePlate}", parameters.SearchCriteria.ToContainsPattern());
 
         if (parameters.IsActive.HasValue)
             query.Where(vehicle => vehicle.IsActive == parameters.IsActive);

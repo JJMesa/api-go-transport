@@ -1,4 +1,5 @@
 using Ardalis.Specification;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
@@ -15,9 +16,9 @@ internal static class ReservationFilter
 
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
         {
-            query.Search(x => $"{x.PassengerFirstName}", $"%{parameters.SearchCriteria}%");
-            query.Search(x => $"{x.PassengerLastName}", $"%{parameters.SearchCriteria}%");
-            query.Search(x => $"{x.PassengerIdentification}", $"%{parameters.SearchCriteria}%");
+            query.Search(x => $"{x.PassengerFirstName}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(x => $"{x.PassengerLastName}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(x => $"{x.PassengerIdentification}", parameters.SearchCriteria.ToContainsPattern());
         }
 
         if (parameters.IsActive.HasValue)

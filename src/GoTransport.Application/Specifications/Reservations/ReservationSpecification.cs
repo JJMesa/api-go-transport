@@ -23,11 +23,12 @@ public class ReservationSpecification : Specification<Reservation>
 
     public ReservationSpecification(Guid? scheduleId = null, Guid? reservationId = null)
     {
-        Query.Where(reservation => reservation.ScheduleId == scheduleId || scheduleId == null);
+        if (scheduleId.HasValue)
+            Query.Where(reservation => reservation.ScheduleId == scheduleId.Value);
 
         if (reservationId.HasValue)
         {
-            Query.Where(reservation => reservation.ReservationId == reservationId || reservationId == null);
+            Query.Where(reservation => reservation.ReservationId == reservationId.Value);
             Query.Include(reservation => reservation.Schedule);
         }
     }

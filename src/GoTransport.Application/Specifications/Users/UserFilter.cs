@@ -1,4 +1,5 @@
 using Ardalis.Specification;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
@@ -16,8 +17,8 @@ internal static class UserFilter
 
         if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
         {
-            query.Search(user => $"{user.FirstName}", $"%{parameters.SearchCriteria}%");
-            query.Search(user => $"{user.LastName}", $"%{parameters.SearchCriteria}%");
+            query.Search(user => $"{user.FirstName}", parameters.SearchCriteria.ToContainsPattern());
+            query.Search(user => $"{user.LastName}", parameters.SearchCriteria.ToContainsPattern());
         }
 
         if (parameters.IsActive.HasValue)
