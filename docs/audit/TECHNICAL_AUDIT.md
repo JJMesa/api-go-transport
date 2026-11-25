@@ -209,7 +209,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - unused specifications and `ErrorMessages`;
   - a singleton `TokenValidationParameters` that is never resolved. → **F-20**
 - **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
-- **A-40 — A Route can have the same origin and destination Point.** → **F-32**
 - **A-67 — Specification query hygiene** *(new)*.
   - `col == p || p == null` filters (`CitySpecification`, `ReservationSpecification.cs:28`).
   - `ToLower()` on columns in the duplication specs, although the collation is already case-insensitive.
@@ -250,6 +249,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-46 | 🟠 `GET reservations/all` was unbounded and cached | F-38 (`[Fix] Replace the unbounded Reservation list with a per-Trip filter`). The endpoint and `ReservationService.GetAllAsync` are gone, and Reservations are no longer cached. To list one Trip, `GET schedules/{scheduleId}/reservations` takes an optional `travelDate`, paged like the rest of that list. |
 | A-39 | 🟡 Overnight Schedules got a negative `Duration` and the wrong "trip passed" moment | F-31 (`[Fix] Support Schedules that arrive the next day`). `ScheduleExtensions.TripDuration` counts an arrival at or before the departure as next-day, and `ArrivalOn(travelDate)` gives the real arrival, used by every "Trip has taken place" check. The Schedule validators accept 00:00 and reject an arrival equal to the departure. A negative `time` value could never be saved, so no stored row needs fixing. |
 | A-47 | 🟡 The Route destination search used the origin text | F-39 (`[Fix] Search Route destinations by the destination text`). Both Route specifications search the destination City and Point with `DestinationPointSearchCriteria` in search group 2, so origin and destination terms combine with AND. Component tests cover origin-only, destination-only and combined searches. |
+| A-40 | 🟢 A Route could have the same origin and destination Point | F-32 (`[Fix] Reject Routes whose origin and destination are the same Point`). Both Route validators require `DestinationPointId` to differ from `OriginPointId`, so create and update answer 400. |
 
 ### 5.3 No longer applicable
 
@@ -422,7 +422,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -458,9 +458,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 26 | 0 | 4 | 1 |
-| 🟢 Low | 13 | 11 | 0 | 2 | 0 |
-| **Total** | **59** | **37** | **0** | **21** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **36%** | |
+| 🟢 Low | 13 | 10 | 0 | 3 | 0 |
+| **Total** | **59** | **36** | **0** | **22** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **38%** | |
 
 ---
 

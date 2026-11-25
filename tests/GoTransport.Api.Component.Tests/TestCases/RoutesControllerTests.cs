@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Mime;
+using System.Text;
 using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Dtos.Route;
@@ -36,4 +38,57 @@ public class RoutesControllerTests : ComponentTest
     }
 
     #endregion GetAsync
+
+    #region CreateAsync
+
+    [Fact]
+    public async Task CreateAsync_WithTheSameOriginAndDestination_BadRequest()
+    {
+        // Arrange
+        var route = new RouteCreationDto { Description = "Norte - Norte", OriginPointId = 1, DestinationPointId = 1 };
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync(ApiPaths.RoutesFullPath, JsonContent(route));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task CreateAsync_WithDifferentPoints_Created()
+    {
+        // Arrange
+        var route = new RouteCreationDto { Description = "Bogota - Medellin", OriginPointId = 2, DestinationPointId = 1 };
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync(ApiPaths.RoutesFullPath, JsonContent(route));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, apiResponse.StatusCode);
+    }
+
+    #endregion CreateAsync
+
+    #region UpdateAsync
+
+    [Fact]
+    public async Task UpdateAsync_WithTheSameOriginAndDestination_BadRequest()
+    {
+        // Arrange
+        var route = new RouteUpdateDto { RouteId = 1, Description = "Salitre - Salitre", OriginPointId = 2, DestinationPointId = 2, IsActive = true };
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PutAsync($"{ApiPaths.RoutesFullPath}/1", JsonContent(route));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
+    }
+
+    #endregion UpdateAsync
+
+    private static StringContent JsonContent(object body) =>
+        new(JsonConvert.SerializeObject(body), Encoding.UTF8, MediaTypeNames.Application.Json);
 }
