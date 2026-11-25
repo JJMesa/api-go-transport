@@ -2,9 +2,7 @@
 using System.Net.Mime;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using GoTransport.Application.Commons;
 using GoTransport.Application.Wrappers;
-using Microsoft.Data.SqlClient;
 
 namespace GoTransport.Api.Middlewares;
 
@@ -42,57 +40,26 @@ public class ErrorHandlerMiddleware
             return;
         }
 
+        var mapping = ExceptionResponseMapper.Map(exception, context.RequestAborted.IsCancellationRequested);
+
+        _logger.Log(mapping.LogLevel, exception, "Request failed with {StatusCode}. {Method} {Path}",
+            mapping.StatusCode, context.Request.Method, context.Request.Path);
+
+        response.StatusCode = mapping.StatusCode;
+
+        // The client is gone: there is nobody to write a body for.
+        if (mapping.StatusCode == ExceptionResponseMapper.ClientClosedRequest) return;
+
+        if (mapping.StatusCode == (int)HttpStatusCode.ServiceUnavailable)
+            response.Headers.RetryAfter = "5";
+
         response.ContentType = MediaTypeNames.Application.Json;
 
-        var jsonResponse = new JsonResponse<object>();
-
-        switch (exception)
+        var jsonResponse = new JsonResponse<object>
         {
-            case TaskCanceledException:
-                response.StatusCode = (int)HttpStatusCode.BadRequest;
-                jsonResponse.HttpCode = HttpStatusCode.BadRequest;
-                jsonResponse.Errors = new List<string>() { ErrorMessages.CanceledTask };
-                _logger.LogWarning(exception, "Request canceled. {Method} {Path}",
-                    context.Request.Method, context.Request.Path);
-                break;
-
-            case KeyNotFoundException:
-                response.StatusCode = (int)HttpStatusCode.NotFound;
-                jsonResponse.HttpCode = HttpStatusCode.NotFound;
-                _logger.LogWarning(exception, "Resource not found. {Method} {Path}",
-                    context.Request.Method, context.Request.Path);
-                break;
-
-            default:
-
-                response.StatusCode = (int)HttpStatusCode.InternalServerError;
-                jsonResponse.HttpCode = HttpStatusCode.InternalServerError;
-                jsonResponse.Errors = new List<string>() { ErrorMessages.InternalServerError };
-
-                var sqlEx = exception.InnerException as SqlException;
-                if (sqlEx is not null)
-                {
-                    response.StatusCode = (int)HttpStatusCode.BadRequest;
-                    jsonResponse.HttpCode = HttpStatusCode.BadRequest;
-                    jsonResponse.Errors = sqlEx.Number switch
-                    {
-                        547 => new List<string>() { ErrorMessages.ConflictForeignKey },
-                        2601 => new List<string>() { ErrorMessages.ConflictPrimaryKey },
-                        _ => new List<string>() { ErrorMessages.InternalServerError },
-                    };
-
-                    _logger.LogWarning(exception,
-                        "Database conflict (SQL {SqlErrorNumber}). {Method} {Path}",
-                        sqlEx.Number, context.Request.Method, context.Request.Path);
-                }
-                else
-                {
-                    _logger.LogError(exception, "Unhandled exception. {Method} {Path}",
-                        context.Request.Method, context.Request.Path);
-                }
-
-                break;
-        }
+            HttpCode = (HttpStatusCode)mapping.StatusCode,
+            Errors = new List<string> { mapping.Message }
+        };
 
         var result = JsonSerializer.Serialize(jsonResponse,
             new JsonSerializerOptions

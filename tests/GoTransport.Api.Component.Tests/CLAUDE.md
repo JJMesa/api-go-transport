@@ -20,7 +20,7 @@
 
 ## Gotchas
 
-- InMemory has neither FK enforcement nor the SQL Server collation: string filters are case- and accent-exact, and the 547/2601 error translation in `ErrorHandlerMiddleware` can't be exercised. Write tests whose outcome holds on both providers.
+- InMemory has neither FK enforcement nor the SQL Server collation: string filters are case- and accent-exact, and SQL Server errors can't be raised; `ExceptionResponseMapperTests` covers their status mapping by error number. Write tests whose outcome holds on both providers.
 - The host validates DI at startup (`ValidateOnBuild`): one broken registration fails every test here at once — read the host exception, not the individual assertions.
 - Test classes run one at a time (`Infrastructure/TestParallelization.cs`). Every class boots its own host through `Program`, which assigns and freezes Serilog's static bootstrap logger; hosts built in parallel fail with "The logger is already frozen". Keep the assembly attribute when adding classes.
 - The Api project grants `InternalsVisibleTo` to this project.

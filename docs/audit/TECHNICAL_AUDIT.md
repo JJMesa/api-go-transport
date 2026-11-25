@@ -148,9 +148,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-53 — Login enumeration and lockout abuse** *(new)*.
   - An unknown email returns 400 at once; a known one returns 429 after 5 failures (`AccountService.cs:37-43`).
   - There is no rate limiting, so anyone can confirm accounts and keep the administrator locked out with 5 requests every 15 minutes. → **F-45**
-- **A-57 — Database errors map to the wrong status** *(new)*.
-  - `ErrorHandlerMiddleware` turns every `SqlException` inside a `DbUpdateException` into **400**. Codes other than 547/2601 get an "internal server error" text (`src/GoTransport.Api/Middlewares/ErrorHandlerMiddleware.cs:72-86`).
-  - `TaskCanceledException` becomes 400 (`:51`). → **F-49**
 - **A-58 — Validators disagree with the database; paging input is not range-checked** *(new)*.
   - City names allow 128 characters (`CityCreationValidator.cs:13`) for a `varchar(32)` column (`CityConfiguration.cs:24-25`).
   - Department has no validators at all.
@@ -186,7 +183,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Duplicates return 400 but "vehicle full" returns 409. → **F-22**
 - **A-32 — Dead code.** Includes:
   - the empty `Exceptions/` folder;
-  - the `KeyNotFoundException` branch;
   - `ValidateAndThrowArgumentException`;
   - unused specifications and `ErrorMessages`. → **F-20**
 - **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
@@ -239,6 +235,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-59 | 🟡 Auth error bodies were PascalCase, and 403 was built by `Unauthorized(...)` | F-51 (`[Fix] Render 401 and 403 in the same envelope as every other response`). `EnvelopeAuthorizationResultHandler` writes 401 (`Unauthorized`) and 403 (`Forbidden`, a new `ResponseBuilder` method) with the controllers' JSON options, for any authentication scheme, replacing the JWT `OnAuthenticationFailed`/`OnChallenge`/`OnForbidden` events. Component tests assert both bodies. |
 | A-55 | 🟡 User Secrets overrode environment variables in every environment; settings were never validated | F-47 (`[Fix] Validate settings at startup and load User Secrets only in Development`). `Program.cs` no longer adds User Secrets itself: `WebApplication.CreateBuilder` loads them in `Development` only, below environment variables, so the component-test factory no longer blanks `AdminBootstrap`. JWT, caching, lockout and bootstrap settings are bound with data annotations and `ValidateOnStart`; JWT validation and Identity lockout read the validated options. `StartupValidationTests` pins a startup failure for each kind of bad value. |
 | A-56 | 🟡 No transient-fault retry; a failed start exited with code 0 | F-48 (same commit). SQL Server is registered with `EnableRetryOnFailure` (transactions already go through the execution strategy in `IUnitOfWork`). `Program.cs` logs a fatal startup error and rethrows it, so the process exits non-zero, while EF's design-time `HostAbortedException` is no longer logged as fatal. |
+| A-57 | 🟡 Database errors mapped to the wrong status; cancellations became 400 | F-49 (`[Fix] Map database errors and cancellations to the right status codes`). `ExceptionResponseMapper` (used by `ErrorHandlerMiddleware`) maps SQL Server 547 and 2601/2627 to 409, exhausted retries and transient faults to 503 with `Retry-After`, other SQL errors to 500, and a cancellation by the client to 499 without a body (logged as Information). A cancellation the client did not ask for is a 500. The unused `KeyNotFoundException` branch is gone. |
 
 ### 5.3 No longer applicable
 
@@ -428,7 +425,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
@@ -446,10 +443,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 19 | 0 | 11 | 1 |
+| 🟡 Medium | 31 | 18 | 0 | 12 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **29** | **0** | **29** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **50%** | |
+| **Total** | **59** | **28** | **0** | **30** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **52%** | |
 
 ---
 
