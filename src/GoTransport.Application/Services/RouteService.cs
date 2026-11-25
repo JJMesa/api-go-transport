@@ -60,6 +60,7 @@ internal class RouteService : IRouteService
 
         var route = routeCreation.ToEntity();
         await _routeRepository.AddAsync(route);
+        InvalidateCachedLists();
 
         // Reload with the navigations, so the response has the same shape as a get-by-id.
         route = await _routeRepository.FirstOrDefaultAsync(new RouteDetailSpecification(route.RouteId)) ?? route;
@@ -82,6 +83,7 @@ internal class RouteService : IRouteService
 
         routeUpdate.ApplyTo(route);
         await _routeRepository.UpdateAsync(route);
+        InvalidateCachedLists();
 
         return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
@@ -92,9 +94,19 @@ internal class RouteService : IRouteService
         if (route is null) return ResponseBuilder<bool?>.NotFound();
 
         await _routeRepository.DeleteAsync(route);
+
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
     private async Task<bool> IsDuplicarePoints(int originPointId, int destinationPointId, int? id = null) =>
         await _routeRepository.AnyAsync(new DuplicationRouteSpecification(originPointId, destinationPointId, id));
+
+    /// <summary>
+    /// Drops the cached Route list, so the next read shows this write.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Routes);
+    }
 }

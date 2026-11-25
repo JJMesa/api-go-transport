@@ -45,7 +45,7 @@ Validators are discovered from this assembly and run automatically on controller
 
 ### Catalog caching
 
-Unpaged `GetAllAsync` methods on catalog-like services cache the entity list through `ICacheService<TEntity>` (an `IMemoryCache` wrapper, TTLs from `CachingSettings`) under a key from `Commons/CacheKey.cs`. Writes do **not** invalidate the cache yet (F-10), so a created/updated record can be missing from `GetAllAsync` until the entry expires.
+Unpaged `GetAllAsync` methods on catalog-like services cache the entity list through `ICacheService<TEntity>` (an `IMemoryCache` wrapper, TTLs from `CachingSettings`) under a key from `Commons/CacheKey.cs`. Every create, update and delete calls the service's `InvalidateCachedLists()`, which removes each cached list the write makes stale, including lists that embed the entity (a Point or City write also drops `CacheKey.Routes`). Add the key there when a new cached list shows an entity.
 
 ## Gotchas
 

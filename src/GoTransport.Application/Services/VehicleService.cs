@@ -60,6 +60,7 @@ internal class VehicleService : IVehicleService
 
         var vehicle = vehicleCreation.ToEntity();
         await _vehicleRepository.AddAsync(vehicle);
+        InvalidateCachedLists();
 
         // Reload with the navigations, so the response has the same shape as a get-by-id.
         vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleDetailSpecification(vehicle.VehicleId)) ?? vehicle;
@@ -77,6 +78,7 @@ internal class VehicleService : IVehicleService
 
         vehicleUpdate.ApplyTo(vehicle);
         await _vehicleRepository.UpdateAsync(vehicle);
+        InvalidateCachedLists();
 
         return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
     }
@@ -87,9 +89,19 @@ internal class VehicleService : IVehicleService
         if (vehicle is null) return ResponseBuilder<bool?>.NotFound();
 
         await _vehicleRepository.DeleteAsync(vehicle);
+
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
     private async Task<bool> IsDuplicatePlate(string licensePlate, int? id = null) =>
         await _vehicleRepository.AnyAsync(new DuplicationVehicleSpecification(licensePlate, id));
+
+    /// <summary>
+    /// Drops the cached Vehicle list, so the next read shows this write.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Vehicles);
+    }
 }

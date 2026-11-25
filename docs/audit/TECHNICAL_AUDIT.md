@@ -125,7 +125,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
   - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
-- **A-16 — The cache is never invalidated.** `CacheService.Remove` (`src/GoTransport.Application/Services/CacheService.cs:40`) has no callers. → **F-10**
 - **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
 - **A-18 — `IServiceBase` covers only 4 of 14 service interfaces** (Department, Point, Route, Vehicle). CRUD-like City, Schedule and User do not use it, and Reservation left it when F-38 removed its unbounded `GetAllAsync`. → **F-18**
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
@@ -217,6 +216,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-21 | 🟢 `IOptionsSnapshot<T>` for stable config | F-19 (`[Refactor] Read stable settings through IOptions`). `AccountService` and `CacheService` take `IOptions<T>`: JWT and cache settings never change at runtime, so they are bound once instead of on every request. |
 | A-12 | 🟢 Sync `SaveChanges` was not overridden | F-13 (`[Fix] Stamp audit columns on synchronous saves too`). `ApplicationDbContext` overrides the two `bool acceptAllChangesOnSuccess` overloads that every `SaveChanges`/`SaveChangesAsync` call ends in, so both paths stamp the audit columns. A component test saves synchronously and reads the stamps back. |
 | A-10 | 🟡 No `AsNoTracking` | F-09 (`[Refactor] Read without change tracking where nothing is saved back`). The specifications behind GET endpoints and cached catalogs (City, Department, Point, Route, Vehicle, the Schedules of a Route, Reservation detail and passenger lookup) call `AsNoTracking()`; the ones that load an entity to update stay tracked. The cached Vehicle catalog now includes the Manufacturer and the Schedules of a Route include their Vehicle. `SpecificationTrackingTests` pins both kinds. |
+| A-16 | 🟡 The cache was never invalidated | F-10 (`[Fix] Drop cached catalogs on every write and keep them longer`). Department, Point, Route, Vehicle and City writes call `ICacheService.Remove` for every cached list they make stale (a Point or City write also drops the Route list, whose Routes embed them). With invalidation in place the committed TTLs rise from 1/1 to 30/120 minutes (sliding/absolute). `CatalogCacheTests` covers a create and a cross-list update over the real memory cache. |
 
 ### 5.3 No longer applicable
 
@@ -367,7 +367,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -424,10 +424,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 10 | 0 | 20 | 1 |
+| 🟡 Medium | 31 | 9 | 0 | 21 | 1 |
 | 🟢 Low | 13 | 6 | 0 | 7 | 0 |
-| **Total** | **59** | **16** | **0** | **42** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **72%** | |
+| **Total** | **59** | **15** | **0** | **43** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **74%** | |
 
 ---
 

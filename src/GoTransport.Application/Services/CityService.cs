@@ -16,10 +16,13 @@ namespace GoTransport.Application.Services;
 public class CityService : ICityService
 {
     private readonly IRepository<City> _cityRepository;
+    private readonly ICacheService<City> _cacheService;
 
-    public CityService(IRepository<City> cityRepository)
+    public CityService(IRepository<City> cityRepository
+        , ICacheService<City> cacheService)
     {
         _cityRepository = cityRepository;
+        _cacheService = cacheService;
     }
 
     public async Task<JsonResponse<IEnumerable<CityDto>>> GetAllByDepartmentAsync(int departmentId, CancellationToken cancellationToken)
@@ -50,6 +53,7 @@ public class CityService : ICityService
 
         var city = cityCreation.ToEntity();
         await _cityRepository.AddAsync(city);
+        InvalidateCachedLists();
 
         // Reload with the Department, so the response has the same shape as a get-by-id.
         city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(city.CityId)) ?? city;
@@ -70,6 +74,7 @@ public class CityService : ICityService
 
         cityUpdateDto.ApplyTo(city);
         await _cityRepository.UpdateAsync(city);
+        InvalidateCachedLists();
         return ResponseBuilder<CityDto>.Ok(city.ToDto());
     }
 
@@ -78,9 +83,19 @@ public class CityService : ICityService
         var city = await _cityRepository.GetByIdAsync(id);
         if (city is null) return ResponseBuilder<bool?>.NotFound();
         await _cityRepository.DeleteAsync(city);
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
     private async Task<bool> IsDuplicateDescriptionAsync(string description, int departmentId, int id = 0) =>
         await _cityRepository.AnyAsync(new DuplicationCitySpecification(description, departmentId, id));
+
+    /// <summary>
+    /// Cities are not cached themselves, but the cached Point and Route lists embed them.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Points);
+        _cacheService.Remove(CacheKey.Routes);
+    }
 }

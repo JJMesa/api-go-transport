@@ -192,6 +192,7 @@ public class DepartmentServiceTests
         Assert.NotNull(actual.Data);
         Assert.Equal(creationDto.Description, actual.Data!.Description);
         _departmentRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()), Times.Once);
+        _cacheServiceMock.Verify(x => x.Remove(CacheKey.Departments), Times.Once);
     }
 
     [Fact]
@@ -238,6 +239,7 @@ public class DepartmentServiceTests
         Assert.NotNull(actual.Data);
         Assert.Equal(updateDto.Description, actual.Data!.Description);
         _departmentRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()), Times.Once);
+        _cacheServiceMock.Verify(x => x.Remove(CacheKey.Departments), Times.Once);
     }
 
     [Fact]
@@ -316,6 +318,7 @@ public class DepartmentServiceTests
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
         Assert.Null(actual.Data);
         _departmentRepositoryMock.Verify(x => x.DeleteAsync(departmentData!, It.IsAny<CancellationToken>()), Times.Once);
+        _cacheServiceMock.Verify(x => x.Remove(CacheKey.Departments), Times.Once);
     }
 
     [Fact]

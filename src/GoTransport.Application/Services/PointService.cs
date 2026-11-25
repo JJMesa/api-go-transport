@@ -56,6 +56,7 @@ internal class PointService : IPointService
     {
         var point = pointCreation.ToEntity();
         await _pointRepository.AddAsync(point);
+        InvalidateCachedLists();
 
         // Reload with the City, so the response has the same shape as a get-by-id.
         point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(point.PointId)) ?? point;
@@ -75,6 +76,7 @@ internal class PointService : IPointService
 
         pointUpdate.ApplyTo(point);
         await _pointRepository.UpdateAsync(point);
+        InvalidateCachedLists();
 
         return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
@@ -84,6 +86,16 @@ internal class PointService : IPointService
         var point = await _pointRepository.GetByIdAsync(pointId);
         if (point is null) return ResponseBuilder<bool?>.NotFound();
         await _pointRepository.DeleteAsync(point);
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
+    }
+
+    /// <summary>
+    /// Drops the cached lists that show Points: the Point list and the Route list, whose Routes embed their Points.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Points);
+        _cacheService.Remove(CacheKey.Routes);
     }
 }

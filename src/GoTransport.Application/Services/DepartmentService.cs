@@ -59,6 +59,7 @@ internal class DepartmentService : IDepartmentService
 
         var department = departmentCreation.ToEntity();
         await _departmentRepository.AddAsync(department);
+        InvalidateCachedLists();
 
         return ResponseBuilder<DepartmentDto>.Created(department.ToDto());
     }
@@ -76,6 +77,7 @@ internal class DepartmentService : IDepartmentService
 
         departmentUpdate.ApplyTo(department);
         await _departmentRepository.UpdateAsync(department);
+        InvalidateCachedLists();
         return ResponseBuilder<DepartmentDto>.Ok(department.ToDto());
     }
 
@@ -84,9 +86,18 @@ internal class DepartmentService : IDepartmentService
         var department = await _departmentRepository.GetByIdAsync(departmentId);
         if (department is null) return ResponseBuilder<bool?>.NotFound();
         await _departmentRepository.DeleteAsync(department);
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
     private async Task<bool> IsDuplicateDescriptionAsync(string description, int id = 0) =>
         await _departmentRepository.AnyAsync(new DuplicationDepartmentSpecification(description, id));
+
+    /// <summary>
+    /// Drops the cached Department list, so the next read shows this write.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Departments);
+    }
 }

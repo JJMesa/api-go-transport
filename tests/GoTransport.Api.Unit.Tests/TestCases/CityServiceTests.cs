@@ -23,7 +23,7 @@ public class CityServiceTests
     public CityServiceTests()
     {
         _cityRepositoryMock = new Mock<IRepository<City>>();
-        _cityService = new CityService(_cityRepositoryMock.Object);
+        _cityService = new CityService(_cityRepositoryMock.Object, new Mock<ICacheService<City>>().Object);
     }
 
     #region DataSeed
