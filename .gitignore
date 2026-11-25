@@ -377,3 +377,6 @@ graphify-out/
 
 # Serilog file sink (src/GoTransport.Api/Logs)
 Logs/
+
+# Coverage / CRAP report output
+/coverage/
