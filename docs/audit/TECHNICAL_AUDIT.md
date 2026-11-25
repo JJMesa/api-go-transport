@@ -138,11 +138,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-49 — The same DTO comes back in different shapes** *(new)*.
   - Get-by-id uses `GetByIdAsync` with no `Include`, so navigations such as Points, Manufacturer and Schedule are `null` on detail endpoints but filled on paged ones.
   - Evidence: `RouteService.cs:51`, `VehicleService.cs:50`, `ScheduleService.cs:32`, `ReservationService.cs:60`. → **F-41**
-- **A-58 — Validators disagree with the database; paging input is not range-checked** *(new)*.
-  - City names allow 128 characters (`CityCreationValidator.cs:13`) for a `varchar(32)` column (`CityConfiguration.cs:24-25`).
-  - Department has no validators at all.
-  - Vehicle `Capacity` only has `NotEmpty`, so negative values pass.
-  - The `PageNumber` setter is not clamped (`PaginationParameters.cs:9`); only the constructor clamps. *(inferred)* `pageNumber=0` produces a negative `OFFSET`, so SQL Server returns 500. → **F-50**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
   - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
   - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
@@ -154,7 +149,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-62 — No correlation id or tracing** *(new)*. Error responses carry no trace id and logs have no request enrichment, so a client error cannot be matched to its log line. → **F-54**
 - **A-63 — Test gaps that let defects through** *(new)*.
   - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
-  - 0 of 14 validators are tested.
+  - 6 of 18 validators have tests (User creation, City, Department and Vehicle limits); the Reservation, Route, Point and Schedule validators have none.
   - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
 #### 🟢 Low
@@ -229,6 +224,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-51 | 🟡 Passenger lookup by document number: string id, prefix match, national ID in the URL | F-43 (`[Fix] Look Passengers up by exact Reservation id with the document in the body`). `POST reservations/{id:guid}/passenger-lookup` binds a `Guid`, matches it exactly (primary-key seek) together with the document number, and takes the document number from a JSON body (`PassengerLookupDto`, validated), so it never appears in a URL or in the request and error logs. The old `GET .../person/{passengerIdentification}/details` route is gone. |
 | A-53 | 🟡 Login enumeration and lockout abuse | F-45 (`[Fix] Rate-limit sign-in and answer locked accounts like unknown ones`). A locked-out account now gets the same `400 InvalidCredentials` as an unknown email (the lockout is logged instead), and `POST account/login` is limited to 10 attempts a minute per client IP (`429` in the envelope, `Retry-After: 60`). A distributed attacker can still lock an account out; the limit only slows one source down. |
 | A-50 | 🟡 Uniqueness rules had no database constraint | F-42 (`[Fix] Back each duplicate check with a unique index`). A migration adds unique indexes on Department description, City (Department, description), Route (origin, destination) and Vehicle license plate; the composite ones replace the single-column foreign-key indexes. A concurrent duplicate now fails with SQL error 2601, answered as 409 since F-49. `DatabaseModelTests` checks the indexes on the EF model. The Colombia seed has no duplicate names within a Department. |
+| A-58 | 🟡 Validators disagreed with the database; paging input was not range-checked | F-50 (`[Fix] Align validators with the database columns and clamp the page number`). City descriptions are limited to the `varchar(32)` column, Department gets creation and update validators, Vehicle `Capacity` must be positive and the model year between 1950 and next year, and `PaginationParameters.PageNumber` is clamped in its setter, which model binding uses. `ValidatorColumnLimitsTests` covers each rule. |
 
 ### 5.3 No longer applicable
 
@@ -419,7 +415,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ⬜ Open | — | — | ⬜ |
@@ -436,10 +432,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 14 | 0 | 16 | 1 |
+| 🟡 Medium | 31 | 13 | 0 | 17 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **24** | **0** | **34** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **59%** | |
+| **Total** | **59** | **23** | **0** | **35** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **60%** | |
 
 ---
 

@@ -16,12 +16,11 @@ public class VehicleCreationValidator : AbstractValidator<VehicleCreationDto>
             .NotEmpty()
             .MaximumLength(8);
 
+        // The model year: no older than 1950, and at most next year's model.
         RuleFor(x => x.Model)
-            .NotNull()
-            .NotEmpty();
+            .InclusiveBetween(1950, DateTime.Today.Year + 1);
 
         RuleFor(x => x.Capacity)
-            .NotNull()
-            .NotEmpty();
+            .GreaterThan(0);
     }
 }

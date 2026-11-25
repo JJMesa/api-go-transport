@@ -7,10 +7,11 @@ public class CityCreationValidator : AbstractValidator<CityCreationDto>
 {
     public CityCreationValidator()
     {
+        // BAS_CITY.DESCRIPTION is varchar(32).
         RuleFor(x => x.Description)
             .NotNull()
             .NotEmpty()
-            .MaximumLength(128);
+            .MaximumLength(32);
 
         RuleFor(x => x.DepartmentId)
             .NotEmpty()
