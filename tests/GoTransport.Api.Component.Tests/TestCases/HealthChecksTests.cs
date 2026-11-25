@@ -1,6 +1,5 @@
 using System.Net;
 using GoTransport.Api.Component.Tests.Infrastructure;
-using GoTransport.Api.Test.Utilities.Commons;
 
 namespace GoTransport.Api.Component.Tests.TestCases;
 

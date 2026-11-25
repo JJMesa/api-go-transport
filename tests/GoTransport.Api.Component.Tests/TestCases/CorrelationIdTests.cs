@@ -1,7 +1,6 @@
 using System.Text.Json;
 using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Middlewares;
-using GoTransport.Api.Test.Utilities.Commons;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging.Abstractions;
 

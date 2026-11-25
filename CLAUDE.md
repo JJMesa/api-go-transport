@@ -25,7 +25,7 @@ Each area has its own `CLAUDE.md`, loaded when you work inside it; this file hol
 | Path | Responsibility |
 |---|---|
 | `src/` | Production code: four layered projects (Domain, Application, Persistence, Api) |
-| `tests/` | xUnit unit and component tests plus shared test utilities |
+| `tests/` | xUnit unit and component tests, each suite with its own helpers |
 | `docs/` | Audit report with the improvement plan; ADRs under `docs/adr/` |
 | `database/` | SQL seed scripts (the schema itself comes from EF Core migrations) |
 | `.github/workflows/` | CI (`ci.yml`): Release build with warnings as errors, both test suites with coverage, a coverage/CRAP gate (`tools/coverage/coverage_gate.py`) and a gate on High/Critical vulnerable packages, on pushes to `master`/`Dev` and on pull requests |

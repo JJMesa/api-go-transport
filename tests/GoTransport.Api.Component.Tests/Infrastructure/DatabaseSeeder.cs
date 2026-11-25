@@ -7,11 +7,19 @@ namespace GoTransport.Api.Component.Tests.Infrastructure;
 
 /// <summary>
 /// Populates the in-memory database with a small, deterministic dataset that the component tests
-/// assert against. Ids match the values exposed through <c>Utils.DefaultId</c> so the existing
-/// expectations remain valid.
+/// assert against. Tests reference the seeded ids through the constants below instead of copying literals.
 /// </summary>
 public static class DatabaseSeeder
 {
+    /// <summary>Antioquia, the Department of most seeded Cities.</summary>
+    public const int AntioquiaDepartmentId = 1;
+
+    /// <summary>Medellín, in Antioquia.</summary>
+    public const int MedellinCityId = 1;
+
+    /// <summary>An id that no seeded row uses, for 404 cases.</summary>
+    public const int UnknownId = 9999999;
+
     /// <summary>The seeded Schedule: a daily Medellín → Bogotá departure.</summary>
     public static readonly Guid ScheduleId = new("5f1c9a3e-0000-4000-8000-000000000001");
 
@@ -38,11 +46,11 @@ public static class DatabaseSeeder
             new Role { Id = OperatorRoleId, Name = Roles.Operator, NormalizedName = Roles.Operator.ToUpperInvariant() });
 
         context.Set<Department>().AddRange(
-            new Department { DepartmentId = 1, Description = "Antioquia", IsActive = true },
+            new Department { DepartmentId = AntioquiaDepartmentId, Description = "Antioquia", IsActive = true },
             new Department { DepartmentId = 2, Description = "Cundinamarca", IsActive = true });
 
         context.Set<City>().AddRange(
-            new City { CityId = 1, Description = "Medellín", DepartmentId = 1, IsActive = true },
+            new City { CityId = MedellinCityId, Description = "Medellín", DepartmentId = AntioquiaDepartmentId, IsActive = true },
             new City { CityId = 2, Description = "Abejorral", DepartmentId = 1, IsActive = true },
             new City { CityId = 3, Description = "Bello", DepartmentId = 1, IsActive = true },
             new City { CityId = 4, Description = "Envigado", DepartmentId = 1, IsActive = true },

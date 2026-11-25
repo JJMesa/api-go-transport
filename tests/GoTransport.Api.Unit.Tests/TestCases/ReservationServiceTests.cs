@@ -1,7 +1,7 @@
 using System.Data;
 using System.Net;
 using GoTransport.Api.Unit.Tests.Helpers;
-using GoTransport.Api.Test.Utilities.Mothers;
+using GoTransport.Api.Unit.Tests.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Interfaces;

@@ -1,6 +1,6 @@
 # tests/ — automated tests
 
-**Responsibility:** fast unit tests of the Application services, component tests of the full HTTP pipeline, and the helpers both share. All tests are xUnit.
+**Responsibility:** fast unit tests of the Application services and component tests of the full HTTP pipeline. All tests are xUnit.
 
 ## Contents
 
@@ -8,13 +8,15 @@
 |---|---|
 | `GoTransport.Api.Unit.Tests` | Application services in isolation with mocked repositories/cache |
 | `GoTransport.Api.Component.Tests` | Real pipeline (routing, auth, validation, services, EF) over EF Core InMemory; specifications also on SQLite; real JWT round trip |
-| `GoTransport.Api.Test.Utilities` | Shared helpers (below) |
 
-## Shared utilities (`GoTransport.Api.Test.Utilities`)
+## Test helpers
 
-- `Commons/ApiPaths` — route constants; `Commons/Utils.DefaultId` — the id the seed data and tests agree on.
-- `Builders/ResponseBuilder` — test-side response builder.
-- `Mothers/*BuilderMother` — test-data factories (Account, City, Department, Reservation). Add one when a new resource needs test data.
+Each suite keeps its own helpers; there is no shared test project. `GoTransport.Api.Test.Utilities` was removed (F-67) because no helper in it was used by both suites in the same sense: an id that is arbitrary for a mock must match a seeded row over HTTP.
+
+- Unit: `Mothers/*BuilderMother` — test-data factories (Account, City parameters, Department, Reservation); `Mothers/TestIds` — ids for mocked lookups; `Helpers/` — `IdentityMocks`, `InlineUnitOfWork`.
+- Component: `Infrastructure/ApiPaths` — URLs; `Infrastructure/DatabaseSeeder` — the seed and the ids of its rows; `Infrastructure/SqliteApplicationDbContext` — the model on a relational database.
+
+Put a new helper in the suite that uses it.
 
 ## Conventions
 

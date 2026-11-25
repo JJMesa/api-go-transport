@@ -23,8 +23,7 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 │   └── GoTransport.Api/             # controllers, middleware, configuration (startup project)
 ├── tests/
 │   ├── GoTransport.Api.Unit.Tests/
-│   ├── GoTransport.Api.Component.Tests/
-│   └── GoTransport.Api.Test.Utilities/
+│   └── GoTransport.Api.Component.Tests/
 ├── database/seed/                   # SQL seed scripts
 ├── docs/                            # technical audit and improvement plan
 ├── .github/workflows/               # CI: build, tests, vulnerable-package gate

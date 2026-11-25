@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Mime;
 using System.Text;
 using GoTransport.Api.Component.Tests.Infrastructure;
-using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Dtos.Route;
 using GoTransport.Application.Dtos.Schedule;

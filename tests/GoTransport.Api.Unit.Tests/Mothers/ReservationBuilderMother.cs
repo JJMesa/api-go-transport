@@ -1,12 +1,11 @@
-using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
-namespace GoTransport.Api.Test.Utilities.Mothers;
+namespace GoTransport.Api.Unit.Tests.Mothers;
 
-public static class ReservationBuilderMother
+internal static class ReservationBuilderMother
 {
     public static ReservationParameters ReservationParameters(int pageNumber = 1, int pageSize = 5, string? search = null, SortDirection? sort = null, bool? isActive = null)
     {
@@ -45,7 +44,7 @@ public static class ReservationBuilderMother
             ReservationDate = reservationDate,
             PassengerFirstName = "John",
             PassengerLastName = "Doe",
-            IdentificationTypeId = Utils.DefaultId,
+            IdentificationTypeId = TestIds.Existing,
             PassengerIdentification = "123456789",
             Detail = "Test reservation",
             IsActive = true
@@ -60,7 +59,7 @@ public static class ReservationBuilderMother
             ReservationDate = DateTime.Now.Date.AddDays(1),
             PassengerFirstName = "John",
             PassengerLastName = "Doe",
-            IdentificationTypeId = Utils.DefaultId,
+            IdentificationTypeId = TestIds.Existing,
             PassengerIdentification = "123456789",
             Detail = "Test reservation"
         };

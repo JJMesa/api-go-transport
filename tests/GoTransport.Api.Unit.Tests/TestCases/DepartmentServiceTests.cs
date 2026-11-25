@@ -1,6 +1,5 @@
 using System.Net;
-using GoTransport.Api.Test.Utilities.Commons;
-using GoTransport.Api.Test.Utilities.Mothers;
+using GoTransport.Api.Unit.Tests.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
@@ -158,7 +157,7 @@ public class DepartmentServiceTests
     public async Task GetByIdAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int departmentId = Utils.IdDoesNotExist;
+        int departmentId = TestIds.Unknown;
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Department)null!);
 
         // Act
@@ -182,7 +181,7 @@ public class DepartmentServiceTests
         _departmentRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationDepartmentSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
         _departmentRepositoryMock.Setup(x => x.AddAsync(It.IsAny<Department>(), It.IsAny<CancellationToken>()))
-            .Callback((Department department, CancellationToken _) => department.DepartmentId = Utils.DefaultId);
+            .Callback((Department department, CancellationToken _) => department.DepartmentId = TestIds.Existing);
 
         // Act
         var actual = await _departmentService.CreateAsync(creationDto, CancellationToken.None);
@@ -246,10 +245,10 @@ public class DepartmentServiceTests
     public async Task UpdateAsync_ShouldReturnBadRequestForUrlAndBodyIdMismatch()
     {
         // Arrange
-        var updateDto = DepartmentBuilderMother.DepartmentUpdateDtoOk(Utils.DefaultId);
+        var updateDto = DepartmentBuilderMother.DepartmentUpdateDtoOk(TestIds.Existing);
 
         // Act
-        var actual = await _departmentService.UpdateAsync(Utils.IdDoesNotExist, updateDto, CancellationToken.None);
+        var actual = await _departmentService.UpdateAsync(TestIds.Unknown, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -262,7 +261,7 @@ public class DepartmentServiceTests
     public async Task UpdateAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int departmentId = Utils.IdDoesNotExist;
+        int departmentId = TestIds.Unknown;
         var updateDto = DepartmentBuilderMother.DepartmentUpdateDtoOk(departmentId);
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Department)null!);
 
@@ -279,7 +278,7 @@ public class DepartmentServiceTests
     public async Task UpdateAsync_ShouldReturnConflictForDuplicateDescription()
     {
         // Arrange
-        int departmentId = Utils.DefaultId;
+        int departmentId = TestIds.Existing;
         var departmentData = DepartmentsList().FirstOrDefault(x => x.DepartmentId == departmentId);
         var updateDto = DepartmentBuilderMother.DepartmentUpdateDtoOk(departmentId);
 
@@ -340,7 +339,7 @@ public class DepartmentServiceTests
     public async Task DeleteAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int departmentId = Utils.IdDoesNotExist;
+        int departmentId = TestIds.Unknown;
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Department)null!);
 
         // Act

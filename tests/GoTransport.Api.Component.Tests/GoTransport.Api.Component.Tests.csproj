@@ -23,7 +23,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\GoTransport.Api.Test.Utilities\GoTransport.Api.Test.Utilities.csproj" />
     <ProjectReference Include="..\..\src\GoTransport.Api\GoTransport.Api.csproj" />
     <ProjectReference Include="..\..\src\GoTransport.Application\GoTransport.Application.csproj" />
   </ItemGroup>

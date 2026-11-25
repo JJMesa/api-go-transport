@@ -1,7 +1,0 @@
-<Project Sdk="Microsoft.NET.Sdk">
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\GoTransport.Application\GoTransport.Application.csproj" />
-  </ItemGroup>
-
-</Project>

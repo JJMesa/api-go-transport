@@ -1,5 +1,4 @@
 using GoTransport.Api.Component.Tests.Infrastructure;
-using GoTransport.Api.Test.Utilities.Commons;
 using Microsoft.AspNetCore.Hosting;
 
 namespace GoTransport.Api.Component.Tests.TestCases;

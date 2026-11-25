@@ -3,7 +3,6 @@ using System.Net.Mime;
 using System.Text;
 using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Extensions;
-using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Account;
 using Newtonsoft.Json;

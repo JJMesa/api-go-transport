@@ -1,6 +1,10 @@
-﻿namespace GoTransport.Api.Test.Utilities.Commons;
+﻿namespace GoTransport.Api.Component.Tests.Infrastructure;
 
-public class ApiPaths
+/// <summary>
+/// URLs of the API under test. The test server accepts any host, so the absolute https address only gives
+/// requests a scheme (HTTPS redirection and HSTS see an https request).
+/// </summary>
+internal static class ApiPaths
 {
     #region Host-Configuration
 

@@ -1,11 +1,10 @@
-using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Parameters;
 
-namespace GoTransport.Api.Test.Utilities.Mothers;
+namespace GoTransport.Api.Unit.Tests.Mothers;
 
-public static class DepartmentBuilderMother
+internal static class DepartmentBuilderMother
 {
     public static DepartmentParameters DepartmentParameters(int pageNumber = 1, int pageSize = 5, string? search = null, SortDirection? sort = null, bool? isActive = null)
     {
@@ -27,7 +26,7 @@ public static class DepartmentBuilderMother
         };
     }
 
-    public static DepartmentUpdateDto DepartmentUpdateDtoOk(int departmentId = Utils.DefaultId)
+    public static DepartmentUpdateDto DepartmentUpdateDtoOk(int departmentId = TestIds.Existing)
     {
         return new DepartmentUpdateDto
         {

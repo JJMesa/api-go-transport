@@ -19,8 +19,7 @@ Build the resource bottom-up, one layer per step, mirroring the closest existing
    6. New messages in `Commons/ErrorMessages.cs`, written in English.
 5. **Api** — `src/GoTransport.Api/Controllers/v1/<Entities>Controller.cs`: `[Authorize(Roles = Roles.Administrator)]`, actions returning `StatusCode((int)response.HttpCode, response)`, `Pagination` header on the paged endpoint.
 6. **Tests**:
-   - `tests/GoTransport.Api.Test.Utilities` — an `ApiPaths` constant and a `<Entity>BuilderMother`.
-   - Unit — `TestCases/<Entity>ServiceTests.cs`, plus the new mapping cases in `MappingExtensionsTests.cs`.
-   - Component — seed rows in `Infrastructure/DatabaseSeeder.cs` and `TestCases/<Entities>ControllerTests.cs` covering success, `404`, validation `400` and unauthenticated `401`.
+   - Unit — a `Mothers/<Entity>BuilderMother.cs`, `TestCases/<Entity>ServiceTests.cs`, plus the new mapping cases in `MappingExtensionsTests.cs`.
+   - Component — an `Infrastructure/ApiPaths` constant, seed rows (with public id constants) in `Infrastructure/DatabaseSeeder.cs`, the endpoint's access in `AuthorizationMatrixTests.AccessOf`, and `TestCases/<Entities>ControllerTests.cs` covering success, `404`, validation `400` and unauthenticated `401`.
 
 **Done when** `dotnet build GoTransport.sln` adds no new warnings, `dotnet test` passes in both test projects, and your final message lists the file created at every step above (or why a step was skipped, e.g. no paged list).

@@ -1,6 +1,5 @@
 ﻿using System.Net;
-using GoTransport.Api.Test.Utilities.Commons;
-using GoTransport.Api.Test.Utilities.Mothers;
+using GoTransport.Api.Unit.Tests.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Dtos.Department;
@@ -72,7 +71,7 @@ public class CityServiceTests
     public async Task GetAllByDepartmentAsync_ShouldReturnCitiesForValidDepartment()
     {
         // Arrange
-        var departmentId = Utils.DefaultId;
+        var departmentId = TestIds.Existing;
         var cityData = CitiesList();
         var cityDtoData = CitiesDtoList();
 
@@ -91,7 +90,7 @@ public class CityServiceTests
     public async Task GetAllByDepartmentAsync_ShouldReturnEmptyListForNonexistentDepartment()
     {
         // Arrange
-        var departmentId = Utils.IdDoesNotExist;
+        var departmentId = TestIds.Unknown;
         var cityData = new List<City>();
         var cityDtoData = new List<CityDto>();
 
@@ -341,12 +340,12 @@ public class CityServiceTests
     public async Task CreateAsync_ShouldCreateCityAndReturnOk()
     {
         //Arrange
-        var cityData = CitiesList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
-        var cityDtoData = CitiesDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        var cityData = CitiesList().FirstOrDefault(x => x.CityId == TestIds.Existing);
+        var cityDtoData = CitiesDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
         var cityCreationDtoData = CitiesCreationDtoList().FirstOrDefault(x => x.Description == cityDtoData!.Description);
 
         _cityRepositoryMock.Setup(x => x.AddAsync(It.IsAny<City>(), CancellationToken.None))
-                           .Callback((City city, CancellationToken _) => city.CityId = Utils.DefaultId);
+                           .Callback((City city, CancellationToken _) => city.CityId = TestIds.Existing);
 
         // Act
         var actual = await _cityService.CreateAsync(cityCreationDtoData!, CancellationToken.None);
@@ -396,8 +395,8 @@ public class CityServiceTests
     public async Task UpdateAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int invalidCityId = Utils.IdDoesNotExist;
-        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        int invalidCityId = TestIds.Unknown;
+        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
         cityUpdateDto!.CityId = invalidCityId;
 
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(invalidCityId, CancellationToken.None)).ReturnsAsync((City)null!);
@@ -416,8 +415,8 @@ public class CityServiceTests
     public async Task UpdateAsync_ShouldReturnBadRequestForUrlAndBodyIdMismatch()
     {
         // Arrange
-        int invalidCityId = Utils.IdDoesNotExist;
-        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        int invalidCityId = TestIds.Unknown;
+        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
 
         // Act
         var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!, CancellationToken.None);
@@ -460,7 +459,7 @@ public class CityServiceTests
     public async Task CityService_DeleteAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int cityId = Utils.IdDoesNotExist;
+        int cityId = TestIds.Unknown;
         var cityToDelete = CitiesList().FirstOrDefault(x => x.CityId == cityId);
 
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(cityId, CancellationToken.None)).ReturnsAsync(cityToDelete);

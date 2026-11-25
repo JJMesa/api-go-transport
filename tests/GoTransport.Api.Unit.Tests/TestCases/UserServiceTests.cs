@@ -1,5 +1,5 @@
 using System.Net;
-using GoTransport.Api.Test.Utilities.Mothers;
+using GoTransport.Api.Unit.Tests.Mothers;
 using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;

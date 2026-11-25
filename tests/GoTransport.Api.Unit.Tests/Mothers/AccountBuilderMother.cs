@@ -3,9 +3,9 @@ using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 
-namespace GoTransport.Api.Test.Utilities.Mothers;
+namespace GoTransport.Api.Unit.Tests.Mothers;
 
-public static class AccountBuilderMother
+internal static class AccountBuilderMother
 {
     public const string ValidEmail = "admin@gotransport.com";
     public const string ValidPassword = "Password123*";

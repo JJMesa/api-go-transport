@@ -7,8 +7,8 @@
           <!-- OpenCover format includes cyclomatic complexity, which CRAP scores need -->
           <Format>cobertura,opencover</Format>
 
-          <!-- Exclude test assemblies and shared test helpers -->
-          <Exclude>[*.Tests]*,[*.Test.Utilities]*,[*.Benchmark]*</Exclude>
+          <!-- Exclude test assemblies -->
+          <Exclude>[*.Tests]*,[*.Benchmark]*</Exclude>
 
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
 
