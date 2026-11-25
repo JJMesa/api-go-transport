@@ -42,6 +42,21 @@ public class RouteServiceTests
     }
 
     [Fact]
+    public async Task CreateAsync_ShouldReturnConflictWhenARouteAlreadyHasThePoints()
+    {
+        // Arrange
+        _routeRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationRouteSpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        // Act
+        var actual = await _routeService.CreateAsync(new RouteCreationDto { Description = "Medellín - Bogotá", OriginPointId = 1, DestinationPointId = 2 }, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateRoute, actual.Errors!);
+        _routeRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Route>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
     public async Task UpdateAsync_ShouldReturnConflictWhenAnotherRouteHasThePoints()
     {
         // Arrange

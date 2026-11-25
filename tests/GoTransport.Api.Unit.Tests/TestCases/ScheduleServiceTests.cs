@@ -1,4 +1,5 @@
 using System.Net;
+using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Schedule;
 using GoTransport.Application.Interfaces;
 using GoTransport.Domain.Interfaces;
@@ -48,5 +49,20 @@ public class ScheduleServiceTests
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
         Assert.Equal(new TimeSpan(6, 30, 0), schedule.Duration);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnBadRequestForUrlAndBodyIdMismatch()
+    {
+        // Arrange
+        var update = new ScheduleUpdateDto { ScheduleId = Guid.NewGuid(), DepartureTime = new TimeSpan(8, 0, 0), ArrivalTime = new TimeSpan(10, 0, 0), VehicleId = 1, RouteId = 1, IsActive = true };
+
+        // Act
+        var actual = await _scheduleService.UpdateAsync(Guid.NewGuid(), update, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(ErrorMessages.UrlAndBodyIdNotEqual, actual.Errors!);
+        _scheduleRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Schedule>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 }

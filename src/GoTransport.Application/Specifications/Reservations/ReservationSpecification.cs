@@ -24,16 +24,13 @@ public class ReservationSpecification : Specification<Reservation>
         Query.AsNoTracking();
     }
 
-    public ReservationSpecification(Guid? scheduleId = null, Guid? reservationId = null)
+    /// <summary>
+    /// The Reservation with this id and its Schedule, tracked, for an update or a Cancellation.
+    /// </summary>
+    public ReservationSpecification(Guid reservationId)
     {
-        if (scheduleId.HasValue)
-            Query.Where(reservation => reservation.ScheduleId == scheduleId.Value);
-
-        if (reservationId.HasValue)
-        {
-            Query.Where(reservation => reservation.ReservationId == reservationId.Value);
-            Query.Include(reservation => reservation.Schedule);
-        }
+        Query.Where(reservation => reservation.ReservationId == reservationId);
+        Query.Include(reservation => reservation.Schedule);
     }
 
     public ReservationSpecification(Guid scheduleId, ReservationParameters parameters)

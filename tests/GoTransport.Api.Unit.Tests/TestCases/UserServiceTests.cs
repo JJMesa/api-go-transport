@@ -106,7 +106,44 @@ public class UserServiceTests
         Assert.Contains(roleError.Description, actual.Errors!);
     }
 
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnBadRequestWhenTheSecurityStampCannotBeSaved()
+    {
+        // Arrange
+        var user = AccountBuilderMother.UserEntity();
+        var saveError = new IdentityError { Code = "ConcurrencyFailure", Description = "Optimistic concurrency failure, object has been modified." };
+        ArrangeSuccessfulUpdate(user);
+        _userManagerMock.Setup(x => x.UpdateSecurityStampAsync(user)).ReturnsAsync(IdentityResult.Failed(saveError));
+
+        // Act
+        var actual = await _userService.UpdateAsync(user.Id, AccountBuilderMother.UserUpdateDtoOk(user.Id, OperatorRoleId), CancellationToken.None);
+
+        // Assert: the Role is not touched when the user could not be saved
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(saveError.Description, actual.Errors!);
+        _roleServiceMock.Verify(x => x.AssignRolesToUser(It.IsAny<User>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     #endregion UpdateAsync
+
+    #region GetByIdAsync
+
+    [Fact]
+    public async Task GetByIdAsync_ShouldReturnTheUser()
+    {
+        // Arrange
+        var user = AccountBuilderMother.UserEntity();
+        _userRepositoryMock.Setup(x => x.GetByIdAsync(user.Id, It.IsAny<CancellationToken>())).ReturnsAsync(user);
+
+        // Act
+        var actual = await _userService.GetByIdAsync(user.Id, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
+        Assert.Equal(user.Email, actual.Data!.Email);
+    }
+
+    #endregion GetByIdAsync
 
     [Fact]
     public async Task UpdateAsync_ShouldReturnBadRequestForUnknownRole()

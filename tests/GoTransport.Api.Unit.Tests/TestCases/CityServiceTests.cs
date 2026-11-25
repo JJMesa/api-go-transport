@@ -358,6 +358,21 @@ public class CityServiceTests
         _cityRepositoryMock.Verify(x => x.AddAsync(It.IsAny<City>(), CancellationToken.None), Times.Once);
     }
 
+    [Fact]
+    public async Task CreateAsync_ShouldReturnConflictForADuplicateDescriptionInTheDepartment()
+    {
+        // Arrange
+        _cityRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationCitySpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        // Act
+        var actual = await _cityService.CreateAsync(new CityCreationDto { Description = "city 1", DepartmentId = 1 }, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
+        _cityRepositoryMock.Verify(x => x.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     #endregion CreateAsync
 
     #region UpdateAsync
@@ -426,6 +441,24 @@ public class CityServiceTests
         Assert.Null(actual.Data);
         _cityRepositoryMock.Verify(x => x.GetByIdAsync(invalidCityId, CancellationToken.None), Times.Never);
         _cityRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<City>(), CancellationToken.None), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnConflictForADuplicateDescriptionInTheDepartment()
+    {
+        // Arrange
+        var city = CitiesList().First(x => x.CityId == TestIds.Existing);
+        _cityRepositoryMock.Setup(x => x.GetByIdAsync(city.CityId, It.IsAny<CancellationToken>())).ReturnsAsync(city);
+        _cityRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationCitySpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        // Act
+        var actual = await _cityService.UpdateAsync(city.CityId,
+            new CityUpdateDto { CityId = city.CityId, Description = "city 2", DepartmentId = 1, IsActive = true }, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
+        _cityRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion UpdateAsync
