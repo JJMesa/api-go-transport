@@ -167,7 +167,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - 0 of 14 validators are tested.
   - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
-- **A-65 — Anonymous `/health` exposes error text** *(new)*. `src/GoTransport.Api/Extensions/HealthCheckExtensions.cs:58` returns `Exception?.Message`; SQL connection failures can reveal server or login names. → **F-57**
 #### 🟢 Low
 
 - **A-12 — Sync `SaveChanges` is not overridden** *(baseline 🟡 → 🟢: nothing in `src/` calls it, so the gap is latent)*. → **F-13**
@@ -236,6 +235,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-55 | 🟡 User Secrets overrode environment variables in every environment; settings were never validated | F-47 (`[Fix] Validate settings at startup and load User Secrets only in Development`). `Program.cs` no longer adds User Secrets itself: `WebApplication.CreateBuilder` loads them in `Development` only, below environment variables, so the component-test factory no longer blanks `AdminBootstrap`. JWT, caching, lockout and bootstrap settings are bound with data annotations and `ValidateOnStart`; JWT validation and Identity lockout read the validated options. `StartupValidationTests` pins a startup failure for each kind of bad value. |
 | A-56 | 🟡 No transient-fault retry; a failed start exited with code 0 | F-48 (same commit). SQL Server is registered with `EnableRetryOnFailure` (transactions already go through the execution strategy in `IUnitOfWork`). `Program.cs` logs a fatal startup error and rethrows it, so the process exits non-zero, while EF's design-time `HostAbortedException` is no longer logged as fatal. |
 | A-57 | 🟡 Database errors mapped to the wrong status; cancellations became 400 | F-49 (`[Fix] Map database errors and cancellations to the right status codes`). `ExceptionResponseMapper` (used by `ErrorHandlerMiddleware`) maps SQL Server 547 and 2601/2627 to 409, exhausted retries and transient faults to 503 with `Retry-After`, other SQL errors to 500, and a cancellation by the client to 499 without a body (logged as Information). A cancellation the client did not ask for is a 500. The unused `KeyNotFoundException` branch is gone. |
+| A-65 | 🟡 Anonymous `/health` exposed error text | F-57 (`[Fix] Keep health check details for Administrators and split the probes`). `/health/live` runs no checks, `/health/ready` (and `/health`) runs the tagged database check, and both answer anonymous callers with the overall status only. Check names, durations and errors are served by `/health/details` to Administrators. `HealthChecksTests` covers all four endpoints. |
 
 ### 5.3 No longer applicable
 
@@ -433,7 +433,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
 | [ ] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 
@@ -443,10 +443,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 18 | 0 | 12 | 1 |
+| 🟡 Medium | 31 | 17 | 0 | 13 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **28** | **0** | **30** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **52%** | |
+| **Total** | **59** | **27** | **0** | **31** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **53%** | |
 
 ---
 

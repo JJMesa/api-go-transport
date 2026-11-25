@@ -5,7 +5,7 @@
 ## Contents
 
 - `Controllers/v1/` — one controller per resource, plus `AccountController` (login).
-- `Extensions/` — `ServiceExtensions` (versioning, JWT, CORS, Swagger, validation response), `LoggingExtensions` (Serilog), `HealthCheckExtensions`, `AppExtensions` (middleware registration).
+- `Extensions/` — `ServiceExtensions` (versioning, JWT, CORS, Swagger, validation response), `LoggingExtensions` (Serilog), `HealthCheckExtensions` (anonymous `/health/live`, `/health/ready` and `/health` return a status only; `/health/details` is for Administrators), `AppExtensions` (middleware registration).
 - `Middlewares/ErrorHandlerMiddleware.cs`.
 - `Program.cs`, `appsettings*.json`, `Properties/launchSettings.json`.
 

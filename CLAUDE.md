@@ -38,7 +38,7 @@ Each area has its own `CLAUDE.md`, loaded when you work inside it; this file hol
 # Build the whole solution
 dotnet build GoTransport.sln
 
-# Run the API (needs configuration — see src/GoTransport.Api/CLAUDE.md; Swagger at https://localhost:7046/swagger, health at /health)
+# Run the API (needs configuration — see src/GoTransport.Api/CLAUDE.md; Swagger at https://localhost:7046/swagger, probes at /health/live and /health/ready)
 dotnet run --project src/GoTransport.Api
 
 # Unit tests (services tested in isolation with mocked repositories/cache)

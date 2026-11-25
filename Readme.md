@@ -88,7 +88,7 @@ dotnet run --project src/GoTransport.Api
 
 - **Address:** the API listens on `https://localhost:7046`.
 - **Swagger UI:** available at `/swagger` in the Development environment.
-- **Health:** `/health` reports the API and database health.
+- **Health:** `/health/live` (process up) and `/health/ready` (database reachable; `/health` is the same) return only `{"status":...}` to anonymous callers. `/health/details` lists each check with its error, for Administrators.
 - **First administrator:** on startup, if no administrator exists and `AdminBootstrap` is set, the API creates one. If that creation fails, for example because the password breaks the policy, the API stops with the reason.
 
 Log in with `POST /api/v1/account/login` (`{ "email": "...", "password": "..." }`) to get a JWT, then send it as `Authorization: Bearer <token>`.

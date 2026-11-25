@@ -14,6 +14,8 @@ public class ApiPaths
 
     public static readonly string BaseUrl = $"{HttpProtocol}://{HostName}:{Port}/api/v1";
 
+    public static readonly string HealthPath = $"{HttpProtocol}://{HostName}:{Port}/health";
+
     public static readonly string AuthBasePath = $"{BaseUrl}/account/login";
 
     public static readonly string DepartmentsPath = "/departments";
