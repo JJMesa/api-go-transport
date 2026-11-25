@@ -136,7 +136,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - `ToPacificStandardTime()` actually converts to Colombia time (Windows id `SA Pacific Standard Time`, UTC−5) and looks the zone up on every call.
   - Audit columns store local time without an offset.
   - The "trip passed" check uses the server's `DateTime.Now` (`ReservationService.cs:110`). → **F-53**
-- **A-62 — No correlation id or tracing** *(new)*. Error responses carry no trace id and logs have no request enrichment, so a client error cannot be matched to its log line. → **F-54**
 - **A-63 — Test gaps that let defects through** *(new)*.
   - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
   - 6 of 18 validators have tests (User creation, City, Department and Vehicle limits); the Reservation, Route, Point and Schedule validators have none.
@@ -207,6 +206,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-18 | 🟡 `IServiceBase` covered only 4 of 14 service interfaces | F-18 (`[Refactor] Remove IServiceBase; each service interface declares its own methods`). The resources differ too much for one base (no "all" list for Reservations, per-Department Cities, per-Route Schedules, Users without delete), so `IServiceBase` is gone and the Department, Point, Route and Vehicle interfaces declare their methods explicitly, like the other ten. |
 | A-31 | 🟢 HTTP conventions | F-22 (`[Fix] Answer creates with 201 and Location, and duplicates with 409`). Every create answers 201 with a `Location` header (Reservations answered 200), and duplicates answer 409 like a full Trip. ProblemDetails is declined on purpose: [ADR 0001](../adr/0001-keep-the-json-response-envelope.md) keeps the `JsonResponse` envelope as the contract. The empty `Exceptions/` folder went with F-20. |
 | A-27 | 🟢 Hard deletes despite `IsActive` columns | F-23 (`[Feature] Cancel Reservations instead of deleting them`). Reservations are where history matters: `DELETE` now cancels (sets `IsActive = false`), the cancelled Reservation stays readable, cannot be updated or cancelled again (404), and its place on the Trip is free because only active Reservations count. Catalog rows keep hard deletes; one still referenced fails with SQL error 547 (409). The glossary gains Cancellation. |
+| A-62 | 🟡 No correlation id or tracing | F-54 (`[Feature] Correlate responses, logs and errors with one request id`). `CorrelationIdMiddleware` runs first and gives every request one id: the W3C trace id of its Activity (so an incoming `traceparent` links it to the caller's trace) or a safe caller-supplied `X-Correlation-Id`. The id is returned in the `X-Correlation-Id` header, added to every log line as `CorrelationId` (including the request log), and returned as `traceId` in unexpected-error bodies. No trace exporter is configured; adding OpenTelemetry later reuses the same trace ids. |
 
 ### 5.3 No longer applicable
 
@@ -401,7 +401,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
 | [ ] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -414,10 +414,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 7 | 0 | 23 | 1 |
+| 🟡 Medium | 31 | 6 | 0 | 24 | 1 |
 | 🟢 Low | 13 | 1 | 0 | 12 | 0 |
-| **Total** | **59** | **8** | **0** | **50** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **86%** | |
+| **Total** | **59** | **7** | **0** | **51** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **88%** | |
 
 ---
 

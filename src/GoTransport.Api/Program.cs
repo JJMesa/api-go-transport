@@ -51,6 +51,8 @@ try
 
     await app.EnsureAdministratorAsync();
 
+    app.UseCorrelationId();
+
     app.UseSerilogRequestLogging();
 
     app.UseErrorHandlerMiddleware();

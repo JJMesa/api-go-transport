@@ -29,6 +29,7 @@ Everything composes through extension methods: `AddApplicationLayer` / `AddPersi
 - Authn/authz failures are rendered as the same envelope, with the controllers' JSON options, by `Middlewares/EnvelopeAuthorizationResultHandler` (an `IAuthorizationMiddlewareResultHandler`): `401` with `ErrorMessages.Unauthorized` and `403` with `ErrorMessages.Forbidden`, for any authentication scheme.
 - JWTs are issued by `AccountService.LoginAsync`, which signs in through `SignInManager` so Identity lockout applies and refuses inactive users. Unknown, inactive and locked-out accounts all get the same `400 InvalidCredentials`. The login endpoint is rate-limited per client IP (`Extensions/RateLimitingExtensions`, 10 attempts a minute, `429` in the envelope); behind a reverse proxy, forward the client IP or all callers share one limit. Each token carries the user's security stamp; `OnTokenValidated` calls `IAccountService.IsTokenUserValidAsync` on every request and rejects the token once the user is inactive or the stamp has rotated (user updates rotate it). That is one user lookup per authenticated request.
 - Log through `ILogger<T>` (Serilog underneath) with structured templates (`"{Method} {Path}"`), keeping values as template arguments.
+- `CorrelationIdMiddleware` runs first: each request gets one id (the W3C trace id, or a safe caller-supplied `X-Correlation-Id`) in the `X-Correlation-Id` response header, the `CorrelationId` log property and the `traceId` of unexpected-error bodies.
 
 ## Configuration
 

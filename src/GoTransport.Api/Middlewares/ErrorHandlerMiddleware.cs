@@ -58,7 +58,8 @@ public class ErrorHandlerMiddleware
         var jsonResponse = new JsonResponse<object>
         {
             HttpCode = (HttpStatusCode)mapping.StatusCode,
-            Errors = new List<string> { mapping.Message }
+            Errors = new List<string> { mapping.Message },
+            TraceId = CorrelationIdMiddleware.Get(context)
         };
 
         var result = JsonSerializer.Serialize(jsonResponse,
