@@ -349,7 +349,7 @@ public class CityServiceTests
                            .Callback((City city, CancellationToken _) => city.CityId = Utils.DefaultId);
 
         // Act
-        var actual = await _cityService.CreateAsync(cityCreationDtoData!);
+        var actual = await _cityService.CreateAsync(cityCreationDtoData!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
@@ -382,7 +382,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.UpdateAsync(cityData!, CancellationToken.None));
 
         // Act
-        var actual = await _cityService.UpdateAsync(cityId, cityUpdateDto);
+        var actual = await _cityService.UpdateAsync(cityId, cityUpdateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -403,7 +403,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(invalidCityId, CancellationToken.None)).ReturnsAsync((City)null!);
 
         // Act
-        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!);
+        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -420,7 +420,7 @@ public class CityServiceTests
         var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
 
         // Act
-        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!);
+        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -447,7 +447,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.DeleteAsync(cityToDelete!, CancellationToken.None));
 
         // Act
-        var actual = await _cityService.DeleteAsync(cityId);
+        var actual = await _cityService.DeleteAsync(cityId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
@@ -466,7 +466,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(cityId, CancellationToken.None)).ReturnsAsync(cityToDelete);
 
         // Act
-        var actual = await _cityService.DeleteAsync(cityId);
+        var actual = await _cityService.DeleteAsync(cityId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);

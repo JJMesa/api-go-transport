@@ -13,11 +13,11 @@ public interface IDepartmentService
 
     Task<JsonResponse<DepartmentDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation);
+    Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation, CancellationToken cancellationToken);
 
-    Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate);
+    Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(int id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken);
 
     Task<JsonPagedResponse<IEnumerable<DepartmentDto>>> GetAsync(DepartmentParameters parameters, CancellationToken cancellationToken);
 }

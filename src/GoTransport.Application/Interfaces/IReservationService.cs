@@ -11,11 +11,11 @@ public interface IReservationService
 {
     Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation);
+    Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdate);
+    Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdate, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(Guid id);
+    Task<JsonResponse<bool?>> DeleteAsync(Guid id, CancellationToken cancellationToken);
 
     Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken);
 

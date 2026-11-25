@@ -12,9 +12,9 @@ public interface ICityService
 
     Task<JsonResponse<CityDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto dto);
+    Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto dto, CancellationToken cancellationToken);
 
-    Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto dto);
+    Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto dto, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(int id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken);
 }

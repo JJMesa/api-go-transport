@@ -53,49 +53,49 @@ internal class VehicleService : IVehicleService
         return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
     }
 
-    public async Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation)
+    public async Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation, CancellationToken cancellationToken)
     {
-        if (await IsDuplicatePlate(vehicleCreation.LicensePlate))
+        if (await IsDuplicatePlate(vehicleCreation.LicensePlate, cancellationToken: cancellationToken))
             return ResponseBuilder<VehicleDto>.BadRequest(ErrorMessages.DuplicatePlate);
 
         var vehicle = vehicleCreation.ToEntity();
-        await _vehicleRepository.AddAsync(vehicle);
+        await _vehicleRepository.AddAsync(vehicle, cancellationToken);
         InvalidateCachedLists();
 
         // Reload with the navigations, so the response has the same shape as a get-by-id.
-        vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleDetailSpecification(vehicle.VehicleId)) ?? vehicle;
+        vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleDetailSpecification(vehicle.VehicleId), cancellationToken) ?? vehicle;
 
         return ResponseBuilder<VehicleDto>.Created(vehicle.ToDto());
     }
 
-    public async Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate)
+    public async Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate, CancellationToken cancellationToken)
     {
         if (id != vehicleUpdate.VehicleId)
             return ResponseBuilder<VehicleDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var vehicle = await _vehicleRepository.GetByIdAsync(id);
+        var vehicle = await _vehicleRepository.GetByIdAsync(id, cancellationToken);
         if (vehicle is null) return ResponseBuilder<VehicleDto>.NotFound();
 
         vehicleUpdate.ApplyTo(vehicle);
-        await _vehicleRepository.UpdateAsync(vehicle);
+        await _vehicleRepository.UpdateAsync(vehicle, cancellationToken);
         InvalidateCachedLists();
 
         return ResponseBuilder<VehicleDto>.Ok(vehicle.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var vehicle = await _vehicleRepository.GetByIdAsync(id);
+        var vehicle = await _vehicleRepository.GetByIdAsync(id, cancellationToken);
         if (vehicle is null) return ResponseBuilder<bool?>.NotFound();
 
-        await _vehicleRepository.DeleteAsync(vehicle);
+        await _vehicleRepository.DeleteAsync(vehicle, cancellationToken);
 
         InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
-    private async Task<bool> IsDuplicatePlate(string licensePlate, int? id = null) =>
-        await _vehicleRepository.AnyAsync(new DuplicationVehicleSpecification(licensePlate, id));
+    private async Task<bool> IsDuplicatePlate(string licensePlate, int? id = null, CancellationToken cancellationToken = default) =>
+        await _vehicleRepository.AnyAsync(new DuplicationVehicleSpecification(licensePlate, id), cancellationToken);
 
     /// <summary>
     /// Drops the cached Vehicle list, so the next read shows this write.

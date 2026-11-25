@@ -11,7 +11,7 @@ internal sealed class InlineUnitOfWork : IUnitOfWork
 {
     public List<IsolationLevel> Transactions { get; } = new();
 
-    public Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted)
+    public Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default)
     {
         Transactions.Add(isolationLevel);
         return operation();

@@ -51,25 +51,25 @@ public class DepartmentsController : ControllerBase
 
     // POST: api/v1/departments
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<DepartmentDto>>> CreateAsync([FromBody] DepartmentCreationDto departmentCreation)
+    public async Task<ActionResult<JsonResponse<DepartmentDto>>> CreateAsync([FromBody] DepartmentCreationDto departmentCreation, CancellationToken cancellationToken)
     {
-        var response = await _departmentService.CreateAsync(departmentCreation);
+        var response = await _departmentService.CreateAsync(departmentCreation, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/v1/departments/4
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<JsonResponse<DepartmentDto>>> UpdateAsync(int id, [FromBody] DepartmentUpdateDto departmentUpdate)
+    public async Task<ActionResult<JsonResponse<DepartmentDto>>> UpdateAsync(int id, [FromBody] DepartmentUpdateDto departmentUpdate, CancellationToken cancellationToken)
     {
-        var response = await _departmentService.UpdateAsync(id, departmentUpdate);
+        var response = await _departmentService.UpdateAsync(id, departmentUpdate, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     // DELETE: api/v1/departments/4
     [HttpDelete("{id:int}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var response = await _departmentService.DeleteAsync(id);
+        var response = await _departmentService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

@@ -41,13 +41,13 @@ internal class RoleService : IRoleService
         return ResponseBuilder<IEnumerable<RoleDto>>.Ok(roles.Select(role => role.ToDto()).ToList());
     }
 
-    public async Task<bool> RoleExistsAsync(long roleId) =>
-        await _roleRepository.AnyAsync(new RoleSpecification(roleId));
+    public async Task<bool> RoleExistsAsync(long roleId, CancellationToken cancellationToken) =>
+        await _roleRepository.AnyAsync(new RoleSpecification(roleId), cancellationToken);
 
-    public async Task<IdentityResult> AssignRolesToUser(User user, long roleId)
+    public async Task<IdentityResult> AssignRolesToUser(User user, long roleId, CancellationToken cancellationToken)
     {
         // An unknown role must not silently leave the user with no Role at all.
-        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId));
+        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId), cancellationToken);
         if (roles.Count == 0)
             return IdentityResult.Failed(new IdentityError { Code = nameof(ErrorMessages.UnknownRole), Description = ErrorMessages.UnknownRole });
 

@@ -13,11 +13,11 @@ public interface IPointService
 
     Task<JsonResponse<PointDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation);
+    Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation, CancellationToken cancellationToken);
 
-    Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate);
+    Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(int id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken);
 
     Task<JsonPagedResponse<IEnumerable<PointDto>>> GetAsync(PointParameters parameters, CancellationToken cancellationToken);
 }

@@ -7,9 +7,9 @@ namespace GoTransport.Application.Interfaces;
 
 public interface IRoleService
 {
-    Task<IdentityResult> AssignRolesToUser(User user, long roleId);
+    Task<IdentityResult> AssignRolesToUser(User user, long roleId, CancellationToken cancellationToken);
 
-    Task<bool> RoleExistsAsync(long roleId);
+    Task<bool> RoleExistsAsync(long roleId, CancellationToken cancellationToken);
 
     Task<JsonResponse<IEnumerable<RoleDto>>> GetAllAsync(CancellationToken cancellationToken);
 }

@@ -9,9 +9,9 @@ public interface IScheduleService
 
     Task<JsonResponse<ScheduleDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto entity);
+    Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto entity, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto entity);
+    Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto entity, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(Guid id);
+    Task<JsonResponse<bool?>> DeleteAsync(Guid id, CancellationToken cancellationToken);
 }

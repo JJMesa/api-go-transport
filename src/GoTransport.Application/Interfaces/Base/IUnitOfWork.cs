@@ -14,5 +14,5 @@ public interface IUnitOfWork
     /// from a clean change tracker, so the operation must load everything it needs itself. Inside an
     /// open transaction, or on a provider without transactions (EF InMemory), the operation just runs.
     /// </summary>
-    Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted);
+    Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default);
 }

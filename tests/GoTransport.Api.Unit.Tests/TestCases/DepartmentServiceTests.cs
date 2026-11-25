@@ -185,7 +185,7 @@ public class DepartmentServiceTests
             .Callback((Department department, CancellationToken _) => department.DepartmentId = Utils.DefaultId);
 
         // Act
-        var actual = await _departmentService.CreateAsync(creationDto);
+        var actual = await _departmentService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
@@ -204,7 +204,7 @@ public class DepartmentServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var actual = await _departmentService.CreateAsync(creationDto);
+        var actual = await _departmentService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -232,7 +232,7 @@ public class DepartmentServiceTests
             .ReturnsAsync(false);
 
         // Act
-        var actual = await _departmentService.UpdateAsync(departmentId, updateDto);
+        var actual = await _departmentService.UpdateAsync(departmentId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -249,7 +249,7 @@ public class DepartmentServiceTests
         var updateDto = DepartmentBuilderMother.DepartmentUpdateDtoOk(Utils.DefaultId);
 
         // Act
-        var actual = await _departmentService.UpdateAsync(Utils.IdDoesNotExist, updateDto);
+        var actual = await _departmentService.UpdateAsync(Utils.IdDoesNotExist, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -267,7 +267,7 @@ public class DepartmentServiceTests
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Department)null!);
 
         // Act
-        var actual = await _departmentService.UpdateAsync(departmentId, updateDto);
+        var actual = await _departmentService.UpdateAsync(departmentId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -288,7 +288,7 @@ public class DepartmentServiceTests
             .ReturnsAsync(true);
 
         // Act
-        var actual = await _departmentService.UpdateAsync(departmentId, updateDto);
+        var actual = await _departmentService.UpdateAsync(departmentId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -312,13 +312,28 @@ public class DepartmentServiceTests
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync(departmentData);
 
         // Act
-        var actual = await _departmentService.DeleteAsync(departmentId);
+        var actual = await _departmentService.DeleteAsync(departmentId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
         Assert.Null(actual.Data);
         _departmentRepositoryMock.Verify(x => x.DeleteAsync(departmentData!, It.IsAny<CancellationToken>()), Times.Once);
         _cacheServiceMock.Verify(x => x.Remove(CacheKey.Departments), Times.Once);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_ShouldPassTheRequestTokenToTheRepository()
+    {
+        // Arrange
+        using var request = new CancellationTokenSource();
+        var department = DepartmentsList().First();
+        _departmentRepositoryMock.Setup(x => x.GetByIdAsync(department.DepartmentId, request.Token)).ReturnsAsync(department);
+
+        // Act
+        await _departmentService.DeleteAsync(department.DepartmentId, request.Token);
+
+        // Assert: an aborted request can cancel the database work
+        _departmentRepositoryMock.Verify(x => x.DeleteAsync(department, request.Token), Times.Once);
     }
 
     [Fact]
@@ -329,7 +344,7 @@ public class DepartmentServiceTests
         _departmentRepositoryMock.Setup(x => x.GetByIdAsync(departmentId, It.IsAny<CancellationToken>())).ReturnsAsync((Department)null!);
 
         // Act
-        var actual = await _departmentService.DeleteAsync(departmentId);
+        var actual = await _departmentService.DeleteAsync(departmentId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);

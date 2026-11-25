@@ -51,39 +51,39 @@ internal class PointService : IPointService
         return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
-    public async Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation)
+    public async Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation, CancellationToken cancellationToken)
     {
         var point = pointCreation.ToEntity();
-        await _pointRepository.AddAsync(point);
+        await _pointRepository.AddAsync(point, cancellationToken);
         InvalidateCachedLists();
 
         // Reload with the City, so the response has the same shape as a get-by-id.
-        point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(point.PointId)) ?? point;
+        point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(point.PointId), cancellationToken) ?? point;
 
         return ResponseBuilder<PointDto>.Created(point.ToDto());
     }
 
-    public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate)
+    public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate, CancellationToken cancellationToken)
     {
         if (id != pointUpdate.PointId)
             return ResponseBuilder<PointDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id));
+        var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id), cancellationToken);
         if (point is null) return ResponseBuilder<PointDto>.NotFound();
 
 
         pointUpdate.ApplyTo(point);
-        await _pointRepository.UpdateAsync(point);
+        await _pointRepository.UpdateAsync(point, cancellationToken);
         InvalidateCachedLists();
 
         return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int pointId)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int pointId, CancellationToken cancellationToken)
     {
-        var point = await _pointRepository.GetByIdAsync(pointId);
+        var point = await _pointRepository.GetByIdAsync(pointId, cancellationToken);
         if (point is null) return ResponseBuilder<bool?>.NotFound();
-        await _pointRepository.DeleteAsync(point);
+        await _pointRepository.DeleteAsync(point, cancellationToken);
         InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }

@@ -41,17 +41,17 @@ internal class UserService : IUserService
 
     public async Task<JsonResponse<UserDto>> GetByIdAsync(long id, CancellationToken cancellationToken)
     {
-        var user = await _userRepository.GetByIdAsync(id);
+        var user = await _userRepository.GetByIdAsync(id, cancellationToken);
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
         return ResponseBuilder<UserDto>.Ok(user.ToDto());
     }
 
-    public async Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto)
+    public async Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto, CancellationToken cancellationToken)
     {
         if (await IsDuplicateEmailAsync(userCreationDto.Email))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.DuplicateEmail);
 
-        if (!await _roleService.RoleExistsAsync(userCreationDto.RoleId))
+        if (!await _roleService.RoleExistsAsync(userCreationDto.RoleId, cancellationToken))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);
 
         var user = userCreationDto.ToEntity();
@@ -59,7 +59,7 @@ internal class UserService : IUserService
 
         if (isCreated.Succeeded)
         {
-            var assingRolesResult = await _roleService.AssignRolesToUser(user, userCreationDto.RoleId);
+            var assingRolesResult = await _roleService.AssignRolesToUser(user, userCreationDto.RoleId, cancellationToken);
             if (!assingRolesResult.Succeeded)
                 return ResponseBuilder<UserDto>.BadRequest(assingRolesResult.Errors.ToErrorList());
 
@@ -72,7 +72,7 @@ internal class UserService : IUserService
         }
     }
 
-    public async Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto)
+    public async Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
     {
         if (id != userUpdateDto.UserId)
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
@@ -80,7 +80,7 @@ internal class UserService : IUserService
         var user = await _userManager.FindByIdAsync(id.ToString());
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
 
-        if (!await _roleService.RoleExistsAsync(userUpdateDto.RoleId))
+        if (!await _roleService.RoleExistsAsync(userUpdateDto.RoleId, cancellationToken))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);
 
         userUpdateDto.ApplyTo(user);
@@ -91,7 +91,7 @@ internal class UserService : IUserService
         if (!updateResult.Succeeded)
             return ResponseBuilder<UserDto>.BadRequest(updateResult.Errors.ToErrorList());
 
-        var assignRolesResult = await _roleService.AssignRolesToUser(user, userUpdateDto.RoleId);
+        var assignRolesResult = await _roleService.AssignRolesToUser(user, userUpdateDto.RoleId, cancellationToken);
         if (!assignRolesResult.Succeeded)
             return ResponseBuilder<UserDto>.BadRequest(assignRolesResult.Errors.ToErrorList());
 

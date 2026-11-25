@@ -26,7 +26,7 @@ public class ScheduleServiceTests
         var creation = new ScheduleCreationDto { DepartureTime = new TimeSpan(22, 0, 0), ArrivalTime = new TimeSpan(6, 0, 0), VehicleId = 1, RouteId = 1 };
 
         // Act
-        var actual = await _scheduleService.CreateAsync(creation);
+        var actual = await _scheduleService.CreateAsync(creation, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
@@ -43,7 +43,7 @@ public class ScheduleServiceTests
         _scheduleRepositoryMock.Setup(x => x.GetByIdAsync(schedule.ScheduleId, It.IsAny<CancellationToken>())).ReturnsAsync(schedule);
 
         // Act
-        var actual = await _scheduleService.UpdateAsync(schedule.ScheduleId, update);
+        var actual = await _scheduleService.UpdateAsync(schedule.ScheduleId, update, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);

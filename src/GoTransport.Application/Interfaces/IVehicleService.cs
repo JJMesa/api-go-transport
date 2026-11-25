@@ -13,11 +13,11 @@ public interface IVehicleService
 
     Task<JsonResponse<VehicleDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation);
+    Task<JsonResponse<VehicleDto>> CreateAsync(VehicleCreationDto vehicleCreation, CancellationToken cancellationToken);
 
-    Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate);
+    Task<JsonResponse<VehicleDto>> UpdateAsync(int id, VehicleUpdateDto vehicleUpdate, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(int id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken);
 
     Task<JsonPagedResponse<IEnumerable<VehicleDto>>> GetAsync(VehicleParameters parameters, CancellationToken cancellationToken);
 }

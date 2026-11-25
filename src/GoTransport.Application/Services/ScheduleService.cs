@@ -35,41 +35,41 @@ internal class ScheduleService : IScheduleService
         return ResponseBuilder<ScheduleDto>.Ok(schedule.ToDto());
     }
 
-    public async Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto scheduleCreation)
+    public async Task<JsonResponse<ScheduleDto>> CreateAsync(ScheduleCreationDto scheduleCreation, CancellationToken cancellationToken)
     {
         var schedule = scheduleCreation.ToEntity();
         schedule.Duration = ScheduleExtensions.TripDuration(schedule.DepartureTime, schedule.ArrivalTime);
 
-        await _scheduleRepository.AddAsync(schedule);
+        await _scheduleRepository.AddAsync(schedule, cancellationToken);
 
         // Reload with the navigations, so the response has the same shape as a get-by-id.
-        schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(schedule.ScheduleId)) ?? schedule;
+        schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(schedule.ScheduleId), cancellationToken) ?? schedule;
 
         return ResponseBuilder<ScheduleDto>.Created(schedule.ToDto());
     }
 
-    public async Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto scheduleUpdate)
+    public async Task<JsonResponse<ScheduleDto>> UpdateAsync(Guid id, ScheduleUpdateDto scheduleUpdate, CancellationToken cancellationToken)
     {
         if (id != scheduleUpdate.ScheduleId)
             return ResponseBuilder<ScheduleDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var schedule = await _scheduleRepository.GetByIdAsync(id);
+        var schedule = await _scheduleRepository.GetByIdAsync(id, cancellationToken);
         if (schedule is null) return ResponseBuilder<ScheduleDto>.NotFound();
 
         scheduleUpdate.ApplyTo(schedule);
         schedule.Duration = ScheduleExtensions.TripDuration(schedule.DepartureTime, schedule.ArrivalTime);
 
-        await _scheduleRepository.UpdateAsync(schedule);
+        await _scheduleRepository.UpdateAsync(schedule, cancellationToken);
 
         return ResponseBuilder<ScheduleDto>.Ok(schedule.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var schedule = await _scheduleRepository.GetByIdAsync(id);
+        var schedule = await _scheduleRepository.GetByIdAsync(id, cancellationToken);
         if (schedule is null) return ResponseBuilder<bool?>.NotFound();
 
-        await _scheduleRepository.DeleteAsync(schedule);
+        await _scheduleRepository.DeleteAsync(schedule, cancellationToken);
         return ResponseBuilder<bool?>.NoContent();
     }
 }

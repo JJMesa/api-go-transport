@@ -371,7 +371,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-23 | Soft delete (`IsActive = false`) where the business requires it (A-27) | 🟢 | Data | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-24 | Remove test credentials from version control (A-28) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -417,10 +417,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 8 | 0 | 22 | 1 |
+| 🟡 Medium | 31 | 7 | 0 | 23 | 1 |
 | 🟢 Low | 13 | 3 | 0 | 10 | 0 |
-| **Total** | **59** | **11** | **0** | **47** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **81%** | |
+| **Total** | **59** | **10** | **0** | **48** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **83%** | |
 
 ---
 

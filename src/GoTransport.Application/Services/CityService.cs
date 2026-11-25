@@ -46,49 +46,49 @@ internal class CityService : ICityService
         return ResponseBuilder<CityDto>.Ok(city.ToDto());
     }
 
-    public async Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto cityCreation)
+    public async Task<JsonResponse<CityDto>> CreateAsync(CityCreationDto cityCreation, CancellationToken cancellationToken)
     {
-        if (await IsDuplicateDescriptionAsync(cityCreation.Description, cityCreation.DepartmentId))
+        if (await IsDuplicateDescriptionAsync(cityCreation.Description, cityCreation.DepartmentId, cancellationToken: cancellationToken))
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
         var city = cityCreation.ToEntity();
-        await _cityRepository.AddAsync(city);
+        await _cityRepository.AddAsync(city, cancellationToken);
         InvalidateCachedLists();
 
         // Reload with the Department, so the response has the same shape as a get-by-id.
-        city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(city.CityId)) ?? city;
+        city = await _cityRepository.FirstOrDefaultAsync(new CitySpecification(city.CityId), cancellationToken) ?? city;
 
         return ResponseBuilder<CityDto>.Created(city.ToDto());
     }
 
-    public async Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto cityUpdateDto)
+    public async Task<JsonResponse<CityDto>> UpdateAsync(int id, CityUpdateDto cityUpdateDto, CancellationToken cancellationToken)
     {
         if (id != cityUpdateDto.CityId)
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var city = await _cityRepository.GetByIdAsync(id);
+        var city = await _cityRepository.GetByIdAsync(id, cancellationToken);
         if (city is null) return ResponseBuilder<CityDto>.NotFound();
 
-        if (await IsDuplicateDescriptionAsync(cityUpdateDto.Description, cityUpdateDto.DepartmentId, id))
+        if (await IsDuplicateDescriptionAsync(cityUpdateDto.Description, cityUpdateDto.DepartmentId, id, cancellationToken: cancellationToken))
             return ResponseBuilder<CityDto>.BadRequest(ErrorMessages.DuplicateDescription);
 
         cityUpdateDto.ApplyTo(city);
-        await _cityRepository.UpdateAsync(city);
+        await _cityRepository.UpdateAsync(city, cancellationToken);
         InvalidateCachedLists();
         return ResponseBuilder<CityDto>.Ok(city.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var city = await _cityRepository.GetByIdAsync(id);
+        var city = await _cityRepository.GetByIdAsync(id, cancellationToken);
         if (city is null) return ResponseBuilder<bool?>.NotFound();
-        await _cityRepository.DeleteAsync(city);
+        await _cityRepository.DeleteAsync(city, cancellationToken);
         InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
-    private async Task<bool> IsDuplicateDescriptionAsync(string description, int departmentId, int id = 0) =>
-        await _cityRepository.AnyAsync(new DuplicationCitySpecification(description, departmentId, id));
+    private async Task<bool> IsDuplicateDescriptionAsync(string description, int departmentId, int id = 0, CancellationToken cancellationToken = default) =>
+        await _cityRepository.AnyAsync(new DuplicationCitySpecification(description, departmentId, id), cancellationToken);
 
     /// <summary>
     /// Cities are not cached themselves, but the cached Point and Route lists embed them.

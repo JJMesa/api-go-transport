@@ -10,7 +10,7 @@ public interface IUserService
 
     Task<JsonResponse<UserDto>> GetByIdAsync(long id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto);
+    Task<JsonResponse<UserDto>> CreateAsync(UserCreationDto userCreationDto, CancellationToken cancellationToken);
 
-    Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto);
+    Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto, CancellationToken cancellationToken);
 }

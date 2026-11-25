@@ -42,17 +42,17 @@ public class UsersController : ControllerBase
 
     //POST: api/v1/users
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<UserDto>>> Create([FromBody] UserCreationDto userCreationDto)
+    public async Task<ActionResult<JsonResponse<UserDto>>> Create([FromBody] UserCreationDto userCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _userService.CreateAsync(userCreationDto);
+        var response = await _userService.CreateAsync(userCreationDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/v1/users/1
     [HttpPut("{id:long}")]
-    public async Task<ActionResult<JsonResponse<UserDto>>> Update(long id, [FromBody] UserUpdateDto userUpdateDto)
+    public async Task<ActionResult<JsonResponse<UserDto>>> Update(long id, [FromBody] UserUpdateDto userUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _userService.UpdateAsync(id, userUpdateDto);
+        var response = await _userService.UpdateAsync(id, userUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 }

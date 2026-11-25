@@ -13,11 +13,11 @@ public interface IRouteService
 
     Task<JsonResponse<RouteDto>> GetByIdAsync(int id, CancellationToken cancellationToken);
 
-    Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation);
+    Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation, CancellationToken cancellationToken);
 
-    Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate);
+    Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate, CancellationToken cancellationToken);
 
-    Task<JsonResponse<bool?>> DeleteAsync(int id);
+    Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken);
 
     Task<JsonPagedResponse<IEnumerable<RouteDto>>> GetAsync(RouteParameters parameters, CancellationToken cancellationToken);
 }

@@ -53,25 +53,25 @@ public class ReservationsController : ControllerBase
 
     //POST: api/v1/reservations
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<ReservationDto>>> CreateAsync([FromBody] ReservationCreationDto reservationCreationDto)
+    public async Task<ActionResult<JsonResponse<ReservationDto>>> CreateAsync([FromBody] ReservationCreationDto reservationCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _reservationService.CreateAsync(reservationCreationDto);
+        var response = await _reservationService.CreateAsync(reservationCreationDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/v1/reservations/ABCD-1234-A1B2-C3D4
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<JsonResponse<ReservationDto>>> UpdateAsync(Guid id, [FromBody] ReservationUpdateDto reservationUpdateDto)
+    public async Task<ActionResult<JsonResponse<ReservationDto>>> UpdateAsync(Guid id, [FromBody] ReservationUpdateDto reservationUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _reservationService.UpdateAsync(id, reservationUpdateDto);
+        var response = await _reservationService.UpdateAsync(id, reservationUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //DELETE: api/v1/reservations/ABCD-1234-A1B2-C3D4
     [HttpDelete("{id:guid}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(Guid id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var response = await _reservationService.DeleteAsync(id);
+        var response = await _reservationService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

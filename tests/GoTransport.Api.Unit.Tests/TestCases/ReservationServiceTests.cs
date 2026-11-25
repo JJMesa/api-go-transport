@@ -140,7 +140,7 @@ public class ReservationServiceTests
             .ReturnsAsync(0);
 
         // Act
-        var actual = await _reservationService.CreateAsync(creationDto);
+        var actual = await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -161,7 +161,7 @@ public class ReservationServiceTests
             .ReturnsAsync(5);
 
         // Act
-        var actual = await _reservationService.CreateAsync(creationDto);
+        var actual = await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
@@ -179,7 +179,7 @@ public class ReservationServiceTests
             .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(creationDto.ScheduleId));
 
         // Act
-        await _reservationService.CreateAsync(creationDto);
+        await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(new[] { IsolationLevel.Serializable }, _unitOfWork.Transactions);
@@ -195,7 +195,7 @@ public class ReservationServiceTests
             .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(creationDto.ScheduleId));
 
         // Act
-        var actual = await _reservationService.CreateAsync(creationDto);
+        var actual = await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -212,7 +212,7 @@ public class ReservationServiceTests
             .ReturnsAsync((Schedule)null!);
 
         // Act
-        var actual = await _reservationService.CreateAsync(creationDto);
+        var actual = await _reservationService.CreateAsync(creationDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -239,7 +239,7 @@ public class ReservationServiceTests
             .ReturnsAsync(ReservationBuilderMother.ScheduleEntity(scheduleId));
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -264,7 +264,7 @@ public class ReservationServiceTests
             .ReturnsAsync(3);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
@@ -286,7 +286,7 @@ public class ReservationServiceTests
             .ReturnsAsync(reservation.Schedule);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -307,7 +307,7 @@ public class ReservationServiceTests
             .ReturnsAsync((Schedule)null!);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -325,7 +325,7 @@ public class ReservationServiceTests
             .ReturnsAsync(reservation);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -339,7 +339,7 @@ public class ReservationServiceTests
         var updateDto = ReservationBuilderMother.ReservationUpdateDtoOk(Guid.NewGuid(), Guid.NewGuid());
 
         // Act
-        var actual = await _reservationService.UpdateAsync(Guid.NewGuid(), updateDto);
+        var actual = await _reservationService.UpdateAsync(Guid.NewGuid(), updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -358,7 +358,7 @@ public class ReservationServiceTests
             .ReturnsAsync((Reservation)null!);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -377,7 +377,7 @@ public class ReservationServiceTests
             .ReturnsAsync(pastReservation);
 
         // Act
-        var actual = await _reservationService.UpdateAsync(reservationId, updateDto);
+        var actual = await _reservationService.UpdateAsync(reservationId, updateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
@@ -400,7 +400,7 @@ public class ReservationServiceTests
             .ReturnsAsync(reservation);
 
         // Act
-        var actual = await _reservationService.DeleteAsync(reservationId);
+        var actual = await _reservationService.DeleteAsync(reservationId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
@@ -417,7 +417,7 @@ public class ReservationServiceTests
             .ReturnsAsync((Reservation)null!);
 
         // Act
-        var actual = await _reservationService.DeleteAsync(reservationId);
+        var actual = await _reservationService.DeleteAsync(reservationId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -435,7 +435,7 @@ public class ReservationServiceTests
             .ReturnsAsync(pastReservation);
 
         // Act
-        var actual = await _reservationService.DeleteAsync(reservationId);
+        var actual = await _reservationService.DeleteAsync(reservationId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
