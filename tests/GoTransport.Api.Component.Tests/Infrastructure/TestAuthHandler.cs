@@ -17,7 +17,7 @@ public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions
 {
     public const string SchemeName = "TestScheme";
     public const string AuthHeader = "X-Test-Auth";
-    private const string TestUserId = "1";
+    public const string TestUserId = "1";
 
     public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,

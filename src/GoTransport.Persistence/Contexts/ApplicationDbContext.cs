@@ -45,7 +45,8 @@ public partial class ApplicationDbContext : IdentityDbContext<User, Role, long, 
                     break;
 
                 case EntityState.Modified:
-                    entry.Entity.UpdateUser ??= username;
+                    // A loaded row already holds its last modifier, so always overwrite it.
+                    entry.Entity.UpdateUser = username;
                     entry.Entity.UpdatedAt = DateTime.UtcNow.ToPacificStandardTime();
                     break;
             }

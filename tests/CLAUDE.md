@@ -21,7 +21,4 @@
 - One test class per service or controller under `TestCases/`, named `<Service>Tests` / `<Controller>Tests`.
 - Test methods read `Method_ShouldOutcome[ForCondition]`, e.g. `GetByIdAsync_ShouldReturnCityForValidId`.
 - Test projects reference production code through `..\..\src\<Project>\<Project>.csproj`.
-
-## Gotchas
-
-- `Readme.md` still describes `AuthTestingSettings`; that section is obsolete — component tests need no configuration.
+- Both suites run without SQL Server, seed data or secrets; keep it that way.
