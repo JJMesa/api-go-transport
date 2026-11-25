@@ -1,4 +1,5 @@
 using System.Net;
+using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Services;
@@ -21,8 +22,8 @@ public class AdminBootstrapServiceTests
 
     public AdminBootstrapServiceTests()
     {
-        _userManagerMock = CreateUserManagerMock();
-        _roleManagerMock = CreateRoleManagerMock();
+        _userManagerMock = IdentityMocks.UserManager();
+        _roleManagerMock = IdentityMocks.RoleManager();
     }
 
     #region EnsureAdministratorAsync
@@ -127,18 +128,6 @@ public class AdminBootstrapServiceTests
         Email = AdminEmail,
         Password = AdminPassword
     };
-
-    private static Mock<UserManager<User>> CreateUserManagerMock()
-    {
-        var storeMock = new Mock<IUserStore<User>>();
-        return new Mock<UserManager<User>>(storeMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
-    }
-
-    private static Mock<RoleManager<Role>> CreateRoleManagerMock()
-    {
-        var storeMock = new Mock<IRoleStore<Role>>();
-        return new Mock<RoleManager<Role>>(storeMock.Object, null!, null!, null!, null!);
-    }
 
     #endregion Helpers
 }

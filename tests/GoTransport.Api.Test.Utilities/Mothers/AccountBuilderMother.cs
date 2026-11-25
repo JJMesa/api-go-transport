@@ -1,4 +1,5 @@
 using GoTransport.Application.Dtos.Account;
+using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Settings;
 using GoTransport.Domain.Entities.App;
 
@@ -27,7 +28,20 @@ public static class AccountBuilderMother
             UserName = ValidEmail,
             FirstName = "Admin",
             LastName = "User",
+            SecurityStamp = "3f6b2c1e-stamp",
             IsActive = true
+        };
+    }
+
+    public static UserUpdateDto UserUpdateDtoOk(long userId, long roleId, bool isActive = true)
+    {
+        return new UserUpdateDto
+        {
+            UserId = userId,
+            FirstName = "Admin",
+            LastName = "Updated",
+            IsActive = isActive,
+            RoleId = roleId
         };
     }
 

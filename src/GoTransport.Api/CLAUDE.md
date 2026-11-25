@@ -27,7 +27,7 @@ Everything composes through extension methods: `AddApplicationLayer` / `AddPersi
 
 - `ErrorHandlerMiddleware` logs unhandled exceptions and converts them into the `JsonResponse` envelope, translating SQL Server error 547 (foreign-key conflict) and 2601 (unique conflict) into `400`s.
 - Authn/authz failures are rendered as the same envelope by the `JwtBearerEvents` in `ServiceExtensions.AddJwtAuthentication`.
-- JWTs are issued by `AccountService.LoginAsync`, which signs in through `SignInManager` so Identity lockout applies.
+- JWTs are issued by `AccountService.LoginAsync`, which signs in through `SignInManager` so Identity lockout applies and refuses inactive users. Each token carries the user's security stamp; `OnTokenValidated` calls `IAccountService.IsTokenUserValidAsync` on every request and rejects the token once the user is inactive or the stamp has rotated (user updates rotate it). That is one user lookup per authenticated request.
 - Log through `ILogger<T>` (Serilog underneath) with structured templates (`"{Method} {Path}"`), keeping values as template arguments.
 
 ## Configuration

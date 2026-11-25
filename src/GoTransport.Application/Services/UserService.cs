@@ -74,11 +74,20 @@ internal class UserService : IUserService
         if (id != userUpdateDto.UserId)
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var user = await _userRepository.GetByIdAsync(id);
+        var user = await _userManager.FindByIdAsync(id.ToString());
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
 
         userUpdateDto.ApplyTo(user);
-        await _userRepository.UpdateAsync(user);
+
+        // Saving through UserManager with a new security stamp retires the tokens issued before this change,
+        // so a deactivated user or a removed role stops working at once instead of when the token expires.
+        var updateResult = await _userManager.UpdateSecurityStampAsync(user);
+        if (!updateResult.Succeeded)
+            return ResponseBuilder<UserDto>.BadRequest(updateResult.Errors.ToErrorList());
+
+        var assignRolesResult = await _roleService.AssignRolesToUser(user, userUpdateDto.RoleId);
+        if (!assignRolesResult.Succeeded)
+            return ResponseBuilder<UserDto>.BadRequest(assignRolesResult.Errors.ToErrorList());
 
         return ResponseBuilder<UserDto>.Ok(user.ToDto());
     }

@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using Asp.Versioning;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
+using GoTransport.Application.Interfaces;
 using GoTransport.Application.Settings;
 using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -60,6 +61,13 @@ public static class ServiceExtensions
             jwt.TokenValidationParameters = tokenValidationParameters;
             jwt.Events = new JwtBearerEvents()
             {
+                // A well-signed token is still rejected once its user is deactivated or their security stamp rotates.
+                OnTokenValidated = async e =>
+                {
+                    var accountService = e.HttpContext.RequestServices.GetRequiredService<IAccountService>();
+                    if (!await accountService.IsTokenUserValidAsync(e.Principal!))
+                        e.Fail(ErrorMessages.Unauthorized);
+                },
                 // Disparador error en la autenticacion
                 OnAuthenticationFailed = e =>
                 {
