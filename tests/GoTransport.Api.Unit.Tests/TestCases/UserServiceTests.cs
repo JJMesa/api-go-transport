@@ -19,6 +19,7 @@ public class UserServiceTests
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<IRepository<User>> _userRepositoryMock;
     private readonly Mock<IRoleService> _roleServiceMock;
+    private readonly InlineUnitOfWork _unitOfWork = new();
     private readonly IUserService _userService;
 
     public UserServiceTests()
@@ -26,7 +27,7 @@ public class UserServiceTests
         _userManagerMock = IdentityMocks.UserManager();
         _userRepositoryMock = new Mock<IRepository<User>>();
         _roleServiceMock = new Mock<IRoleService>();
-        _userService = new UserService(_userManagerMock.Object, _userRepositoryMock.Object, _roleServiceMock.Object, new InlineUnitOfWork());
+        _userService = new UserService(_userManagerMock.Object, _userRepositoryMock.Object, _roleServiceMock.Object, _unitOfWork);
     }
 
     #region UpdateAsync
@@ -142,9 +143,90 @@ public class UserServiceTests
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
+    [Fact]
+    public async Task CreateAsync_ShouldCreateTheUserAndAssignTheRoleInOneTransaction()
+    {
+        // Arrange
+        var creation = Creation();
+        ArrangeCreation();
+
+        // Act
+        var actual = await _userService.CreateAsync(creation, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
+        Assert.Equal(creation.Email, actual.Data!.Email);
+        _roleServiceMock.Verify(x => x.AssignRolesToUser(It.Is<User>(u => u.Email == creation.Email), OperatorRoleId, It.IsAny<CancellationToken>()), Times.Once);
+        Assert.Single(_unitOfWork.Transactions);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnConflictForARegisteredEmail()
+    {
+        // Arrange
+        _userManagerMock.Setup(x => x.FindByEmailAsync("ana@gotransport.test")).ReturnsAsync(new User());
+
+        // Act
+        var actual = await _userService.CreateAsync(Creation(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateEmail, actual.Errors!);
+        _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnIdentityErrorsWhenThePasswordIsRejected()
+    {
+        // Arrange
+        var passwordError = new IdentityError { Code = "PasswordTooShort", Description = "Passwords must be at least 12 characters." };
+        ArrangeCreation();
+        _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Failed(passwordError));
+
+        // Act
+        var actual = await _userService.CreateAsync(Creation(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(passwordError.Description, actual.Errors!);
+        _roleServiceMock.Verify(x => x.AssignRolesToUser(It.IsAny<User>(), It.IsAny<long>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnBadRequestWhenTheRoleCannotBeAssigned()
+    {
+        // Arrange: the transaction then rolls the new user back
+        var roleError = new IdentityError { Code = "RoleError", Description = "Role could not be assigned." };
+        ArrangeCreation();
+        _roleServiceMock.Setup(x => x.AssignRolesToUser(It.IsAny<User>(), OperatorRoleId, It.IsAny<CancellationToken>())).ReturnsAsync(IdentityResult.Failed(roleError));
+
+        // Act
+        var actual = await _userService.CreateAsync(Creation(), CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(roleError.Description, actual.Errors!);
+    }
+
     #endregion CreateAsync
 
     #region Helpers
+
+    private static UserCreationDto Creation() => new()
+    {
+        FirstName = "Ana",
+        LastName = "Ruiz",
+        Email = "ana@gotransport.test",
+        Password = "Transporte-2026",
+        RoleId = OperatorRoleId
+    };
+
+    private void ArrangeCreation()
+    {
+        _roleServiceMock.Setup(x => x.RoleExistsAsync(OperatorRoleId, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        _userManagerMock.Setup(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>())).ReturnsAsync(IdentityResult.Success);
+        _roleServiceMock.Setup(x => x.AssignRolesToUser(It.IsAny<User>(), OperatorRoleId, It.IsAny<CancellationToken>())).ReturnsAsync(IdentityResult.Success);
+    }
 
     private void ArrangeSuccessfulUpdate(User user)
     {

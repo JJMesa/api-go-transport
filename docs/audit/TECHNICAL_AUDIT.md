@@ -118,7 +118,6 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 
 | ID | Sev. | Finding | Evidence | Plan item |
 |---|:--:|---|---|---|
-| A-71 | 🟡 | **Write paths of four services never run in any test.** A-04 closed with the claim that the services without a unit test class are "covered through their endpoints". The coverage report shows that is not true for these methods, which sit at 0% line and branch coverage (`UserService.CreateAsync` at 26%): | `RouteService.UpdateAsync` (complexity 6, CRAP 6.0), `RoleService.AssignRolesToUser` (6, CRAP 6.0), `VehicleService.CreateAsync` and `UpdateAsync` (4 each, CRAP 4.0), `UserService.CreateAsync` (4, 26% lines, CRAP 2.2), plus `RoleService.RoleExistsAsync`, `VehicleService.IsDuplicatePlate` and the `UserFilter` and `ReservationFilter` branches. `RoutesControllerTests` has a single update test, and it fails validation before the service runs. `AssignRolesToUser` is only mocked in `UserServiceTests`, so the real Role lookup and assignment (unknown Role → failure, A-54) have no test. No Vehicle create or update runs in any test. These are the rules A-50, A-54 and A-58 fixed (duplicate license plate, unknown Role, Capacity and model year), now unprotected against regressions. | F-60 |
 | A-72 | 🟢 | **The success path of nine create/update controller actions is never reached.** Their action bodies have 0% line coverage. Every test that touches them (the 401/403 matrix, validator rejections) stops before the action, so a routing, binding or `Location` header regression in a successful create or update would go unnoticed. *(The reason they are not reached is inferred from the pattern; the 0% is measured.)* | `DepartmentsController.CreateAsync`/`UpdateAsync`, `RoutesController.UpdateAsync`, `SchedulesController.CreateAsync`/`UpdateAsync`, `UsersController.Create`/`Update`, `VehiclesController.CreateAsync`/`UpdateAsync`. All have complexity 1, so CRAP is 1.0 each: the risk is the missing HTTP-level check, not complexity. | F-61 |
 | A-73 | 🟢 | **Coverage is collected but not analysed.** CI runs both suites with `--collect "XPlat Code Coverage"` and no `.runsettings`, so the report has Cobertura only: no OpenCover complexity, no exclusions for migrations and test helpers, no CRAP score, no threshold and no trend. A method like those of A-71 can reach `master` with no signal. | `.github/workflows/ci.yml` lines 38 and 45. `coverage.runsettings` and the `reportgenerator` tool entry in `dotnet-tools.json` were added with the analysis and are not yet used by CI. | F-62 |
 
@@ -196,6 +195,7 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 | A-63 | 🟡 Test gaps that let defects through | F-55 (same commit). `AuthorizationMatrixTests` holds every endpoint to an access table (401/403 for each caller kind); `JwtRoundTripTests` logs in through the real endpoint and presents the token to the real JWT handler (role claims, a deactivated user, a tampered token); `ValidatorRulesTests` covers the remaining validators; `RelationalSpecificationTests` runs the specifications on SQLite, which found A-70. The Reservation Object Mother no longer hides missing `Include`s: those are pinned by component tests over the real pipeline. |
 | A-70 | 🟠 *(new, found by F-55)* Every paged search failed on a relational database | F-55 (same commit). The `Search` selectors were written as `x => $"{x.Property}"`, a `string.Format` call that SQL cannot translate, so searching Users, Vehicles, Routes or Reservations threw on SQL Server; EF InMemory evaluated it in memory, so no test noticed. The selectors now use the property itself, and the relational specification tests pin the translation. |
 | A-22 | 🟡 No `.editorconfig`, analyzers or CI | F-11 (CI) and F-12 (`[Feature] Enforce analyzers and code style, with warnings as errors in CI`). `.editorconfig` sets the code style (file-scoped namespaces, usings outside the namespace, `I`/`_camelCase` naming) and the analyzer severities, each lowered rule with its reason; `Directory.Build.props` turns on `AnalysisLevel` `latest-recommended` and `EnforceCodeStyleInBuild`, and `TreatWarningsAsErrors` when `CI=true`. The findings it raised were fixed: internal Persistence types sealed, a cached `JsonSerializerOptions`, culture-invariant formatting. Migrations are marked generated code. |
+| A-71 | 🟡 Write paths of four services never ran in any test | F-60 (`[Test] Cover the write paths the coverage analysis found untested`). `RouteServiceTests`, `VehicleServiceTests` and `RoleServiceTests` cover the update/create paths, the duplicate license plate, the unknown Role and the role replacement; `UserServiceTests` covers every branch of `CreateAsync` (duplicate email, rejected password, failed role assignment, success inside one transaction); `FilterSpecificationTests` covers each branch of `UserFilter` and `ReservationFilter`. A re-run with `coverage.runsettings` shows 100% of lines and branches for every method listed, and line / branch coverage up from 93.1% / 71.3% to 96.1% / 79.1%. |
 
 ### 5.3 No longer applicable
 
@@ -396,7 +396,7 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 | [x] | F-57 | Hide `/health` details from anonymous callers; split liveness and readiness (A-65) | 🟡 | Security/Observability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-58 | Specification query hygiene: conditional filters, no `ToLower` on columns, escaped `LIKE` input (A-67) | 🟢 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-60 | Unit-test the uncovered write paths: `RouteService.UpdateAsync`, `VehicleService.CreateAsync`/`UpdateAsync` (duplicate license plate), `RoleService.AssignRolesToUser`/`RoleExistsAsync` (unknown Role), and the uncovered branches of `UserService.CreateAsync`, `UserFilter` and `ReservationFilter` (A-71) | 🟡 | Testing | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-60 | Unit-test the uncovered write paths: `RouteService.UpdateAsync`, `VehicleService.CreateAsync`/`UpdateAsync` (duplicate license plate), `RoleService.AssignRolesToUser`/`RoleExistsAsync` (unknown Role), and the uncovered branches of `UserService.CreateAsync`, `UserFilter` and `ReservationFilter` (A-71) | 🟡 | Testing | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-61 | Component tests for the success path (201 + `Location`, 200) of create/update in Departments, Routes (update), Schedules, Users and Vehicles (A-72) | 🟢 | Testing | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-62 | Use `coverage.runsettings` in CI, publish the ReportGenerator report with its Risk Hotspots, fail on a method with CRAP above 30 and on line coverage below 80% / branch below 60% (A-73) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 
@@ -406,10 +406,10 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 32 | 1 | 0 | 30 | 1 |
+| 🟡 Medium | 32 | 0 | 0 | 31 | 1 |
 | 🟢 Low | 15 | 2 | 0 | 13 | 0 |
-| **Total** | **62** | **3** | **0** | **58** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **95%** (58 ÷ 61) | |
+| **Total** | **62** | **2** | **0** | **59** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **97%** | |
 
 ---
 
