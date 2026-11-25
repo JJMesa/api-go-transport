@@ -11,8 +11,7 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
 {
     public PagedVehicleSpecification(VehicleParameters parameters)
     {
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Search(vehicle => $"{vehicle.LicensePlate}", $"%{parameters.SearchCriteria}%");
+        VehicleFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -28,9 +27,6 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
                 Query.OrderBy(vehicle => vehicle.LicensePlate);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(vehicle => vehicle.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 

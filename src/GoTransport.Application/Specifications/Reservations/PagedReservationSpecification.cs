@@ -15,14 +15,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
 {
     public PagedReservationSpecification(Guid scheduleId, ReservationParameters parameters)
     {
-        Query.Where(reservation => reservation.ScheduleId == scheduleId);
-
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-        {
-            Query.Search(x => $"{x.PassengerFirstName}", $"%{parameters.SearchCriteria}%");
-            Query.Search(x => $"{x.PassengerLastName}", $"%{parameters.SearchCriteria}%");
-            Query.Search(x => $"{x.PassengerIdentification}", $"%{parameters.SearchCriteria}%");
-        }
+        ReservationFilter.Apply(Query, scheduleId, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -40,15 +33,6 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                 Query.OrderBy(schedule => schedule.PassengerFirstName)
                     .ThenBy(schedule => schedule.PassengerLastName);
                 break;
-        }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(schedule => schedule.IsActive == parameters.IsActive);
-
-        if (parameters.TravelDate.HasValue)
-        {
-            var travelDate = parameters.TravelDate.Value.Date;
-            Query.Where(reservation => reservation.ReservationDate == travelDate);
         }
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);

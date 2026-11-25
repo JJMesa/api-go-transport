@@ -1,5 +1,4 @@
 ﻿using Ardalis.Specification;
-using GoTransport.Application.Enums;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.Bas;
 
@@ -20,25 +19,6 @@ public class CitySpecification : Specification<City>
 
     public CitySpecification(CityParameters parameters)
     {
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Where(city => city.Description.Contains(parameters.SearchCriteria));
-
-        switch (parameters.OrderBy)
-        {
-            case SortDirection.Ascending:
-                Query.OrderBy(city => city.Description);
-                break;
-
-            case SortDirection.Descending:
-                Query.OrderByDescending(city => city.Description);
-                break;
-
-            default:
-                Query.OrderBy(city => city.Description);
-                break;
-        }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(city => city.IsActive == parameters.IsActive);
+        CityFilter.Apply(Query, parameters);
     }
 }

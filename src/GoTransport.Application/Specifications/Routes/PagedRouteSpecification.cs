@@ -12,19 +12,7 @@ public class PagedRouteSpecification : Specification<Route, RouteDto>
 {
     public PagedRouteSpecification(RouteParameters parameters)
     {
-        if (!string.IsNullOrWhiteSpace(parameters.OriginPointSearchCriteria))
-        {
-            Query.Search(ruote => $"{ruote.OriginPoint.City.Description}", $"%{parameters.OriginPointSearchCriteria}%");
-            Query.Search(ruote => $"{ruote.OriginPoint.Detail}", $"%{parameters.OriginPointSearchCriteria}%");
-        }
-
-        // Search terms in the same group are OR-ed and groups are AND-ed: the origin matches its City or
-        // Point, the destination matches its own, and both must hold when both are given.
-        if (!string.IsNullOrWhiteSpace(parameters.DestinationPointSearchCriteria))
-        {
-            Query.Search(ruote => $"{ruote.DestinationPoint.City.Description}", $"%{parameters.DestinationPointSearchCriteria}%", group: 2);
-            Query.Search(ruote => $"{ruote.DestinationPoint.Detail}", $"%{parameters.DestinationPointSearchCriteria}%", group: 2);
-        }
+        RouteFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -40,9 +28,6 @@ public class PagedRouteSpecification : Specification<Route, RouteDto>
                 Query.OrderBy(ruote => ruote.Description);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(ruote => ruote.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 

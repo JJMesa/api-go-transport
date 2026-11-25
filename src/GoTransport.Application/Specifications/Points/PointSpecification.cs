@@ -1,5 +1,4 @@
 ﻿using Ardalis.Specification;
-using GoTransport.Application.Enums;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
@@ -25,22 +24,6 @@ public class PointSpecification : Specification<Point>
 
     public PointSpecification(PointParameters parameters)
     {
-        switch (parameters.OrderBy)
-        {
-            case SortDirection.Ascending:
-                Query.OrderBy(point => point.Detail);
-                break;
-
-            case SortDirection.Descending:
-                Query.OrderByDescending(point => point.Detail);
-                break;
-
-            default:
-                Query.OrderBy(point => point.Detail);
-                break;
-        }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(point => point.IsActive == parameters.IsActive);
+        PointFilter.Apply(Query, parameters);
     }
 }

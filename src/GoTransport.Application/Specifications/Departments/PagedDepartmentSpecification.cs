@@ -10,8 +10,7 @@ public class PagedDepartmentSpecification : Specification<Department, Department
 {
     public PagedDepartmentSpecification(DepartmentParameters parameters)
     {
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Where(department => department.Description.Contains(parameters.SearchCriteria));
+        DepartmentFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -27,9 +26,6 @@ public class PagedDepartmentSpecification : Specification<Department, Department
                 Query.OrderBy(department => department.Description);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(department => department.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 

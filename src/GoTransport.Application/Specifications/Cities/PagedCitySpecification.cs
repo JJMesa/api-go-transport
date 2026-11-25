@@ -11,11 +11,7 @@ public class PagedCitySpecification : Specification<City, CityDto>
 {
     public PagedCitySpecification(CityParameters parameters)
     {
-        if (parameters.DepartmentId.HasValue)
-            Query.Where(city => city.DepartmentId == parameters.DepartmentId.Value);
-
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Where(city => city.Description.Contains(parameters.SearchCriteria));
+        CityFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -31,9 +27,6 @@ public class PagedCitySpecification : Specification<City, CityDto>
                 Query.OrderBy(city => city.Description);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(city => city.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 

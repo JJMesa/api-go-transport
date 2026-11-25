@@ -11,6 +11,8 @@ public class PagedPointSpecification : Specification<Point, PointDto>
 {
     public PagedPointSpecification(PointParameters parameters)
     {
+        PointFilter.Apply(Query, parameters);
+
         switch (parameters.OrderBy)
         {
             case SortDirection.Ascending:
@@ -25,9 +27,6 @@ public class PagedPointSpecification : Specification<Point, PointDto>
                 Query.OrderBy(point => point.Detail);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(point => point.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 

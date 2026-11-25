@@ -187,6 +187,22 @@ public class CitiesControllerTests : ComponentTest
     }
 
     [Fact]
+    public async Task GetAsync_Parameters_WithDepartmentId_CountsOnlyThatDepartment()
+    {
+        // Arrange: the seed has 2 Cities in Cundinamarca (Bogotá, Soacha) and 7 in total.
+        const int cundinamarca = 2;
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.CitiesFullPath}?departmentId={cundinamarca}");
+        var metadata = JsonConvert.DeserializeObject<Metadata>(apiResponse.Headers.GetValues(Constants.PaginationHeader).Single());
+
+        // Assert: the total count used to ignore the Department filter.
+        Assert.Equal(2, metadata!.TotalItems);
+        Assert.Equal(1, metadata.TotalPages);
+    }
+
+    [Fact]
     public async Task GetAsync_Parameters_WithNotExistsDepartmentId_Ok()
     {
         // Arrange
