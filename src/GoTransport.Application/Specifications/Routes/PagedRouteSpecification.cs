@@ -17,47 +17,47 @@ public class PagedRouteSpecification : Specification<Route, RouteDto>
         switch (parameters.OrderBy)
         {
             case SortDirection.Ascending:
-                Query.OrderBy(ruote => ruote.Description);
+                Query.OrderBy(route => route.Description);
                 break;
 
             case SortDirection.Descending:
-                Query.OrderByDescending(ruote => ruote.Description);
+                Query.OrderByDescending(route => route.Description);
                 break;
 
             default:
-                Query.OrderBy(ruote => ruote.Description);
+                Query.OrderBy(route => route.Description);
                 break;
         }
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
-        Query.Select(ruote => new RouteDto
+        Query.Select(route => new RouteDto
         {
-            RouteId = ruote.RouteId,
+            RouteId = route.RouteId,
             OriginPoint = new PointDto
             {
-                PointId = ruote.OriginPoint!.PointId,
+                PointId = route.OriginPoint!.PointId,
                 City = new CityDto
                 {
-                    CityId = ruote.OriginPoint!.City!.CityId,
-                    Description = ruote.OriginPoint!.City!.Description,
-                    IsActive = ruote.OriginPoint!.City!.IsActive!.Value
+                    CityId = route.OriginPoint!.City!.CityId,
+                    Description = route.OriginPoint!.City!.Description,
+                    IsActive = route.OriginPoint!.City!.IsActive!.Value
                 },
-                Detail = ruote.OriginPoint!.Detail
+                Detail = route.OriginPoint!.Detail
             },
             DestinationPoint = new PointDto
             {
-                PointId = ruote.DestinationPoint!.PointId,
+                PointId = route.DestinationPoint!.PointId,
                 City = new CityDto
                 {
-                    CityId = ruote.DestinationPoint!.City!.CityId,
-                    Description = ruote.DestinationPoint!.City!.Description,
-                    IsActive = ruote.DestinationPoint!.City!.IsActive!.Value
+                    CityId = route.DestinationPoint!.City!.CityId,
+                    Description = route.DestinationPoint!.City!.Description,
+                    IsActive = route.DestinationPoint!.City!.IsActive!.Value
                 },
-                Detail = ruote.DestinationPoint!.Detail
+                Detail = route.DestinationPoint!.Detail
             },
-            Description = ruote.Description,
-            IsActive = ruote.IsActive!.Value
+            Description = route.Description,
+            IsActive = route.IsActive!.Value
         });
     }
 }

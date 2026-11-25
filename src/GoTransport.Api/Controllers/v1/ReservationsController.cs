@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Interfaces;
@@ -30,7 +30,7 @@ public class ReservationsController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<ReservationDto>>>> GetByScheduleAsync(Guid scheduleId, [FromQuery] ReservationParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _reservationService.GetByScheduleAsync(scheduleId, parameters, cancellationToken);
-        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 

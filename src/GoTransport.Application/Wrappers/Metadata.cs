@@ -12,16 +12,14 @@ public class Metadata
     public int? NextPageNumber => HasNextPage ? CurrentPage + 1 : null;
     public int? PreviousPageNumber => HasPreviousPage ? CurrentPage - 1 : null;
 
-    public Metadata(int totalItems, int pageNumber, int pageSize)
+    // Public so clients can deserialize the Pagination header; same parameter order as Create.
+    public Metadata(int pageNumber, int pageSize, int totalItems)
     {
-        TotalItems = totalItems;
-        PageSize = pageSize;
         CurrentPage = pageNumber;
+        PageSize = pageSize;
+        TotalItems = totalItems;
         TotalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
     }
 
-    public static Metadata Create(int pageNumber, int pageSize, int totalAmount)
-    {
-        return new Metadata(totalAmount, pageNumber, pageSize);
-    }
+    public static Metadata Create(int pageNumber, int pageSize, int totalItems) => new(pageNumber, pageSize, totalItems);
 }

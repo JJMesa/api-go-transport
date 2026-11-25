@@ -22,9 +22,9 @@ internal class ScheduleService : IScheduleService
         _scheduleRepository = scheduleRepository;
     }
 
-    public async Task<JsonResponse<IEnumerable<ScheduleDto>>> GetAllByRouteAsync(int ruoteId, CancellationToken cancellationToken)
+    public async Task<JsonResponse<IEnumerable<ScheduleDto>>> GetAllByRouteAsync(int routeId, CancellationToken cancellationToken)
     {
-        var schedules = await _scheduleRepository.ListAsync(new ScheduleSpecification(ruoteId), cancellationToken);
+        var schedules = await _scheduleRepository.ListAsync(new ScheduleSpecification(routeId), cancellationToken);
         return ResponseBuilder<IEnumerable<ScheduleDto>>.Ok(schedules.Select(schedule => schedule.ToDto()).ToList());
     }
 

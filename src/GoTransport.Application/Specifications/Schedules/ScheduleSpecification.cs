@@ -5,10 +5,10 @@ namespace GoTransport.Application.Specifications.Schedules;
 
 public class ScheduleSpecification : Specification<Schedule>
 {
-    public ScheduleSpecification(int ruoteId)
+    public ScheduleSpecification(int routeId)
     {
         Query.Where(schedule => schedule.IsActive!.Value);
-        Query.Where(Schedule => Schedule.RouteId == ruoteId);
+        Query.Where(schedule => schedule.RouteId == routeId);
 
         Query.OrderBy(schedule => schedule.DepartureTime);
 

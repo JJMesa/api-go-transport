@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Vehicle;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class VehiclesController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<VehicleDto>>>> GetAsync([FromQuery] VehicleParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _vehicleService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 

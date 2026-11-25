@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Point;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class PointsController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<PointDto>>>> GetAsync([FromQuery] PointParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _pointService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 

@@ -1,3 +1,4 @@
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Dtos.Route;
 using GoTransport.Domain.Entities.App;
 
@@ -19,14 +20,14 @@ internal static class RouteMappingExtensions
 
     public static Route ToEntity(this RouteCreationDto routeCreation) => new()
     {
-        Description = routeCreation.Description,
+        Description = routeCreation.Description.RemoveExtraBlank(),
         OriginPointId = routeCreation.OriginPointId,
         DestinationPointId = routeCreation.DestinationPointId
     };
 
     public static void ApplyTo(this RouteUpdateDto routeUpdate, Route route)
     {
-        route.Description = routeUpdate.Description;
+        route.Description = routeUpdate.Description.RemoveExtraBlank();
         route.OriginPointId = routeUpdate.OriginPointId;
         route.DestinationPointId = routeUpdate.DestinationPointId;
         route.IsActive = routeUpdate.IsActive;

@@ -2,7 +2,6 @@
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Route;
-using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Mappings;
@@ -55,7 +54,7 @@ internal class RouteService : IRouteService
 
     public async Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation)
     {
-        if (await IsDuplicarePoints(routeCreation.OriginPointId, routeCreation.DestinationPointId))
+        if (await IsDuplicateRouteAsync(routeCreation.OriginPointId, routeCreation.DestinationPointId))
             return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
 
         var route = routeCreation.ToEntity();
@@ -76,10 +75,9 @@ internal class RouteService : IRouteService
         var route = await _routeRepository.GetByIdAsync(id);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
 
-        if (await IsDuplicarePoints(routeUpdate.OriginPointId, routeUpdate.DestinationPointId, id))
+        if (await IsDuplicateRouteAsync(routeUpdate.OriginPointId, routeUpdate.DestinationPointId, id))
             return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
 
-        routeUpdate.Description = routeUpdate.Description.RemoveExtraBlank();
 
         routeUpdate.ApplyTo(route);
         await _routeRepository.UpdateAsync(route);
@@ -99,7 +97,7 @@ internal class RouteService : IRouteService
         return ResponseBuilder<bool?>.NoContent();
     }
 
-    private async Task<bool> IsDuplicarePoints(int originPointId, int destinationPointId, int? id = null) =>
+    private async Task<bool> IsDuplicateRouteAsync(int originPointId, int destinationPointId, int? id = null) =>
         await _routeRepository.AnyAsync(new DuplicationRouteSpecification(originPointId, destinationPointId, id));
 
     /// <summary>

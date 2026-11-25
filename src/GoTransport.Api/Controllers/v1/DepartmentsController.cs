@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class DepartmentsController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<DepartmentDto>>>> GetAsync([FromQuery] DepartmentParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _departmentService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 

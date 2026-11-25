@@ -148,20 +148,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
 - **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
 - **A-27 — Hard deletes despite `IsActive` columns.** → **F-23**
-- **A-30 — Typos** *(partial: "transaporte" is gone)*. `RuoteParameters.cs`, `ruoteId`, `ruote` lambdas and `IsDuplicarePoints` remain. → **F-20**
 - **A-31 — HTTP conventions.**
   - No `Location` header, a custom `Pagination` header, no ProblemDetails.
   - Creating a Reservation returns 200 while every other create returns 201 (`ReservationService.cs:75`).
   - Duplicates return 400 but "vehicle full" returns 409. → **F-22**
-- **A-32 — Dead code.** Includes:
-  - the empty `Exceptions/` folder;
-  - `ValidateAndThrowArgumentException`;
-  - unused specifications and `ErrorMessages`. → **F-20**
-- **A-68 — Inconsistent conventions** *(new)*.
-  - `CityService` is `public` while the other services are `internal`.
-  - `Metadata` takes the same parameters in two different orders.
-  - Services mutate input DTOs.
-  - The `Pagination`-header code is repeated in 6 controllers. → **F-20**
 ### 5.2 Resolved since the baseline
 
 | ID | Finding | Resolved by |
@@ -217,6 +207,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-19 | 🟡 No HSTS or security headers | F-17 (`[Fix] Restrict CORS to configured origins and add HSTS and security headers`). `UseHsts` runs outside Development, and `SecurityHeadersMiddleware` adds `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and a `default-src 'none'` content policy (Swagger UI excepted). `HttpHardeningTests` checks them. |
 | A-24 | 🟢 CORS `AllowAnyOrigin` | F-17 (same commit). Origins come from `Cors:AllowedOrigins`; with none configured, Development allows any origin and every other environment allows none. Component tests cover the unconfigured and configured cases. |
 | A-34 | 🟢 XML docs not exposed in Swagger; versioned API explorer missing | F-25 (`[Feature] Show XML comments in Swagger`). Api and Application generate their XML documentation (CS1591 off, so undocumented members stay optional) and Swagger includes both files. The versioned API explorer came with F-06. A Swagger test reads a DTO property description from the generated document. |
+| A-30 | 🟢 Typos | F-20 (`[Refactor] Fix the Ruote typos, drop dead code and align conventions`). `RuoteParameters.cs` is `RouteParameters.cs`, and the `ruote`/`ruoteId` identifiers and `IsDuplicarePoints` are now `route`, `routeId` and `IsDuplicateRouteAsync`. The `LICENCE_PLATE` column keeps its persisted name. |
+| A-32 | 🟢 Dead code | F-20 (same commit). Removed: the empty `Exceptions/` folder, `ValidateAndThrowArgumentException`, `SerializeWithCamelCase`, `ErrorMessages.ConflictValidators` and `RoleSpecification(User)`. The `KeyNotFoundException` branch (F-49) and the singleton `TokenValidationParameters` (F-07) went earlier. |
+| A-68 | 🟢 Inconsistent conventions | F-20 (same commit). `CityService` is `internal` like the other services, `Metadata` takes (page number, page size, total items) in one order through `Create`, the services no longer rewrite their input DTOs (the mappings trim the free text they copy), and the controllers write the `Pagination` header through one `AddPaginationHeader` helper. |
 
 ### 5.3 No longer applicable
 
@@ -377,7 +370,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-23 | Soft delete (`IsActive = false`) where the business requires it (A-27) | 🟢 | Data | M | ⬜ Open | — | — | ⬜ |
@@ -425,9 +418,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 9 | 0 | 21 | 1 |
-| 🟢 Low | 13 | 4 | 0 | 9 | 0 |
-| **Total** | **59** | **13** | **0** | **45** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **78%** | |
+| 🟢 Low | 13 | 3 | 0 | 10 | 0 |
+| **Total** | **59** | **12** | **0** | **46** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **79%** | |
 
 ---
 

@@ -8,14 +8,14 @@ public class RouteSpecification : Specification<Route>
 {
     public RouteSpecification()
     {
-        Query.Where(ruote => ruote.IsActive!.Value);
+        Query.Where(route => route.IsActive!.Value);
 
-        Query.OrderBy(ruote => ruote.Description);
+        Query.OrderBy(route => route.Description);
 
-        Query.Include(ruote => ruote.OriginPoint);
-        Query.Include(ruote => ruote.OriginPoint!.City);
-        Query.Include(ruote => ruote.DestinationPoint);
-        Query.Include(ruote => ruote.DestinationPoint!.City);
+        Query.Include(route => route.OriginPoint);
+        Query.Include(route => route.OriginPoint!.City);
+        Query.Include(route => route.DestinationPoint);
+        Query.Include(route => route.DestinationPoint!.City);
 
         // Read-only: nothing loaded here is saved back, so skip change tracking.
         Query.AsNoTracking();

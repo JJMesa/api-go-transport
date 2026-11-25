@@ -2,7 +2,6 @@
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Point;
-using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Mappings;
@@ -72,7 +71,6 @@ internal class PointService : IPointService
         var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id));
         if (point is null) return ResponseBuilder<PointDto>.NotFound();
 
-        pointUpdate.Detail = pointUpdate.Detail.RemoveExtraBlank();
 
         pointUpdate.ApplyTo(point);
         await _pointRepository.UpdateAsync(point);

@@ -25,8 +25,4 @@
     <InternalsVisibleTo Include="GoTransport.Api.Unit.Tests" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Exceptions\" />
-  </ItemGroup>
-
 </Project>

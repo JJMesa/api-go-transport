@@ -1,5 +1,5 @@
-﻿using System.Text.Json;
-using Asp.Versioning;
+﻿using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Interfaces;
@@ -28,7 +28,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<UserDto>>>> GetAsync([FromQuery] UserParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _userService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 

@@ -50,5 +50,4 @@ Unpaged `GetAllAsync` methods on catalog-like services cache the entity list thr
 ## Gotchas
 
 - `Roles` constant values are Spanish (`Administrador`, `Operario`) because they match persisted role names.
-- `Exceptions/` is empty (F-22). `RuoteParameters.cs` and `ruote*` identifiers are known typos for Route (F-20).
 - `InternalsVisibleTo` exposes the internal services to `GoTransport.Api.Unit.Tests`.

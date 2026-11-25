@@ -13,7 +13,7 @@ using GoTransport.Domain.Entities.Bas;
 namespace GoTransport.Application.Services;
 
 [Transient]
-public class CityService : ICityService
+internal class CityService : ICityService
 {
     private readonly IRepository<City> _cityRepository;
     private readonly ICacheService<City> _cacheService;

@@ -22,7 +22,7 @@ public class SchedulesController : ControllerBase
         _scheduleService = scheduleService;
     }
 
-    //GET: api/v1/ruotes/2/schedules-all
+    //GET: api/v1/routes/2/schedules-all
     [HttpGet("/api/v{version:apiVersion}/routes/{routeId:int}/[controller]")]
     public async Task<ActionResult<JsonResponse<IEnumerable<ScheduleDto>>>> GetAllByRouteAsync(int routeId, CancellationToken cancellationToken)
     {
