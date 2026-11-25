@@ -27,6 +27,7 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 │   └── GoTransport.Api.Test.Utilities/
 ├── database/seed/                   # SQL seed scripts
 ├── docs/                            # technical audit and improvement plan
+├── .github/workflows/               # CI: build, tests, vulnerable-package gate
 ├── .claude/                         # Claude Code settings, rules and skills
 └── GLOSSARY.md                      # domain vocabulary
 ```
@@ -127,6 +128,8 @@ dotnet test tests/GoTransport.Api.Component.Tests   # full HTTP pipeline over EF
 ```
 
 Neither suite needs SQL Server, seed data or secrets.
+
+**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `master` and `Dev` and on every pull request. It restores, builds in Release, runs both suites (TRX results and coverage are uploaded as the `test-results` artifact), and fails when `dotnet list package --vulnerable --include-transitive` reports a High or Critical advisory.
 
 ## Contributing
 

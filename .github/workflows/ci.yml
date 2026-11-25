@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [master, Dev]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore GoTransport.sln
+
+      - name: Build
+        run: dotnet build GoTransport.sln --no-restore --configuration Release
+
+      - name: Unit tests
+        run: >
+          dotnet test tests/GoTransport.Api.Unit.Tests
+          --no-build --configuration Release
+          --logger trx --results-directory TestResults
+          --collect "XPlat Code Coverage"
+
+      - name: Component tests
+        run: >
+          dotnet test tests/GoTransport.Api.Component.Tests
+          --no-build --configuration Release
+          --logger trx --results-directory TestResults
+          --collect "XPlat Code Coverage"
+
+      # Fails on High or Critical advisories anywhere in the dependency closure; lower ones are listed only.
+      - name: Vulnerable packages
+        run: |
+          dotnet list GoTransport.sln package --vulnerable --include-transitive --format json > vulnerable.json
+          jq -r '.projects[] | .path as $project | (.frameworks // [])[]
+            | ((.topLevelPackages // []) + (.transitivePackages // []))[]
+            | .id as $id | .resolvedVersion as $version
+            | .vulnerabilities[]
+            | "\(.severity)\t\($id) \($version)\t\($project)\t\(.advisoryurl)"' vulnerable.json | tee vulnerable.tsv
+          if grep -qE '^(High|Critical)' vulnerable.tsv; then
+            echo "::error::High or Critical package vulnerabilities found (see the list above)."
+            exit 1
+          fi
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: TestResults
+          if-no-files-found: ignore

@@ -150,7 +150,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
 - **A-18 — `IServiceBase` covers only 5 of 14 service interfaces** (Department, Point, Reservation, Route, Vehicle). CRUD-like City, Schedule and User do not use it. → **F-18**
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
-- **A-22 — No `.editorconfig`, analyzers or CI** (`.github/workflows` is empty). → **F-11, F-12**
+- **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
 - **A-38 — An unknown `ScheduleId` gives 500 instead of 404.** `vehicle!.Capacity` at `ReservationService.cs:70`. → **F-30**
 - **A-39 — Overnight Schedules.** `Duration = Arrival − Departure` turns negative (`ScheduleService.cs:40,56`), and the "trip passed" check uses `ReservationDate + ArrivalTime` (`ReservationService.cs:110`). → **F-31**
@@ -263,6 +263,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-42 | 🟠 Vulnerable packages in the dependency closure | F-06 / F-34 / QW-9 (same commit). The upgrade replaced every flagged package; `dotnet list package --vulnerable --include-transitive` now reports none in any project, so nothing had to be pinned. NuGet Audit warns on restore if one reappears. |
 | A-66 | 🟡 Package and test-stack drift | F-06 (same commit). `Directory.Packages.props` holds one version per package: ASP.NET Core and EF Core on 10.0.15, Ardalis.Specification 10 in both layers (core package only in Application), one xunit/coverlet/Test SDK stack for both test projects. EF InMemory left the unit tests and UserSecrets the component tests. `Identity.UI` stays until F-52 replaces `AddDefaultIdentity`. |
 | A-33 | 🟢 Conservative C# (no records, no primary constructors) | F-06 (same commit). The code now compiles as C# 14, so the language ceiling is gone; existing classes are not rewritten, and new code may use records and primary constructors. |
+| A-22 (CI part) | 🟡 No CI | F-11 (`[Feature] Add a CI workflow with tests and a vulnerable-package gate`). `.github/workflows/ci.yml` builds in Release, runs both suites with coverage, uploads the results, and fails on High/Critical advisories in the dependency closure. The `.editorconfig`/analyzer part stays open as F-12. |
 
 ### 5.3 No longer applicable
 
@@ -412,7 +413,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [ ] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ⬜ Open | — | — | ⬜ |
-| [ ] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) | 🟡 | Data | S | ⬜ Open | — | — | ⬜ |
@@ -467,11 +468,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 4 | 0 | 9 |
+| 🟠 High | 13 | 3 | 0 | 10 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **45** | **0** | **14** |
-| **% Completed** | | | | **24%** |
+| **Total** | **59** | **44** | **0** | **15** |
+| **% Completed** | | | | **25%** |
 
 ---
 
