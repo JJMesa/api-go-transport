@@ -30,6 +30,10 @@ public class ApiPaths
 
     public static readonly string SchedulesFullPath = $"{BaseUrl}{SchedulesPath}";
 
+    public static readonly string UsersPath = "/users";
+
+    public static readonly string UsersFullPath = $"{BaseUrl}{UsersPath}";
+
     public static readonly string PointsPath = "/points";
 
     public static readonly string PointsFullPath = $"{BaseUrl}{PointsPath}";

@@ -87,6 +87,22 @@ public class RoutesControllerTests : ComponentTest
         Assert.Equal(HttpStatusCode.BadRequest, apiResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task UpdateAsync_Ok()
+    {
+        // Arrange: same Points, new description (its own Route is not a duplicate of itself)
+        var route = new RouteUpdateDto { RouteId = 1, Description = "Medellín - Bogotá (directo)", OriginPointId = 1, DestinationPointId = 2, IsActive = true };
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PutAsync($"{ApiPaths.RoutesFullPath}/1", JsonContent(route));
+        var actual = JsonConvert.DeserializeObject<JsonResponse<RouteDto>>(await apiResponse.Content.ReadAsStringAsync(), JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal("Medellín - Bogotá (directo)", actual!.Data!.Description);
+    }
+
     #endregion UpdateAsync
 
     private static StringContent JsonContent(object body) =>

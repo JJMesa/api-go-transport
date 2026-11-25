@@ -1,3 +1,4 @@
+using GoTransport.Application.Commons;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Domain.Entities.Bas;
 using GoTransport.Persistence.Contexts;
@@ -26,8 +27,16 @@ public static class DatabaseSeeder
     /// <summary>Travel date of the upcoming seeded Reservation, so its Trip already has one place taken.</summary>
     public static DateTime UpcomingTravelDate => DateTime.Today.AddDays(7);
 
+    /// <summary>Ids of the seeded Roles (INSERT_SEED.sql creates the same two).</summary>
+    public const long AdministratorRoleId = 1;
+    public const long OperatorRoleId = 2;
+
     public static void Seed(ApplicationDbContext context)
     {
+        context.Set<Role>().AddRange(
+            new Role { Id = AdministratorRoleId, Name = Roles.Administrator, NormalizedName = Roles.Administrator.ToUpperInvariant() },
+            new Role { Id = OperatorRoleId, Name = Roles.Operator, NormalizedName = Roles.Operator.ToUpperInvariant() });
+
         context.Set<Department>().AddRange(
             new Department { DepartmentId = 1, Description = "Antioquia", IsActive = true },
             new Department { DepartmentId = 2, Description = "Cundinamarca", IsActive = true });
