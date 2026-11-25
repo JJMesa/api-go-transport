@@ -9,7 +9,7 @@
 - `Migrations/` — EF Core migrations, the source of truth for the schema.
 - `Repositories/BaseRepository.cs` — open-generic `IRepository<T>` on Ardalis `RepositoryBase`.
 - `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory.
-- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity stores, repository and unit-of-work registration.
+- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity's EF Core stores, repository and unit-of-work registration. No HTTP types: the DbContext gets the user from `ICurrentUser`.
 
 ## Dependencies
 
@@ -25,7 +25,7 @@ Every `Duplication<Entity>Specification` check in Application is backed by a uni
 
 ### Auditing
 
-`ApplicationDbContext` stamps, on every save (sync or async), `IsActive` (true on insert), `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser` on every `IAuditableEntity`. The user comes from the JWT `NameIdentifier` claim, falling back to `"SISTEMA"`; timestamps are UTC, from the injected `TimeProvider`. On insert the creation and update fields use `??=`, so a value the caller set (e.g. in seeds) is kept; on update `UpdateUser` is always overwritten with the current user.
+`ApplicationDbContext` stamps, on every save (sync or async), `IsActive` (true on insert), `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser` on every `IAuditableEntity`. The user comes from Domain's `ICurrentUser` (the Api's `HttpCurrentUser` reads the token's `NameIdentifier` claim), falling back to `"SISTEMA"`; timestamps are UTC, from the injected `TimeProvider`. On insert the creation and update fields use `??=`, so a value the caller set (e.g. in seeds) is kept; on update `UpdateUser` is always overwritten with the current user.
 
 ### Migrations
 

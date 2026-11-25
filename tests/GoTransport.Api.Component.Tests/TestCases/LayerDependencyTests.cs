@@ -31,6 +31,15 @@ public class LayerDependencyTests
     }
 
     [Fact]
+    public void Persistence_DoesNotDependOnHttp()
+    {
+        var references = ReferencedAssemblies(typeof(ApplicationDbContext));
+
+        Assert.DoesNotContain("Microsoft.AspNetCore.Http.Abstractions", references);
+        Assert.DoesNotContain("Microsoft.AspNetCore.Identity.UI", references);
+    }
+
+    [Fact]
     public void Application_DoesNotReferencePersistenceOrApi()
     {
         var references = ReferencedAssemblies(typeof(ColombiaTime));

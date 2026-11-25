@@ -5,6 +5,7 @@ using FluentValidation.AspNetCore;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
+using GoTransport.Domain.Entities.App;
 using GoTransport.Application.Commons;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -36,6 +37,12 @@ public static class RegisterLayerExtensions
 
         // Identity's rules come from Application (password policy, validated lockout settings); Persistence
         // only stores the users.
+        // A JWT-only API needs Identity's user and role managers and password sign-in, not the cookie
+        // schemes and Razor UI that AddDefaultIdentity registers.
+        services.AddIdentityCore<User>()
+            .AddRoles<Role>()
+            .AddSignInManager();
+
         services.AddOptions<IdentityOptions>()
             .Configure<IOptions<LockoutSettings>>((options, lockout) =>
             {

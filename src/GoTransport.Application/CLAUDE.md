@@ -17,7 +17,7 @@
 
 ## Dependencies
 
-References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAccessor`), Ardalis.Specification (core only, no EF Core), FluentValidation and `System.IdentityModel.Tokens.Jwt`. It also configures Identity's options (password policy, lockout). Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
+References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAccessor`), Ardalis.Specification (core only, no EF Core), FluentValidation and `System.IdentityModel.Tokens.Jwt`. It also registers Identity for a JWT-only API (`AddIdentityCore` + roles + sign-in manager, no cookies or UI) and its options (password policy, lockout). Services take no MVC/HTTP types; only the status code of the envelope (`System.Net.HttpStatusCode`) reaches them, by design ([ADR 0001](../../docs/adr/0001-keep-the-json-response-envelope.md)). Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
 
 ## Conventions
 

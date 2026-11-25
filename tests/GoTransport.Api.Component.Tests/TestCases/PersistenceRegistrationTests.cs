@@ -1,3 +1,4 @@
+using GoTransport.Domain.Interfaces;
 using GoTransport.Persistence;
 using GoTransport.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
@@ -23,8 +24,9 @@ public class PersistenceRegistrationTests
             })
             .Build();
         var services = new ServiceCollection();
-        services.AddHttpContextAccessor();
         services.AddLogging();
+        services.AddSingleton(TimeProvider.System);
+        services.AddSingleton<ICurrentUser>(new SystemUser());
         services.AddPersistenceLayer(configuration);
 
         using var provider = services.BuildServiceProvider();
@@ -36,5 +38,10 @@ public class PersistenceRegistrationTests
 
         // Assert
         Assert.IsType<SqlServerRetryingExecutionStrategy>(strategy);
+    }
+
+    private sealed class SystemUser : ICurrentUser
+    {
+        public string? UserId => null;
     }
 }

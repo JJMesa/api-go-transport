@@ -2,6 +2,7 @@ using GoTransport.Domain.Interfaces;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Persistence.Contexts;
 using GoTransport.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,9 +28,9 @@ public static class RegisterLayerExtensions
 
         #region Configuracion identity
 
-        // Password and lockout rules are configured by Application (AddApplicationLayer).
-        services.AddDefaultIdentity<User>()
-            .AddRoles<Role>()
+        // Identity itself (users, roles, sign-in, password and lockout rules) is registered by Application;
+        // Persistence only adds the EF Core stores behind it.
+        new IdentityBuilder(typeof(User), typeof(Role), services)
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
         #endregion Configuracion identity

@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
 using GoTransport.Api.Extensions;
+using GoTransport.Api.Security;
 using GoTransport.Application;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Persistence;
 using Serilog;
 
@@ -25,6 +27,7 @@ try
     builder.AddSerilogConfiguration();
 
     builder.Services.AddHttpContextAccessor();
+    builder.Services.AddScoped<ICurrentUser, HttpCurrentUser>();
     builder.Services.AddApplicationLayer(configuration);
     builder.Services.AddPersistenceLayer(configuration);
     builder.Services.AddControllers()

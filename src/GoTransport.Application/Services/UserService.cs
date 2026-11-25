@@ -10,7 +10,6 @@ using GoTransport.Application.Specifications.Users;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.App;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace GoTransport.Application.Services;
 
@@ -32,7 +31,7 @@ internal class UserService : IUserService
         _roleService = roleService;
     }
 
-    public async Task<JsonPagedResponse<IEnumerable<UserDto>>> GetAsync([FromQuery] UserParameters parameters, CancellationToken cancellationToken)
+    public async Task<JsonPagedResponse<IEnumerable<UserDto>>> GetAsync(UserParameters parameters, CancellationToken cancellationToken)
     {
         var users = await _userRepository.ListAsync(new PagedUserSpecification(parameters), cancellationToken);
         var totalRecords = _userRepository.CountAsync(new UserSpecification(parameters), cancellationToken);

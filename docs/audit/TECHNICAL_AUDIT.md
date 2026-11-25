@@ -123,10 +123,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 #### 🟡 Medium
 
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
-- **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
-  - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
-  - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
-  - `AddDefaultIdentity` (`src/GoTransport.Persistence/RegisterLayerExtensions.cs:31`) registers cookie authentication and the Razor UI in a JWT-only API. → **F-52**
 - **A-63 — Test gaps that let defects through** *(new)*.
   - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
   - 6 of 18 validators have tests (User creation, City, Department and Vehicle limits); the Reservation, Route, Point and Schedule validators have none.
@@ -202,6 +198,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-11 | 🟡 Multi-step user writes were not atomic | F-16 (`[Refactor] Make Persistence depend on Domain only and save users with their Role atomically`). `UserService.CreateAsync` and `AdminBootstrapService` create the user and assign the Role inside one `IUnitOfWork` transaction, so a failed assignment leaves no user without a Role. |
 | A-17 | 🟡 Persistence depended on Application | F-16 (same commit). `IRepository<T>` and `IUnitOfWork` (now generic over a commit predicate) live in Domain, the `SISTEMA` audit user is `AuditDefaults.SystemUser`, Identity's password and lockout options are configured by Application, and Persistence's project reference to Application is gone. `LayerDependencyTests` checks the rule on the compiled assemblies. |
 | A-23 | 🟡 Domain depended on ASP.NET Core Identity's EF package | F-16 (same commit). Domain references `Microsoft.Extensions.Identity.Stores` (the Identity entity base types, no EF Core) and `Ardalis.Specification`; a test asserts Domain references no EF Core assembly. |
+| A-60 | 🟡 HTTP and Identity UI leaked into inner layers | F-52 (`[Refactor] Keep HTTP out of Application and Persistence and drop Identity's cookie UI`). `ApplicationDbContext` gets the user from Domain's `ICurrentUser`, implemented in the Api (`HttpCurrentUser`), so Persistence has no HTTP types; `UserService` lost its `[FromQuery]`; and `AddIdentityCore` (roles, sign-in manager) replaces `AddDefaultIdentity`, which registered cookie authentication and the Razor UI in a JWT-only API, so `Identity.UI` is gone. The envelope's `HttpStatusCode` stays on purpose (ADR 0001). `LayerDependencyTests` checks Persistence for HTTP references. |
 
 ### 5.3 No longer applicable
 
@@ -394,7 +391,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
@@ -409,10 +406,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 4 | 0 | 26 | 1 |
+| 🟡 Medium | 31 | 3 | 0 | 27 | 1 |
 | 🟢 Low | 13 | 0 | 0 | 13 | 0 |
-| **Total** | **59** | **4** | **0** | **54** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **93%** | |
+| **Total** | **59** | **3** | **0** | **55** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **95%** | |
 
 ---
 
