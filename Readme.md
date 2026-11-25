@@ -130,7 +130,7 @@ dotnet test tests/GoTransport.Api.Component.Tests   # full HTTP pipeline over EF
 
 Neither suite needs SQL Server, seed data or secrets.
 
-**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `master` and `Dev` and on every pull request. It restores, builds in Release with warnings as errors (the .NET analyzers at `latest-recommended` and the code style in [`.editorconfig`](.editorconfig) run in every build), runs both suites (TRX results and coverage are uploaded as the `test-results` artifact), and fails when `dotnet list package --vulnerable --include-transitive` reports a High or Critical advisory. Run `dotnet build -warnaserror` locally to see what CI will reject.
+**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `master` and `Dev` and on every pull request. It restores, builds in Release with warnings as errors (the .NET analyzers at `latest-recommended` and the code style in [`.editorconfig`](.editorconfig) run in every build), runs both suites with [`coverage.runsettings`](coverage.runsettings) (TRX results go to the `test-results` artifact), merges their coverage with ReportGenerator (HTML report with Risk Hotspots in the `coverage-report` artifact and a summary on the run page), fails under 80% line / 60% branch coverage or on any method with a CRAP score above 30 ([`tools/coverage/coverage_gate.py`](tools/coverage/coverage_gate.py)), and fails when `dotnet list package --vulnerable --include-transitive` reports a High or Critical advisory. Run `dotnet build -warnaserror` locally to see what CI will reject.
 
 ## Contributing
 

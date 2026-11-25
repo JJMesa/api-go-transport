@@ -28,7 +28,7 @@ Each area has its own `CLAUDE.md`, loaded when you work inside it; this file hol
 | `tests/` | xUnit unit and component tests plus shared test utilities |
 | `docs/` | Audit report with the improvement plan; ADRs under `docs/adr/` |
 | `database/` | SQL seed scripts (the schema itself comes from EF Core migrations) |
-| `.github/workflows/` | CI (`ci.yml`): Release build with warnings as errors, both test suites, and a gate on High/Critical vulnerable packages, on pushes to `master`/`Dev` and on pull requests |
+| `.github/workflows/` | CI (`ci.yml`): Release build with warnings as errors, both test suites with coverage, a coverage/CRAP gate (`tools/coverage/coverage_gate.py`) and a gate on High/Critical vulnerable packages, on pushes to `master`/`Dev` and on pull requests |
 | `.editorconfig` | Code style and analyzer severities, enforced by every build; deliberate exceptions carry a comment |
 | `.claude/` | Shared Claude Code settings, path-scoped `rules/`, and the `new-crud-resource` and `implement-plan-item` skills |
 | `GLOSSARY.md` | Domain vocabulary (imported above) |
@@ -47,6 +47,12 @@ dotnet test tests/GoTransport.Api.Unit.Tests
 
 # Component tests (full HTTP pipeline over EF Core InMemory — no SQL Server, seed or secrets needed)
 dotnet test tests/GoTransport.Api.Component.Tests
+
+# Coverage and CRAP gate, as CI runs it (dotnet tool restore first; output in coverage/, git-ignored)
+dotnet test tests/GoTransport.Api.Unit.Tests --settings coverage.runsettings --results-directory coverage/raw
+dotnet test tests/GoTransport.Api.Component.Tests --settings coverage.runsettings --results-directory coverage/raw
+dotnet reportgenerator -reports:"coverage/raw/**/coverage.cobertura.xml" -targetdir:coverage/report -reporttypes:"Html;Cobertura"
+python tools/coverage/coverage_gate.py coverage/report/Cobertura.xml
 
 # A single test class or method
 dotnet test --filter "FullyQualifiedName~CityServiceTests"

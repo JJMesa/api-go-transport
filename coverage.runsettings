@@ -17,7 +17,8 @@
 
           <IncludeTestAssembly>false</IncludeTestAssembly>
           <SingleHit>false</SingleHit>
-          <UseSourceLink>true</UseSourceLink>
+          <!-- Local paths: with Source Link, ReportGenerator downloads each source file from GitHub, which fails for unpushed commits -->
+          <UseSourceLink>false</UseSourceLink>
           <SkipAutoProps>true</SkipAutoProps>
         </Configuration>
       </DataCollector>

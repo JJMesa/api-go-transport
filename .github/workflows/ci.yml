@@ -25,7 +25,9 @@ jobs:
           global-json-file: global.json
 
       - name: Restore
-        run: dotnet restore GoTransport.sln
+        run: |
+          dotnet restore GoTransport.sln
+          dotnet tool restore
 
       - name: Build
         run: dotnet build GoTransport.sln --no-restore --configuration Release
@@ -35,14 +37,31 @@ jobs:
           dotnet test tests/GoTransport.Api.Unit.Tests
           --no-build --configuration Release
           --logger trx --results-directory TestResults
-          --collect "XPlat Code Coverage"
+          --settings coverage.runsettings
 
       - name: Component tests
         run: >
           dotnet test tests/GoTransport.Api.Component.Tests
           --no-build --configuration Release
           --logger trx --results-directory TestResults
-          --collect "XPlat Code Coverage"
+          --settings coverage.runsettings
+
+      # Merges both suites into one report. ReportGenerator computes CRAP scores (its Risk Hotspots) from
+      # coverlet's Cobertura output, not from its OpenCover output; the threshold setting takes no leading dash.
+      # One level only: the TRX logger copies each suite's coverage again under TestResults/<run>/In/.
+      - name: Coverage report
+        run: >
+          dotnet reportgenerator
+          -reports:"TestResults/*/coverage.cobertura.xml"
+          -targetdir:coverage/report
+          -reporttypes:"Html;Cobertura;MarkdownSummaryGithub"
+          "riskHotspotsAnalysisThresholds:metricThresholdForCrapScore=30"
+
+      # Fails under 80% line / 60% branch coverage or on any method with CRAP above 30.
+      - name: Coverage gate
+        run: |
+          cat coverage/report/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+          python3 tools/coverage/coverage_gate.py coverage/report/Cobertura.xml --min-line 80 --min-branch 60 --max-crap 30
 
       # Fails on High or Critical advisories anywhere in the dependency closure; lower ones are listed only.
       - name: Vulnerable packages
@@ -64,4 +83,12 @@ jobs:
         with:
           name: test-results
           path: TestResults
+          if-no-files-found: ignore
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/report
           if-no-files-found: ignore

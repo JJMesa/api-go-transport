@@ -9,7 +9,7 @@
 
 ## 1. Executive summary
 
-> **Status on 2026-11-24:** the improvement plan of the re-assessment is done: 58 of its 59 items, with F-14 superseded by F-38 (§7.3). Every finding of the re-assessment is resolved (§5.2) or no longer applicable (§5.3). A CRAP / coverage analysis run the same day opened three small findings (A-71…A-73, §5.1) with their plan items F-60…F-62. The scores below are those of the 2026-11-17 re-assessment; re-assess before relying on them (§8).
+> **Status on 2026-11-24:** the improvement plan is done: 61 of its 62 items, with F-14 superseded by F-38 (§7.3). Every finding is resolved (§5.2) or no longer applicable (§5.3), including the three (A-71…A-73) that a CRAP / coverage analysis opened the same day; CI now gates on coverage and CRAP (F-62). The scores below are those of the 2026-11-17 re-assessment; re-assess before relying on them (§8).
 
 - **Overall score: 5.6 / 10 — Acceptable** (baseline 6.0).
 - **Why the score dropped although seven plan items were done:**
@@ -114,11 +114,7 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 
 ### 5.1 Open findings
 
-Every finding of the baseline and the re-assessment, and A-70 (found while closing F-55), is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. The three below came from the CRAP analysis of that day (§2); no method is above the CRAP threshold of 30, so none is high-risk. New findings continue the sequence at A-74.
-
-| ID | Sev. | Finding | Evidence | Plan item |
-|---|:--:|---|---|---|
-| A-73 | 🟢 | **Coverage is collected but not analysed.** CI runs both suites with `--collect "XPlat Code Coverage"` and no `.runsettings`, so the report has Cobertura only: no OpenCover complexity, no exclusions for migrations and test helpers, no CRAP score, no threshold and no trend. A method like those of A-71 can reach `master` with no signal. | `.github/workflows/ci.yml` lines 38 and 45. `coverage.runsettings` and the `reportgenerator` tool entry in `dotnet-tools.json` were added with the analysis and are not yet used by CI. | F-62 |
+Every finding of the baseline and the re-assessment, A-70 (found while closing F-55) and A-71…A-73 (from the CRAP analysis of 2026-11-24, §2) is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. No finding is open. New findings continue the sequence at A-74.
 
 ### 5.2 Resolved since the baseline
 
@@ -196,6 +192,7 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 | A-22 | 🟡 No `.editorconfig`, analyzers or CI | F-11 (CI) and F-12 (`[Feature] Enforce analyzers and code style, with warnings as errors in CI`). `.editorconfig` sets the code style (file-scoped namespaces, usings outside the namespace, `I`/`_camelCase` naming) and the analyzer severities, each lowered rule with its reason; `Directory.Build.props` turns on `AnalysisLevel` `latest-recommended` and `EnforceCodeStyleInBuild`, and `TreatWarningsAsErrors` when `CI=true`. The findings it raised were fixed: internal Persistence types sealed, a cached `JsonSerializerOptions`, culture-invariant formatting. Migrations are marked generated code. |
 | A-71 | 🟡 Write paths of four services never ran in any test | F-60 (`[Test] Cover the write paths the coverage analysis found untested`). `RouteServiceTests`, `VehicleServiceTests` and `RoleServiceTests` cover the update/create paths, the duplicate license plate, the unknown Role and the role replacement; `UserServiceTests` covers every branch of `CreateAsync` (duplicate email, rejected password, failed role assignment, success inside one transaction); `FilterSpecificationTests` covers each branch of `UserFilter` and `ReservationFilter`. A re-run with `coverage.runsettings` shows 100% of lines and branches for every method listed, and line / branch coverage up from 93.1% / 71.3% to 96.1% / 79.1%. |
 | A-72 | 🟢 The success path of nine create/update controller actions was never reached | F-61 (`[Test] Run the success path of every create and update endpoint`). New `DepartmentsControllerTests`, `SchedulesControllerTests`, `UsersControllerTests` and `VehiclesControllerTests`, plus a successful update in `RoutesControllerTests`, assert 201 with the `Location` of the new resource and 200 with the changed data (also a duplicate plate 409, an unknown Role 400, an overnight Schedule duration). The component seed gains the two Roles that `INSERT_SEED.sql` creates. Coverage shows every listed action body fully run. |
+| A-73 | 🟢 Coverage was collected but not analysed | F-62 (`[Feature] Gate CI on coverage and CRAP scores`). CI runs both suites with `coverage.runsettings` (migrations and test helpers excluded; Source Link off so the report reads local sources), merges their Cobertura output with the `reportgenerator` local tool into an HTML report whose Risk Hotspots rank methods by CRAP (artifact `coverage-report`; ReportGenerator computes no CRAP score from coverlet's OpenCover output) and a run-page summary, and `tools/coverage/coverage_gate.py` fails the build under 80% line / 60% branch coverage or on any method with CRAP above 30, using the standard formula that ReportGenerator's Risk Hotspots also use (complexity² × (1 − coverage)³ + complexity, stricter than the one in §2). On 2026-11-24 the gate, on a Release build as in CI, reports 97.3% lines, 79.4% branches and a highest CRAP of 13.6 (`UnitOfWork.ExecuteInTransactionAsync`, whose relational transaction path no test runs). |
 
 ### 5.3 No longer applicable
 
@@ -398,7 +395,7 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 | [x] | F-59 | Repository hygiene: LICENSE placeholder, `.gitignore` IDE/env entries (A-69) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-60 | Unit-test the uncovered write paths: `RouteService.UpdateAsync`, `VehicleService.CreateAsync`/`UpdateAsync` (duplicate license plate), `RoleService.AssignRolesToUser`/`RoleExistsAsync` (unknown Role), and the uncovered branches of `UserService.CreateAsync`, `UserFilter` and `ReservationFilter` (A-71) | 🟡 | Testing | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-61 | Component tests for the success path (201 + `Location`, 200) of create/update in Departments, Routes (update), Schedules, Users and Vehicles (A-72) | 🟢 | Testing | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-62 | Use `coverage.runsettings` in CI, publish the ReportGenerator report with its Risk Hotspots, fail on a method with CRAP above 30 and on line coverage below 80% / branch below 60% (A-73) | 🟢 | Maintainability | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-62 | Use `coverage.runsettings` in CI, publish the ReportGenerator report with its Risk Hotspots, fail on a method with CRAP above 30 and on line coverage below 80% / branch below 60% (A-73) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 
 ### 7.3 Progress summary
 
@@ -407,9 +404,9 @@ Every finding of the baseline and the re-assessment, and A-70 (found while closi
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 32 | 0 | 0 | 31 | 1 |
-| 🟢 Low | 15 | 1 | 0 | 14 | 0 |
-| **Total** | **62** | **1** | **0** | **60** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **98%** | |
+| 🟢 Low | 15 | 0 | 0 | 15 | 0 |
+| **Total** | **62** | **0** | **0** | **61** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **100%** | |
 
 ---
 
