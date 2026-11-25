@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using System.Security.Claims;
-using GoTransport.Application.Commons;
+using GoTransport.Domain.Common;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Domain.Interfaces;
 using Microsoft.AspNetCore.Http;
@@ -47,7 +47,7 @@ public partial class ApplicationDbContext : IdentityDbContext<User, Role, long, 
     {
         // Audit timestamps are stored in UTC.
         var now = _clock.GetUtcNow().UtcDateTime;
-        var username = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)?.ToString() ?? Constants.ApplicationUser;
+        var username = _httpContextAccessor.HttpContext?.User?.FindFirstValue(ClaimTypes.NameIdentifier)?.ToString() ?? AuditDefaults.SystemUser;
 
         foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
         {

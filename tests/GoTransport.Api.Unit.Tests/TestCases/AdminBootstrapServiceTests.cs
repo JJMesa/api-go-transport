@@ -19,6 +19,7 @@ public class AdminBootstrapServiceTests
 
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
+    private readonly InlineUnitOfWork _unitOfWork = new();
 
     public AdminBootstrapServiceTests()
     {
@@ -76,6 +77,7 @@ public class AdminBootstrapServiceTests
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
         Assert.Equal(AdminBootstrapResult.Created, actual.Data);
+        Assert.Single(_unitOfWork.Transactions);
         _userManagerMock.Verify(x => x.CreateAsync(It.Is<User>(u => u.Email == AdminEmail && u.UserName == AdminEmail), AdminPassword), Times.Once);
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.Is<User>(u => u.Email == AdminEmail), Roles.Administrator), Times.Once);
     }
@@ -121,7 +123,7 @@ public class AdminBootstrapServiceTests
     #region Helpers
 
     private AdminBootstrapService CreateService(AdminBootstrapSettings settings) =>
-        new(_userManagerMock.Object, _roleManagerMock.Object, Options.Create(settings), NullLogger<AdminBootstrapService>.Instance);
+        new(_userManagerMock.Object, _roleManagerMock.Object, Options.Create(settings), NullLogger<AdminBootstrapService>.Instance, _unitOfWork);
 
     private static AdminBootstrapSettings ConfiguredSettings() => new()
     {

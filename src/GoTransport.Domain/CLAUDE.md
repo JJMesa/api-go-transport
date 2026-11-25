@@ -6,11 +6,12 @@
 
 - `Entities/App/` — data the business creates (Points, Routes, Schedules, Vehicles, Reservations) and the ASP.NET Identity entities (`User`, `Role`, `UserRole`, …). Mapped to `APP_*` tables.
 - `Entities/Bas/` — seeded reference data that rarely changes (Departments, Cities, Identification types, Manufacturers). Mapped to `BAS_*` tables.
-- `Commons/AuditableEntity.cs` + `Interfaces/IAuditableEntity.cs` — the audit-column base (`IsActive`, `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser`).
+- `Commons/AuditableEntity.cs` + `Interfaces/IAuditableEntity.cs` — the audit-column base (`IsActive`, `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser`); `Commons/AuditDefaults.SystemUser` is the `SISTEMA` audit user.
+- `Interfaces/IRepository.cs`, `Interfaces/IUnitOfWork.cs` — the data-access contracts Application uses and Persistence implements.
 
 ## Dependencies
 
-References only ASP.NET Core Identity (`User`/`Role` and the Identity join entities extend the `Identity*<long>` types). It is the bottom of the graph: every other project may reference it, it references none of them.
+Only `Microsoft.Extensions.Identity.Stores` (`User`/`Role` and the Identity join entities extend the `Identity*<long>` types; no EF Core) and `Ardalis.Specification` (for `IRepository<T>`). It is the bottom of the graph: every other project may reference it, it references none of them.
 
 ## Conventions
 

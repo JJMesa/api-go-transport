@@ -1,4 +1,5 @@
 using GoTransport.Application.Builders;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Extensions;
@@ -18,12 +19,15 @@ internal class AdminBootstrapService : IAdminBootstrapService
     private readonly RoleManager<Role> _roleManager;
     private readonly AdminBootstrapSettings _settings;
     private readonly ILogger<AdminBootstrapService> _logger;
+    private readonly IUnitOfWork _unitOfWork;
 
     public AdminBootstrapService(UserManager<User> userManager
         , RoleManager<Role> roleManager
         , IOptions<AdminBootstrapSettings> settings
-        , ILogger<AdminBootstrapService> logger)
+        , ILogger<AdminBootstrapService> logger
+        , IUnitOfWork unitOfWork)
     {
+        _unitOfWork = unitOfWork;
         _userManager = userManager;
         _roleManager = roleManager;
         _settings = settings.Value;
@@ -56,15 +60,24 @@ internal class AdminBootstrapService : IAdminBootstrapService
             UserName = _settings.Email
         };
 
-        var creation = await _userManager.CreateAsync(administrator, _settings.Password);
-        if (!creation.Succeeded)
-            return ResponseBuilder<AdminBootstrapResult>.BadRequest(creation.Errors.ToErrorList());
+        // The user and the role are saved together, so a failure cannot leave an administrator without the
+        // Administrador role (which would make the bootstrap fail on every later start).
+        var response = await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var creation = await _userManager.CreateAsync(administrator, _settings.Password);
+            if (!creation.Succeeded)
+                return ResponseBuilder<AdminBootstrapResult>.BadRequest(creation.Errors.ToErrorList());
 
-        var roleAssignment = await _userManager.AddToRoleAsync(administrator, Roles.Administrator);
-        if (!roleAssignment.Succeeded)
-            return ResponseBuilder<AdminBootstrapResult>.BadRequest(roleAssignment.Errors.ToErrorList());
+            var roleAssignment = await _userManager.AddToRoleAsync(administrator, Roles.Administrator);
+            if (!roleAssignment.Succeeded)
+                return ResponseBuilder<AdminBootstrapResult>.BadRequest(roleAssignment.Errors.ToErrorList());
 
-        _logger.LogInformation("Administrator bootstrap created the first {Role} user", Roles.Administrator);
-        return ResponseBuilder<AdminBootstrapResult>.Created(AdminBootstrapResult.Created);
+            return ResponseBuilder<AdminBootstrapResult>.Created(AdminBootstrapResult.Created);
+        });
+
+        if (response.Ok)
+            _logger.LogInformation("Administrator bootstrap created the first {Role} user", Roles.Administrator);
+
+        return response;
     }
 }

@@ -1,6 +1,5 @@
 using System.Data;
-using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Wrappers;
+using GoTransport.Domain.Interfaces;
 
 namespace GoTransport.Api.Unit.Tests.Helpers;
 
@@ -11,7 +10,8 @@ internal sealed class InlineUnitOfWork : IUnitOfWork
 {
     public List<IsolationLevel> Transactions { get; } = new();
 
-    public Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default)
+    public Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Task<TResult>> operation, Func<TResult, bool> commitWhen,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default)
     {
         Transactions.Add(isolationLevel);
         return operation();

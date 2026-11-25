@@ -1,14 +1,10 @@
-﻿using GoTransport.Application.Commons;
-using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Settings;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Persistence.Contexts;
 using GoTransport.Persistence.Repositories;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Options;
 
 namespace GoTransport.Persistence;
 
@@ -31,21 +27,10 @@ public static class RegisterLayerExtensions
 
         #region Configuracion identity
 
-        services.AddDefaultIdentity<User>(options =>
-            {
-                PasswordPolicy.Apply(options.Password);
-                options.Lockout.AllowedForNewUsers = true;
-            })
+        // Password and lockout rules are configured by Application (AddApplicationLayer).
+        services.AddDefaultIdentity<User>()
             .AddRoles<Role>()
             .AddEntityFrameworkStores<ApplicationDbContext>();
-
-        // Read through the validated LockoutSettings options rather than straight from configuration.
-        services.AddOptions<IdentityOptions>()
-            .Configure<IOptions<LockoutSettings>>((options, lockout) =>
-            {
-                options.Lockout.MaxFailedAccessAttempts = lockout.Value.MaxFailedAccessAttempts;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockout.Value.LockoutTimeInMinutes);
-            });
 
         #endregion Configuracion identity
 

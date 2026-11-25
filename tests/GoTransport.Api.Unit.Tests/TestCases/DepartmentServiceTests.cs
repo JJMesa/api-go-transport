@@ -4,7 +4,7 @@ using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Departments;
 using GoTransport.Domain.Entities.Bas;

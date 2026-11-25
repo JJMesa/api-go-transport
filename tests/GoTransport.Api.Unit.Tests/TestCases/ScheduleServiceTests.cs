@@ -1,7 +1,7 @@
 using System.Net;
 using GoTransport.Application.Dtos.Schedule;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Domain.Entities.App;
 using Moq;

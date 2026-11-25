@@ -9,11 +9,11 @@
 - `Migrations/` — EF Core migrations, the source of truth for the schema.
 - `Repositories/BaseRepository.cs` — open-generic `IRepository<T>` on Ardalis `RepositoryBase`.
 - `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory.
-- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity (password policy, lockout from the validated `LockoutSettings` options), repository and unit-of-work registration.
+- `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext` (SQL Server with `EnableRetryOnFailure`), Identity stores, repository and unit-of-work registration.
 
 ## Dependencies
 
-Domain, plus Application for `IRepository<T>`, `IUnitOfWork`, settings and `Constants.ApplicationUser` (F-16 plans to cut this to Domain only).
+Domain only. It implements Domain's `IRepository<T>` and `IUnitOfWork` and uses `AuditDefaults.SystemUser`; Identity's password and lockout rules are configured by Application.
 
 ## Conventions
 

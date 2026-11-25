@@ -4,7 +4,7 @@ using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Reservations;

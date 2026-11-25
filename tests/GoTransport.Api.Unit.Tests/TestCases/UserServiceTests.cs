@@ -4,7 +4,7 @@ using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Domain.Entities.App;
 using Microsoft.AspNetCore.Identity;
@@ -26,7 +26,7 @@ public class UserServiceTests
         _userManagerMock = IdentityMocks.UserManager();
         _userRepositoryMock = new Mock<IRepository<User>>();
         _roleServiceMock = new Mock<IRoleService>();
-        _userService = new UserService(_userManagerMock.Object, _userRepositoryMock.Object, _roleServiceMock.Object);
+        _userService = new UserService(_userManagerMock.Object, _userRepositoryMock.Object, _roleServiceMock.Object, new InlineUnitOfWork());
     }
 
     #region UpdateAsync

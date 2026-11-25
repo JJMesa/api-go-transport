@@ -6,7 +6,7 @@
 
 | Folder | Holds |
 |---|---|
-| `Services/`, `Interfaces/` | One `I<Entity>Service` / `<Entity>Service` pair per resource; `Interfaces/Base/` declares `IRepository<T>` and `IUnitOfWork` |
+| `Services/`, `Interfaces/` | One `I<Entity>Service` / `<Entity>Service` pair per resource (`IRepository<T>` and `IUnitOfWork` are Domain contracts) |
 | `Dtos/<Entity>/`, `Mappings/` | `<Entity>Dto` / `CreationDto` / `UpdateDto` and their `<Entity>MappingExtensions` |
 | `Validators/<Entity>/` | FluentValidation `<Entity>CreationValidator` / `<Entity>UpdateValidator` |
 | `Specifications/<Entities>/`, `Parameters/` | Ardalis query objects (folder name is plural) and paging/filter inputs |
@@ -17,7 +17,7 @@
 
 ## Dependencies
 
-References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAccessor`), Ardalis.Specification (core only, no EF Core), FluentValidation and `System.IdentityModel.Tokens.Jwt`. Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
+References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAccessor`), Ardalis.Specification (core only, no EF Core), FluentValidation and `System.IdentityModel.Tokens.Jwt`. It also configures Identity's options (password policy, lockout). Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
 
 ## Conventions
 
@@ -29,7 +29,7 @@ Register each service in `RegisterServices()` (`RegisterLayerExtensions.cs`) wit
 
 One generic `IRepository<TEntity>` (Ardalis `RepositoryBase` underneath). Encode every query as a Specification class under `Specifications/<Entities>/` and pass it to `ListAsync` / `FirstOrDefaultAsync` / `CountAsync` / `AnyAsync`. Common shapes per entity: `<Entity>Specification` (filter / by-id), `<Entity>DetailSpecification` (one row with the navigations its DTO shows, for get-by-id and for reloading after a create), `Paged<Entity>Specification` (paging + sort) and the count `<Entity>Specification(parameters)`, which both call one `<Entity>Filter.Apply` so a page and its total always agree, `Duplication<Entity>Specification` (uniqueness checks). Never answer a get-by-id with the repository's `GetByIdAsync`: it loads no navigations. Specifications that only feed responses or the cache call `Query.AsNoTracking()`; one that loads an entity to change and save it must not (`SpecificationTrackingTests` lists both kinds). Specifications can project straight to a DTO (`Specification<City, CityDto>`). Navigations are loaded only when the specification `Include`s them (no lazy loading).
 
-Each repository call saves on its own. When a check and a write must be atomic, or several writes must succeed together, wrap them in `IUnitOfWork.ExecuteInTransactionAsync` (`Interfaces/Base/`): it commits when the returned response is `Ok` and rolls back otherwise. Load everything inside the operation, because a transient failure retries it from a clean change tracker. `ReservationService.CreateAsync` is the reference: it counts the places taken on the Trip (`TripReservationSpecification`) and inserts under `IsolationLevel.Serializable`, so two bookings cannot both take the last place.
+Each repository call saves on its own. When a check and a write must be atomic, or several writes must succeed together, wrap them in `_unitOfWork.ExecuteInTransactionAsync(...)` (the `UnitOfWorkExtensions` overload for envelopes): it commits when the returned response is `Ok` and rolls back otherwise. User creation (with its Role) and the administrator bootstrap use it too. Load everything inside the operation, because a transient failure retries it from a clean change tracker. `ReservationService.CreateAsync` is the reference: it counts the places taken on the Trip (`TripReservationSpecification`) and inserts under `IsolationLevel.Serializable`, so two bookings cannot both take the last place.
 
 ### Mapping (manual, no library)
 

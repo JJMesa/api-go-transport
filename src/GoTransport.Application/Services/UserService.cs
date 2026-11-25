@@ -3,7 +3,7 @@ using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Users;
@@ -19,11 +19,14 @@ internal class UserService : IUserService
     private readonly UserManager<User> _userManager;
     private readonly IRepository<User> _userRepository;
     private readonly IRoleService _roleService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public UserService(UserManager<User> userManager
         , IRepository<User> userRepository
-        , IRoleService roleService)
+        , IRoleService roleService
+        , IUnitOfWork unitOfWork)
     {
+        _unitOfWork = unitOfWork;
         _userManager = userManager;
         _userRepository = userRepository;
         _roleService = roleService;
@@ -52,22 +55,20 @@ internal class UserService : IUserService
         if (!await _roleService.RoleExistsAsync(userCreationDto.RoleId, cancellationToken))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);
 
-        var user = userCreationDto.ToEntity();
-        var isCreated = await _userManager.CreateAsync(user, userCreationDto.Password);
-
-        if (isCreated.Succeeded)
+        // The user and their Role are saved together: a failed role assignment leaves no user without a Role.
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
         {
-            var assingRolesResult = await _roleService.AssignRolesToUser(user, userCreationDto.RoleId, cancellationToken);
-            if (!assingRolesResult.Succeeded)
-                return ResponseBuilder<UserDto>.BadRequest(assingRolesResult.Errors.ToErrorList());
+            var user = userCreationDto.ToEntity();
+            var isCreated = await _userManager.CreateAsync(user, userCreationDto.Password);
+            if (!isCreated.Succeeded)
+                return ResponseBuilder<UserDto>.BadRequest(isCreated.Errors.ToErrorList());
+
+            var assignRolesResult = await _roleService.AssignRolesToUser(user, userCreationDto.RoleId, cancellationToken);
+            if (!assignRolesResult.Succeeded)
+                return ResponseBuilder<UserDto>.BadRequest(assignRolesResult.Errors.ToErrorList());
 
             return ResponseBuilder<UserDto>.Created(user.ToDto());
-        }
-        else
-        {
-            var errors = isCreated.Errors;
-            return ResponseBuilder<UserDto>.BadRequest(errors.ToErrorList());
-        }
+        }, cancellationToken: cancellationToken);
     }
 
     public async Task<JsonResponse<UserDto>> UpdateAsync(long id, UserUpdateDto userUpdateDto, CancellationToken cancellationToken)

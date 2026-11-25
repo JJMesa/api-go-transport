@@ -3,7 +3,7 @@ using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Schedule;
 using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Specifications.Schedules;
 using GoTransport.Application.Wrappers;

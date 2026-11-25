@@ -2,7 +2,7 @@
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Route;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Routes;

@@ -5,6 +5,8 @@ using FluentValidation.AspNetCore;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
+using GoTransport.Application.Commons;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -31,6 +33,17 @@ public static class RegisterLayerExtensions
         AddValidatedSettings<AdminBootstrapSettings>(services, configuration, "AdminBootstrap")
             .Validate(settings => string.IsNullOrWhiteSpace(settings.Email) == string.IsNullOrWhiteSpace(settings.Password),
                 "AdminBootstrap needs both Email and Password, or neither.");
+
+        // Identity's rules come from Application (password policy, validated lockout settings); Persistence
+        // only stores the users.
+        services.AddOptions<IdentityOptions>()
+            .Configure<IOptions<LockoutSettings>>((options, lockout) =>
+            {
+                PasswordPolicy.Apply(options.Password);
+                options.Lockout.AllowedForNewUsers = true;
+                options.Lockout.MaxFailedAccessAttempts = lockout.Value.MaxFailedAccessAttempts;
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockout.Value.LockoutTimeInMinutes);
+            });
 
         services.RegisterServices();
     }

@@ -1,6 +1,5 @@
 using System.Data;
-using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Wrappers;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Persistence.Contexts;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +14,8 @@ internal class UnitOfWork : IUnitOfWork
         _context = context;
     }
 
-    public async Task<JsonResponse<T>> ExecuteInTransactionAsync<T>(Func<Task<JsonResponse<T>>> operation, IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default)
+    public async Task<TResult> ExecuteInTransactionAsync<TResult>(Func<Task<TResult>> operation, Func<TResult, bool> commitWhen,
+        IsolationLevel isolationLevel = IsolationLevel.ReadCommitted, CancellationToken cancellationToken = default)
     {
         // EF InMemory has no transactions, and a nested call joins the transaction already open.
         if (!_context.Database.IsRelational() || _context.Database.CurrentTransaction is not null)
@@ -33,7 +33,7 @@ internal class UnitOfWork : IUnitOfWork
             await using var transaction = await _context.Database.BeginTransactionAsync(isolationLevel, ct);
             var response = await operation();
 
-            if (response.Ok) await transaction.CommitAsync(ct);
+            if (commitWhen(response)) await transaction.CommitAsync(ct);
             else await transaction.RollbackAsync(ct);
 
             return response;

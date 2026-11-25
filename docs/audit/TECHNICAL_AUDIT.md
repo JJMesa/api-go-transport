@@ -122,12 +122,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Detailed test gaps are in A-63. → **F-55**
 #### 🟡 Medium
 
-- **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
-  - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
-  - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
-- **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
-- **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
   - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
   - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
@@ -204,6 +199,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-25 | 🟢 Reflection-based DI over `AppDomain` assemblies | F-15 (`[Refactor] Register services explicitly and hide the DbContext behind the repository`). `RegisterServices()` lists the 13 services with one `AddTransient` line each, and the `[Transient]`/`[Scoped]`/`[Singleton]` attributes are gone, so a forgotten registration fails startup validation by name instead of being skipped by a scan. |
 | A-26 | 🟢 Thin generic repository with an unused public `Context` | F-15 (same commit). `BaseRepository<T>` is `internal` and no longer exposes the `DbContext`; data access goes through `IRepository<T>` and specifications only. |
 | A-61 | 🟡 Inconsistent time handling | F-53 (`[Fix] Store audit times in UTC and judge Trips in Colombian time`). "Now" comes from an injected `TimeProvider`. Audit columns are stamped in UTC, and a data migration moves the rows written before (in Colombian time) forward five hours; the seed scripts use `GETUTCDATE()`. The "Trip has taken place" check compares with `ColombiaTime.Now` (a cached `America/Bogota` zone) instead of the server's `DateTime.Now`. The token's `Expires` is returned in UTC. `ToPacificStandardTime()` is gone. A `FakeTimeProvider` test pins the Colombian cut-off. |
+| A-11 | 🟡 Multi-step user writes were not atomic | F-16 (`[Refactor] Make Persistence depend on Domain only and save users with their Role atomically`). `UserService.CreateAsync` and `AdminBootstrapService` create the user and assign the Role inside one `IUnitOfWork` transaction, so a failed assignment leaves no user without a Role. |
+| A-17 | 🟡 Persistence depended on Application | F-16 (same commit). `IRepository<T>` and `IUnitOfWork` (now generic over a commit predicate) live in Domain, the `SISTEMA` audit user is `AuditDefaults.SystemUser`, Identity's password and lockout options are configured by Application, and Persistence's project reference to Application is gone. `LayerDependencyTests` checks the rule on the compiled assemblies. |
+| A-23 | 🟡 Domain depended on ASP.NET Core Identity's EF package | F-16 (same commit). Domain references `Microsoft.Extensions.Identity.Stores` (the Identity entity base types, no EF Core) and `Ardalis.Specification`; a test asserts Domain references no EF Core assembly. |
 
 ### 5.3 No longer applicable
 
@@ -360,7 +358,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-13 | Override sync `SaveChanges` (or an auditing `ISaveChangesInterceptor`) (A-12) | 🟢 *(was 🟡)* | Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) — *superseded by F-38, which removed `GetAllAsync`* | 🟡 | Data | S | ❌ Won't do | Juan Mesa | — | ✅ |
 | [x] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -411,10 +409,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 5 | 0 | 25 | 1 |
+| 🟡 Medium | 31 | 4 | 0 | 26 | 1 |
 | 🟢 Low | 13 | 0 | 0 | 13 | 0 |
-| **Total** | **59** | **5** | **0** | **53** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **91%** | |
+| **Total** | **59** | **4** | **0** | **54** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **93%** | |
 
 ---
 
