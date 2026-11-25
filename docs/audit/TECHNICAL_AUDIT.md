@@ -137,9 +137,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
-- **A-47 — The Route destination search uses the origin text** *(new)*.
-  - `PagedRouteSpecification.cs:21-24` and `RouteSpecification.cs:30-33` search the destination with `OriginPointSearchCriteria`. All four `Search` calls share search group 1, so they are OR-ed.
-  - **Impact:** a destination-only search on the anonymous route finder becomes `LIKE '%%'`. → **F-39**
 - **A-48 — Paged and count specifications are copy-pasted and have drifted** *(new)*.
   - `PagedCitySpecification` filters by `DepartmentId`; `CitySpecification(CityParameters)` does not. `CityService.GetAsync` therefore returns wrong `TotalItems`/`TotalPages` when filtering by Department.
   - All six paged/count pairs duplicate their filters. → **F-40**
@@ -252,6 +249,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-44 | 🟠 Updating a Reservation bypassed the Trip rules | F-36 (`[Fix] Apply the Trip rules when a Reservation moves`). When an update changes the Schedule or the travel date, the target Trip must exist (404), must not have taken place (400 `TravelDatePassed`) and must have a free place, not counting the Reservation itself (409), all under the same `Serializable` transaction as a booking. Editing a Reservation without moving it skips the Capacity check. New bookings now also reject a Trip that has already taken place. |
 | A-46 | 🟠 `GET reservations/all` was unbounded and cached | F-38 (`[Fix] Replace the unbounded Reservation list with a per-Trip filter`). The endpoint and `ReservationService.GetAllAsync` are gone, and Reservations are no longer cached. To list one Trip, `GET schedules/{scheduleId}/reservations` takes an optional `travelDate`, paged like the rest of that list. |
 | A-39 | 🟡 Overnight Schedules got a negative `Duration` and the wrong "trip passed" moment | F-31 (`[Fix] Support Schedules that arrive the next day`). `ScheduleExtensions.TripDuration` counts an arrival at or before the departure as next-day, and `ArrivalOn(travelDate)` gives the real arrival, used by every "Trip has taken place" check. The Schedule validators accept 00:00 and reject an arrival equal to the departure. A negative `time` value could never be saved, so no stored row needs fixing. |
+| A-47 | 🟡 The Route destination search used the origin text | F-39 (`[Fix] Search Route destinations by the destination text`). Both Route specifications search the destination City and Point with `DestinationPointSearchCriteria` in search group 2, so origin and destination terms combine with AND. Component tests cover origin-only, destination-only and combined searches. |
 
 ### 5.3 No longer applicable
 
@@ -275,10 +273,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **Weaknesses:** the visible defects are copy-paste bugs (A-47, A-48), suppressed nullability (A-64), dead code (A-32) and leftover typos (A-30).
 
   ```csharp
-  // Current (PagedRouteSpecification) — destination searched with the origin text, all in group 1
+  // At re-assessment (PagedRouteSpecification) — destination searched with the origin text, all in group 1
   Query.Search(r => $"{r.DestinationPoint.Detail}", $"%{parameters.OriginPointSearchCriteria}%");
-  // Recommended — right criteria, separate group so origin AND destination combine
-  Query.Search(r => $"{r.DestinationPoint.Detail}", $"%{parameters.DestinationPointSearchCriteria}%", searchGroup: 2);
+  // Recommended — right criteria, separate group so origin AND destination combine; applied by F-39
+  Query.Search(r => $"{r.DestinationPoint.Detail}", $"%{parameters.DestinationPointSearchCriteria}%", group: 2);
   ```
 
 **3. Patterns / anti-patterns (6.0).**
@@ -431,7 +429,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-38 | Page (by Trip/date) or remove `GET reservations/all`; stop caching Reservations (A-46) | 🟠 | Performance/API | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-39 | Fix the Route destination search (right criteria, separate search groups) (A-47) | 🟡 | Quality/Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-40 | Build paged and count specifications from one shared filter (A-48) | 🟡 | Patterns | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-41 | Detail specifications with `Include`s for get-by-id and create responses (A-49) | 🟡 | Data/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-42 | Unique indexes backing the duplicate checks (A-50) | 🟡 | Data | S | ⬜ Open | — | — | ⬜ |
@@ -459,10 +457,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 27 | 0 | 3 | 1 |
+| 🟡 Medium | 31 | 26 | 0 | 4 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 | 0 |
-| **Total** | **59** | **38** | **0** | **20** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **34%** | |
+| **Total** | **59** | **37** | **0** | **21** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **36%** | |
 
 ---
 
