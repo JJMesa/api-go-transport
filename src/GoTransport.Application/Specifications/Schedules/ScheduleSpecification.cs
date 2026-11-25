@@ -14,6 +14,11 @@ public class ScheduleSpecification : Specification<Schedule>
 
         Query.Include(schedule => schedule.Route!.OriginPoint.City);
         Query.Include(schedule => schedule.Route!.DestinationPoint.City);
+
+        Query.Include(schedule => schedule.Vehicle.Manufacturer);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     /// <summary>

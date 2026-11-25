@@ -11,6 +11,9 @@ public class DepartmentSpecification : Specification<Department>
         Query.Where(department => department.IsActive!.Value);
 
         Query.OrderBy(department => department.Description);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public DepartmentSpecification(DepartmentParameters parameters)

@@ -14,5 +14,8 @@ public class RouteDetailSpecification : Specification<Route>
 
         Query.Include(route => route.OriginPoint.City);
         Query.Include(route => route.DestinationPoint.City);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 }

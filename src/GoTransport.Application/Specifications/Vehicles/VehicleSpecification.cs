@@ -11,6 +11,12 @@ public class VehicleSpecification : Specification<Vehicle>
         Query.Where(vehicle => vehicle.IsActive!.Value);
 
         Query.OrderBy(vehicle => vehicle.LicensePlate);
+
+        // The cached catalog shows each Vehicle with its Manufacturer, like the paged list.
+        Query.Include(vehicle => vehicle.Manufacturer);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public VehicleSpecification(VehicleParameters parameters)

@@ -122,7 +122,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Detailed test gaps are in A-63. → **F-55**
 #### 🟡 Medium
 
-- **A-10 — No `AsNoTracking`** on entity reads (0 occurrences in `src/`). → **F-09**
 - **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
   - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
@@ -217,6 +216,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-69 | 🟢 Repository hygiene | F-59 (`[Refactor] Fill in the license holder and ignore IDE, env and log files`). `LICENSE.txt` names the copyright holder (2024, Juan Mesa) instead of the template placeholder, and `.gitignore` covers `.idea/`, `.vscode/`, `.env` files and the Serilog `Logs/` folder. |
 | A-21 | 🟢 `IOptionsSnapshot<T>` for stable config | F-19 (`[Refactor] Read stable settings through IOptions`). `AccountService` and `CacheService` take `IOptions<T>`: JWT and cache settings never change at runtime, so they are bound once instead of on every request. |
 | A-12 | 🟢 Sync `SaveChanges` was not overridden | F-13 (`[Fix] Stamp audit columns on synchronous saves too`). `ApplicationDbContext` overrides the two `bool acceptAllChangesOnSuccess` overloads that every `SaveChanges`/`SaveChangesAsync` call ends in, so both paths stamp the audit columns. A component test saves synchronously and reads the stamps back. |
+| A-10 | 🟡 No `AsNoTracking` | F-09 (`[Refactor] Read without change tracking where nothing is saved back`). The specifications behind GET endpoints and cached catalogs (City, Department, Point, Route, Vehicle, the Schedules of a Route, Reservation detail and passenger lookup) call `AsNoTracking()`; the ones that load an entity to update stay tracked. The cached Vehicle catalog now includes the Manufacturer and the Schedules of a Route include their Vehicle. `SpecificationTrackingTests` pins both kinds. |
 
 ### 5.3 No longer applicable
 
@@ -366,7 +366,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-06 | Migrate to `net10.0` (LTS; `net8.0` also lost support on 2026-11-10) + `Directory.Build.props` + CPM; align package and test-stack versions, drop unused packages (A-06, A-33, A-66) | 🟠 | NuGet/Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-10 | Invalidate the cache (`Remove`) on writes + raise the TTL (A-16) | 🟡 | Performance | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-11 | CI pipeline (`dotnet build`/`test` + vulnerable-package scan) in `.github/workflows` (A-22) | 🟠 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-12 | `.editorconfig` + analyzers + `TreatWarningsAsErrors` in CI (A-22) | 🟡 | Maintainability | S | ⬜ Open | — | — | ⬜ |
@@ -424,10 +424,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 11 | 0 | 19 | 1 |
+| 🟡 Medium | 31 | 10 | 0 | 20 | 1 |
 | 🟢 Low | 13 | 6 | 0 | 7 | 0 |
-| **Total** | **59** | **17** | **0** | **41** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **71%** | |
+| **Total** | **59** | **16** | **0** | **42** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **72%** | |
 
 ---
 

@@ -19,6 +19,9 @@ public class ReservationSpecification : Specification<Reservation>
         Query.Include(reservation => reservation.Schedule.Route.OriginPoint.City);
         Query.Include(reservation => reservation.Schedule.Route.DestinationPoint.City);
         Query.Include(reservation => reservation.IdentificationType);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public ReservationSpecification(Guid? scheduleId = null, Guid? reservationId = null)

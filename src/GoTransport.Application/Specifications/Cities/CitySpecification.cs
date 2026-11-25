@@ -19,6 +19,9 @@ public class CitySpecification : Specification<City>
         Query.OrderBy(city => city.Description);
 
         Query.Include(city => city.Department);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public CitySpecification(CityParameters parameters)

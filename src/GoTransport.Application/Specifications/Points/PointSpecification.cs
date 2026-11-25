@@ -13,6 +13,9 @@ public class PointSpecification : Specification<Point>
         Query.Include(point => point.City);
 
         Query.OrderBy(point => point.City.Description);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public PointSpecification(int id)

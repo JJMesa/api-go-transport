@@ -13,5 +13,8 @@ public class VehicleDetailSpecification : Specification<Vehicle>
         Query.Where(vehicle => vehicle.VehicleId == vehicleId);
 
         Query.Include(vehicle => vehicle.Manufacturer);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 }
