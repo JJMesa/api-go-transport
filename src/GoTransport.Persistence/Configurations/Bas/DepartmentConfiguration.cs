@@ -26,5 +26,10 @@ public class DepartmentConfiguration : BaseEntityConfiguration<Department>
             .IsUnicode(false)
             .HasColumnName("DESCRIPTION")
             .HasColumnOrder(2);
+
+        // Backs DuplicationDepartmentSpecification: concurrent requests cannot both insert the same name.
+        builder.HasIndex(e => e.Description)
+            .IsUnique()
+            .HasDatabaseName("IX_BAS_DEPARTMENT_DESCRIPTION");
     }
 }

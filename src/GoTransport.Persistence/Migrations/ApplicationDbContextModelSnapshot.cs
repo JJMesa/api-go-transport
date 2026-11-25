@@ -365,7 +365,9 @@ namespace GoTransport.Persistence.Migrations
 
                     b.HasIndex("DestinationPointId");
 
-                    b.HasIndex("OriginPointId");
+                    b.HasIndex("OriginPointId", "DestinationPointId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_APP_ROUTE_ORIGIN_POINT_ID_DESTINATION_POINT_ID");
 
                     b.ToTable("APP_ROUTE", (string)null);
                 });
@@ -904,6 +906,10 @@ namespace GoTransport.Persistence.Migrations
 
                     b.HasKey("VehicleId");
 
+                    b.HasIndex("LicensePlate")
+                        .IsUnique()
+                        .HasDatabaseName("IX_APP_VEHICLE_LICENSE_PLATE");
+
                     b.HasIndex("ManufacturerId");
 
                     b.ToTable("APP_VEHICLE", (string)null);
@@ -962,7 +968,9 @@ namespace GoTransport.Persistence.Migrations
 
                     b.HasKey("CityId");
 
-                    b.HasIndex("DepartmentId");
+                    b.HasIndex("DepartmentId", "Description")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BAS_CITY_DEPARTMENT_ID_DESCRIPTION");
 
                     b.ToTable("BAS_CITY", (string)null);
                 });
@@ -1014,6 +1022,10 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("UPDATED_AT");
 
                     b.HasKey("DepartmentId");
+
+                    b.HasIndex("Description")
+                        .IsUnique()
+                        .HasDatabaseName("IX_BAS_DEPARTMENT_DESCRIPTION");
 
                     b.ToTable("BAS_DEPARTMENT", (string)null);
                 });

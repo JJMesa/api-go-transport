@@ -21,6 +21,8 @@ Domain, plus Application for `IRepository<T>`, settings, `Constants.ApplicationU
 
 SQL Server with `Modern_Spanish_CI_AS` collation. Tables are prefixed by area — `BAS_*` for `Entities/Bas`, `APP_*` for `Entities/App` — and columns are `UPPER_SNAKE_CASE`. Each entity configuration inherits `BaseEntityConfiguration<T>` and calls `base.Configure(builder)`. Configurations are auto-applied with `ApplyConfigurationsFromAssembly`, and the context declares no `DbSet`s: a configuration is all a new entity needs here.
 
+Every `Duplication<Entity>Specification` check in Application is backed by a unique index here (`HasIndex(...).IsUnique()`), so a concurrent duplicate fails with SQL error 2601 (`409` from the error middleware) instead of being inserted. `DatabaseModelTests` in the component tests pins them.
+
 ### Auditing
 
 `ApplicationDbContext.SaveChangesAsync` stamps `IsActive` (true on insert), `CreatedAt`, `UpdatedAt`, `CreationUser`, `UpdateUser` on every `IAuditableEntity`. The user comes from the JWT `NameIdentifier` claim, falling back to `"SISTEMA"`; timestamps are Colombia local time (UTC−5) despite the helper's name, `ToPacificStandardTime()` (it uses the Windows zone id `SA Pacific Standard Time`; F-53). On insert the creation and update fields use `??=`, so a value the caller set (e.g. in seeds) is kept; on update `UpdateUser` is always overwritten with the current user. Only the async overload stamps — the sync `SaveChanges` does not (F-13).

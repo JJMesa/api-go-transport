@@ -35,6 +35,11 @@ internal class RouteConfiguration : BaseEntityConfiguration<Route>
             .HasColumnName("DESTINATION_POINT_ID")
             .HasColumnOrder(4);
 
+        // Backs DuplicationRouteSpecification: one Route per origin-destination pair.
+        builder.HasIndex(e => new { e.OriginPointId, e.DestinationPointId })
+            .IsUnique()
+            .HasDatabaseName("IX_APP_ROUTE_ORIGIN_POINT_ID_DESTINATION_POINT_ID");
+
         builder.HasOne(d => d.OriginPoint).WithMany(p => p.OriginRoutes)
             .HasForeignKey(d => d.OriginPointId)
             .OnDelete(DeleteBehavior.NoAction)

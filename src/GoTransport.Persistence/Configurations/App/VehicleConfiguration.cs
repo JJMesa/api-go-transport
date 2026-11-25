@@ -38,6 +38,11 @@ internal class VehicleConfiguration : BaseEntityConfiguration<Vehicle>
             .HasColumnName("CAPACITY")
             .HasColumnOrder(5);
 
+        // Backs DuplicationVehicleSpecification: a license plate identifies one Vehicle.
+        builder.HasIndex(e => e.LicensePlate)
+            .IsUnique()
+            .HasDatabaseName("IX_APP_VEHICLE_LICENSE_PLATE");
+
         builder.HasOne(d => d.Manufacturer).WithMany(p => p.Vehicles)
             .HasForeignKey(d => d.ManufacturerId)
             .OnDelete(DeleteBehavior.NoAction)

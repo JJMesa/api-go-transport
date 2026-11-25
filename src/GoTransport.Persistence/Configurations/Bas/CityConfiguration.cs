@@ -31,5 +31,10 @@ internal class CityConfiguration : BaseEntityConfiguration<City>
             .HasColumnType("int")
             .HasColumnName("DEPARTMENT_ID")
             .HasColumnOrder(3);
+
+        // Backs DuplicationCitySpecification: a City name is unique within its Department.
+        builder.HasIndex(e => new { e.DepartmentId, e.Description })
+            .IsUnique()
+            .HasDatabaseName("IX_BAS_CITY_DEPARTMENT_ID_DESCRIPTION");
     }
 }
