@@ -7,6 +7,7 @@ public static class ErrorMessages
     public const string TooManyLoginAttempts = "Too many sign-in attempts. Wait a minute and try again.";
     public const string DuplicateDescription = "Ya existe otro registro con la misma descripción suministrada.";
     public const string Unauthorized = "El usuario no se encuentra autenticado.";
+    public const string MissingBearerScheme = "The Authorization header must use the Bearer scheme: 'Authorization: Bearer <token>'.";
     public const string Forbidden = "El usuario no tiene permisos para acceder al recurso solicitado.";
     public const string UrlAndBodyIdNotEqual = "El ID proporcionado en la URL y en el cuerpo de la petición no coinciden.";
     public const string DuplicateRoute = "Ya existe otra ruta creada con el mismo punto de origen y el mismo punto de destino.";

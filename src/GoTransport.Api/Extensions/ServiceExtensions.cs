@@ -100,14 +100,15 @@ public static class ServiceExtensions
                 if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
             }
 
+            // An HTTP bearer scheme, not an API key: Swagger UI asks for the bare token and sends
+            // "Authorization: Bearer <token>" itself. With an API key it sent whatever was typed, so a token
+            // pasted without the prefix reached the API as an unreadable header and every call answered 401.
             c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
             {
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = JwtBearerDefaults.AuthenticationScheme,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
                 BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the bearer scheme.\n\nEnter prefix (Bearer), space, and your token.\nExample: 'Bearer abcdefghi123456789'"
+                Description = "Paste the token returned by POST /api/v1/account/login, without the 'Bearer' prefix."
             });
 
             c.AddSecurityRequirement(document => new OpenApiSecurityRequirement

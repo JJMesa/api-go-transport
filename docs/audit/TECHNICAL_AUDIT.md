@@ -114,7 +114,7 @@ Each finding has a stable ID: **A-01…A-40** come from the baseline (A-35…A-4
 
 ### 5.1 Open findings
 
-Every finding of the baseline and the re-assessment, A-70 (found while closing F-55) and A-71…A-73 (from the CRAP analysis of 2026-11-24, §2) is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. A-74…A-77 were found by re-running the coverage analysis after F-60…F-62. None is high-risk by CRAP (no method is above the gate's limit of 30); they matter because of what they leave unverified. A-78 comes from a review, the same day, of whether the shared test-utilities project is still useful. New findings continue the sequence at A-79.
+Every finding of the baseline and the re-assessment, A-70 (found while closing F-55) and A-71…A-73 (from the CRAP analysis of 2026-11-24, §2) is resolved (§5.2) or no longer applicable (§5.3) as of 2026-11-24. A-74…A-77 were found by re-running the coverage analysis after F-60…F-62. None is high-risk by CRAP (no method is above the gate's limit of 30); they matter because of what they leave unverified. A-78 comes from a review, the same day, of whether the shared test-utilities project is still useful. A-79, reported while testing the API from Swagger, was fixed at once (§5.2). New findings continue the sequence at A-80.
 
 | ID | Sev. | Finding | Evidence | Plan item |
 |---|:--:|---|---|---|
@@ -201,6 +201,7 @@ Every finding of the baseline and the re-assessment, A-70 (found while closing F
 | A-74 | 🟡 The transaction behind the Capacity check never ran on a relational database | F-63 (`[Test] Test the unit of work's transaction on SQLite`). `UnitOfWorkTests` runs the real `UnitOfWork` on in-memory SQLite (Persistence grants the component tests `InternalsVisibleTo`; the SQLite context moved to `Infrastructure/SqliteApplicationDbContext`): commit when `commitWhen` accepts, rollback when it rejects or the operation throws, the requested isolation level (`Serializable` and `ReadUncommitted`, on a shared-cache connection so SQLite keeps the latter), a nested call joining and rolling back with the outer transaction, and a retry, through a test execution strategy, that starts with a clean change tracker. Removing the `ChangeTracker.Clear()`, ignoring the isolation level or dropping the nesting check each fails one test. The `Serializable` oversell race itself still needs SQL Server (§8). |
 | A-76 | 🟢 Dead `PaginationParameters(int, int)` constructor | F-65 (`[Refactor] Remove the unused PaginationParameters constructor`). Removed; the paging parameters keep the parameterless constructor (defaults page 1, size 10) that model binding and the seven `*Parameters` subclasses use, and the clamping setters (F-50). |
 | A-77 | 🟢 The coverage gate mis-ranked methods and never flagged one of unknown complexity | F-66 (`[Fix] Make the coverage gate robust to NaN complexities, with tests`). `coverage_gate.py` parses every report attribute through `number()`, which turns a missing, malformed or NaN value into a default (complexity 1, coverage 0), sorts by score then name, and is split into `analyse()` and `summary()`. `tools/coverage/test_coverage_gate.py` (`unittest`, run by a new CI step before the gate) checks the ranking with NaN accessors, the CRAP and coverage failures, the summary and the parsing; restoring the old parsing fails two of its seven tests. On the report of A-77 the table now leads with `UnitOfWork.ExecuteInTransactionAsync` (12.2). |
+| A-79 | 🟡 Swagger sent the JWT without the `Bearer ` prefix, so every protected call from it answered 401 | Reported 2026-11-24: an Administrador's `GET /api/v1/cities` from Swagger answered `401` "El usuario no se encuentra autenticado." with a valid token. Swagger declared the JWT as an `ApiKey` scheme named `Authorization`, so its Authorize dialog sent whatever was typed: the token alone, as the dialog invites, became `Authorization: <token>`, which the JWT handler ignores, and the 401 did not say why. F-68 (`[Fix] Send the JWT from Swagger with the Bearer prefix and explain a 401 without it`): the scheme is now HTTP `bearer` (`BearerFormat` JWT), so Swagger UI adds the prefix; `EnvelopeAuthorizationResultHandler` appends `ErrorMessages.MissingBearerScheme` to the 401 when an `Authorization` header lacks it (the same mistake in Postman or curl); the README says how to send the token from Swagger and Postman. `SwaggerDocumentTests` pins the scheme and `JwtRoundTripTests` the 401 with and without the hint. |
 
 ### 5.3 No longer applicable
 
@@ -409,6 +410,7 @@ Every finding of the baseline and the re-assessment, A-70 (found while closing F
 | [x] | F-65 | Remove the unused `PaginationParameters(int, int)` constructor (A-76) | 🟢 | Quality | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-66 | Make `coverage_gate.py` treat a NaN or missing complexity as 1 so the ranking is reliable, and add a small test of the script against a sample report (A-77) | 🟢 | Maintainability | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-67 | Remove `GoTransport.Api.Test.Utilities`: move `ApiPaths` and the City creation/update data to the component tests and the other mothers to the unit tests, take the component tests' ids from `DatabaseSeeder`, delete `ResponseBuilder` and `StandarPageSize`, and update the solution, `coverage.runsettings`, `tests/CLAUDE.md`, the README and the `new-crud-resource` skill (A-78) | 🟢 | Testing | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-68 | Declare the JWT in Swagger as an HTTP `bearer` scheme so its Authorize dialog adds the `Bearer ` prefix, and make the `401` say so when an `Authorization` header lacks it (A-79) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 
 ### 7.3 Progress summary
 
@@ -416,10 +418,10 @@ Every finding of the baseline and the re-assessment, A-70 (found while closing F
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 33 | 0 | 0 | 32 | 1 |
+| 🟡 Medium | 34 | 0 | 0 | 33 | 1 |
 | 🟢 Low | 19 | 2 | 0 | 17 | 0 |
-| **Total** | **67** | **2** | **0** | **64** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **97%** (64 ÷ 66) | |
+| **Total** | **68** | **2** | **0** | **65** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **97%** (65 ÷ 67) | |
 
 ---
 

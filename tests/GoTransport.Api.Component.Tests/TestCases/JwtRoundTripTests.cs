@@ -99,6 +99,36 @@ public class JwtRoundTripTests : IClassFixture<JwtWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, apiResponse.StatusCode);
     }
 
+    [Fact]
+    public async Task ATokenWithoutTheBearerPrefix_IsRejectedWithAHint()
+    {
+        // Arrange: what Swagger UI sent before F-68 when only the token was pasted
+        await CreateUserAsync("admin@gotransport.test", Roles.Administrator);
+        var token = await LoginAsync("admin@gotransport.test");
+        var request = new HttpRequestMessage(HttpMethod.Get, ApiPaths.CitiesFullPath);
+        request.Headers.TryAddWithoutValidation("Authorization", token);
+
+        // Act
+        var apiResponse = await _client.SendAsync(request);
+        var actual = JsonConvert.DeserializeObject<JsonResponse<object>>(await apiResponse.Content.ReadAsStringAsync());
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, apiResponse.StatusCode);
+        Assert.Equal([ErrorMessages.Unauthorized, ErrorMessages.MissingBearerScheme], actual!.Errors);
+    }
+
+    [Fact]
+    public async Task NoToken_IsRejectedWithoutTheHint()
+    {
+        // Act
+        var apiResponse = await GetCitiesAsync(null);
+        var actual = JsonConvert.DeserializeObject<JsonResponse<object>>(await apiResponse.Content.ReadAsStringAsync());
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, apiResponse.StatusCode);
+        Assert.Equal([ErrorMessages.Unauthorized], actual!.Errors);
+    }
+
     private async Task CreateUserAsync(string email, string role)
     {
         using var scope = _factory.Services.CreateScope();

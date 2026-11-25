@@ -1,5 +1,6 @@
 using GoTransport.Api.Component.Tests.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi;
 using Swashbuckle.AspNetCore.Swagger;
 
 namespace GoTransport.Api.Component.Tests.TestCases;
@@ -45,8 +46,11 @@ public class SwaggerDocumentTests : ComponentTest
         // Act
         var document = _factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
 
-        // Assert
-        Assert.Contains("Bearer", document.Components!.SecuritySchemes!.Keys);
+        // Assert: an HTTP bearer scheme, so Swagger UI adds the "Bearer " prefix to the pasted token
+        var scheme = document.Components!.SecuritySchemes!["Bearer"];
+        Assert.Equal(SecuritySchemeType.Http, scheme.Type);
+        Assert.Equal("bearer", scheme.Scheme);
+        Assert.Equal("JWT", scheme.BearerFormat);
         Assert.NotEmpty(document.Security!);
     }
 }

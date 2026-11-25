@@ -23,7 +23,13 @@ internal sealed class EnvelopeAuthorizationResultHandler : IAuthorizationMiddlew
         if (authorizeResult.Challenged)
         {
             context.Response.Headers.WWWAuthenticate = "Bearer";
-            await WriteAsync(context, ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized));
+            var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
+
+            // The JWT handler ignores a token sent without the "Bearer " prefix; say so instead of a bare 401.
+            if (HasNonBearerAuthorization(context.Request))
+                response.Errors = [.. response.Errors ?? [], ErrorMessages.MissingBearerScheme];
+
+            await WriteAsync(context, response);
             return;
         }
 
@@ -34,6 +40,12 @@ internal sealed class EnvelopeAuthorizationResultHandler : IAuthorizationMiddlew
         }
 
         await _defaultHandler.HandleAsync(next, context, policy, authorizeResult);
+    }
+
+    private static bool HasNonBearerAuthorization(HttpRequest request)
+    {
+        var authorization = request.Headers.Authorization.ToString();
+        return authorization.Length > 0 && !authorization.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase);
     }
 
     private static Task WriteAsync(HttpContext context, JsonResponse<object> response)

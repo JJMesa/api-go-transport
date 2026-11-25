@@ -92,7 +92,7 @@ dotnet run --project src/GoTransport.Api
 - **Health:** `/health/live` (process up) and `/health/ready` (database reachable; `/health` is the same) return only `{"status":...}` to anonymous callers. `/health/details` lists each check with its error, for Administrators.
 - **First administrator:** on startup, if no administrator exists and `AdminBootstrap` is set, the API creates one. If that creation fails, for example because the password breaks the policy, the API stops with the reason.
 
-Log in with `POST /api/v1/account/login` (`{ "email": "...", "password": "..." }`) to get a JWT, then send it as `Authorization: Bearer <token>`.
+Log in with `POST /api/v1/account/login` (`{ "email": "...", "password": "..." }`) to get a JWT, then send it as `Authorization: Bearer <token>`. In Swagger UI, click **Authorize** and paste only the token (Swagger adds the prefix); in Postman, use the **Bearer Token** type on the Authorization tab. A token sent without the `Bearer ` prefix is not read: the `401` then says so.
 
 ## API overview
 
