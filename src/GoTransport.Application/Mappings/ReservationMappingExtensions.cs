@@ -11,14 +11,14 @@ internal static class ReservationMappingExtensions
     public static ReservationDto ToDto(this Reservation reservation) => new()
     {
         ReservationId = reservation.ReservationId,
-        Schedule = reservation.Schedule?.ToDto()!,
+        Schedule = reservation.Schedule?.ToDto(),
         ReservationDate = reservation.ReservationDate,
         PassengerFirstName = reservation.PassengerFirstName,
         PassengerLastName = reservation.PassengerLastName,
-        IdentificationType = reservation.IdentificationType?.ToDto()!,
+        IdentificationType = reservation.IdentificationType?.ToDto(),
         PassengerIdentification = reservation.PassengerIdentification,
         Detail = reservation.Detail,
-        IsActive = reservation.IsActive ?? false
+        IsActive = reservation.IsActive
     };
 
     public static Reservation ToEntity(this ReservationCreationDto reservationCreation) => new()

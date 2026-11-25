@@ -41,7 +41,7 @@ public class PagedRouteSpecification : Specification<Route, RouteDto>
                 {
                     CityId = route.OriginPoint!.City!.CityId,
                     Description = route.OriginPoint!.City!.Description,
-                    IsActive = route.OriginPoint!.City!.IsActive!.Value
+                    IsActive = route.OriginPoint!.City!.IsActive
                 },
                 Detail = route.OriginPoint!.Detail
             },
@@ -52,12 +52,12 @@ public class PagedRouteSpecification : Specification<Route, RouteDto>
                 {
                     CityId = route.DestinationPoint!.City!.CityId,
                     Description = route.DestinationPoint!.City!.Description,
-                    IsActive = route.DestinationPoint!.City!.IsActive!.Value
+                    IsActive = route.DestinationPoint!.City!.IsActive
                 },
                 Detail = route.DestinationPoint!.Detail
             },
             Description = route.Description,
-            IsActive = route.IsActive!.Value
+            IsActive = route.IsActive
         });
     }
 }

@@ -41,7 +41,7 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
             },
             Model = vehicle.Model,
             Capacity = vehicle.Capacity,
-            IsActive = vehicle.IsActive!.Value
+            IsActive = vehicle.IsActive
         });
     }
 }

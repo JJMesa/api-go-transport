@@ -34,6 +34,6 @@ public static class AppExtensions
 
         var response = await adminBootstrap.EnsureAdministratorAsync();
         if (!response.Ok)
-            throw new InvalidOperationException($"Administrator bootstrap failed: {string.Join(" ", response.Errors)}");
+            throw new InvalidOperationException($"Administrator bootstrap failed: {string.Join(" ", response.Errors ?? [])}");
     }
 }

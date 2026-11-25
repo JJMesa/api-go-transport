@@ -202,7 +202,7 @@ public class ReservationServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors);
+        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -219,7 +219,7 @@ public class ReservationServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
-        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors);
+        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -271,7 +271,7 @@ public class ReservationServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
-        Assert.Contains(ErrorMessages.VehicleFull, actual.Errors);
+        Assert.Contains(ErrorMessages.VehicleFull, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -293,7 +293,7 @@ public class ReservationServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors);
+        Assert.Contains(ErrorMessages.TravelDatePassed, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -314,7 +314,7 @@ public class ReservationServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
-        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors);
+        Assert.Contains(ErrorMessages.InvalidSchedule, actual.Errors!);
     }
 
     [Fact]

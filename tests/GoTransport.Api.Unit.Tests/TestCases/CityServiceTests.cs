@@ -156,7 +156,7 @@ public class CityServiceTests
     public async Task GetAsync_ShouldReturnCitiesForValidDepartment(int departmentId)
     {
         // Arrange
-        var cityDtoData = CitiesDtoList().Where(x => x.Department.DepartmentId == departmentId).ToList();
+        var cityDtoData = CitiesDtoList().Where(x => x.Department!.DepartmentId == departmentId).ToList();
 
         _cityRepositoryMock.Setup(x => x.ListAsync(It.IsAny<PagedCitySpecification>(), CancellationToken.None)).ReturnsAsync(cityDtoData);
         _cityRepositoryMock.Setup(x => x.CountAsync(It.IsAny<CitySpecification>(), CancellationToken.None)).ReturnsAsync(cityDtoData.Count);

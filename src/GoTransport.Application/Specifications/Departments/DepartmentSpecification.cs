@@ -8,7 +8,7 @@ public class DepartmentSpecification : Specification<Department>
 {
     public DepartmentSpecification()
     {
-        Query.Where(department => department.IsActive!.Value);
+        Query.Where(department => department.IsActive);
 
         Query.OrderBy(department => department.Description);
 

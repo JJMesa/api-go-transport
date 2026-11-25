@@ -56,10 +56,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DETAIL")
                         .HasColumnOrder(3);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -111,10 +109,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("IDENTIFICATION_TYPE_ID")
                         .HasColumnOrder(6);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("PassengerFirstName")
@@ -201,10 +197,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("Name")
@@ -277,10 +271,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<long>("RoleId")
@@ -339,10 +331,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DESTINATION_POINT_ID")
                         .HasColumnOrder(4);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<int>("OriginPointId")
@@ -409,10 +399,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DURATION")
                         .HasColumnOrder(4);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<int>("RouteId")
@@ -500,10 +488,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("FIRST_NAME")
                         .HasColumnOrder(2);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("LastName")
@@ -636,10 +622,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -693,10 +677,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("ProviderDisplayName")
@@ -752,10 +734,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -812,10 +792,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -869,10 +847,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnType("varchar(256)")
                         .HasColumnName("CREATION_USER");
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("LicensePlate")
@@ -949,10 +925,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DESCRIPTION")
                         .HasColumnOrder(2);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -1004,10 +978,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DESCRIPTION")
                         .HasColumnOrder(2);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -1059,10 +1031,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DESCRIPTION")
                         .HasColumnOrder(2);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")
@@ -1110,10 +1080,8 @@ namespace GoTransport.Persistence.Migrations
                         .HasColumnName("DESCRIPTION")
                         .HasColumnOrder(2);
 
-                    b.Property<bool?>("IsActive")
-                        .ValueGeneratedOnAdd()
+                    b.Property<bool>("IsActive")
                         .HasColumnType("bit")
-                        .HasDefaultValue(true)
                         .HasColumnName("IS_ACTIVE");
 
                     b.Property<string>("UpdateUser")

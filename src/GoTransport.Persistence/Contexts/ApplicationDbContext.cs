@@ -52,7 +52,6 @@ public partial class ApplicationDbContext : IdentityDbContext<User, Role, long, 
             switch (entry.State)
             {
                 case EntityState.Added:
-                    entry.Entity.IsActive ??= true;
                     entry.Entity.CreationUser ??= username;
                     entry.Entity.CreatedAt = now;
                     entry.Entity.UpdateUser ??= username;

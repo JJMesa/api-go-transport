@@ -162,14 +162,12 @@ public class AccountServiceTests
         _signInManagerMock.Verify(x => x.CheckPasswordSignInAsync(It.IsAny<User>(), It.IsAny<string>(), It.IsAny<bool>()), Times.Never);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(null)]
-    public async Task LoginAsync_ShouldReturnBadRequestForInactiveUser(bool? isActive)
+    [Fact]
+    public async Task LoginAsync_ShouldReturnBadRequestForInactiveUser()
     {
         // Arrange
         var user = AccountBuilderMother.UserEntity();
-        user.IsActive = isActive;
+        user.IsActive = false;
         _userManagerMock.Setup(x => x.FindByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
         _signInManagerMock.Setup(x => x.CheckPasswordSignInAsync(user, It.IsAny<string>(), true)).ReturnsAsync(SignInResult.Success);
 

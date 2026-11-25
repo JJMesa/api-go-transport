@@ -33,7 +33,7 @@ public class PagedDepartmentSpecification : Specification<Department, Department
         {
             DepartmentId = department.DepartmentId,
             Description = department.Description,
-            IsActive = department.IsActive!.Value
+            IsActive = department.IsActive
         });
     }
 }

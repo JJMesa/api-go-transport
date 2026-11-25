@@ -6,7 +6,7 @@ public class VehicleDto
 {
     public int VehicleId { get; set; }
 
-    public ManufacturerDto Manufacturer { get; set; } = null!;
+    public ManufacturerDto? Manufacturer { get; set; }
 
     public string LicensePlate { get; set; } = null!;
 

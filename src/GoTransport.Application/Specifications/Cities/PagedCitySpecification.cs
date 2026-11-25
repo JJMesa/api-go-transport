@@ -38,9 +38,9 @@ public class PagedCitySpecification : Specification<City, CityDto>
             {
                 DepartmentId = city.Department.DepartmentId,
                 Description = city.Department.Description,
-                IsActive = city.Department.IsActive!.Value
+                IsActive = city.Department.IsActive
             },
-            IsActive = city.IsActive!.Value
+            IsActive = city.IsActive
         });
     }
 }

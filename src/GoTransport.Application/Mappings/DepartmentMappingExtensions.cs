@@ -9,7 +9,7 @@ internal static class DepartmentMappingExtensions
     {
         DepartmentId = department.DepartmentId,
         Description = department.Description,
-        IsActive = department.IsActive ?? false
+        IsActive = department.IsActive
     };
 
     public static Department ToEntity(this DepartmentCreationDto departmentCreation) => new()

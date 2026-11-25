@@ -8,7 +8,7 @@ public partial class UserClaim : IdentityUserClaim<long>, IAuditableEntity
     /// <summary>
     /// ¿Está activo? (1-True, 0-False)
     /// </summary>
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// Fecha de creación del registro

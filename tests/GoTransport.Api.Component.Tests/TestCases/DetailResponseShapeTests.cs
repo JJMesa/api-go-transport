@@ -27,8 +27,8 @@ public class DetailResponseShapeTests : ComponentTest
     {
         var actual = await GetAsync<RouteDto>($"{ApiPaths.RoutesFullPath}/1");
 
-        Assert.Equal("Medellín", actual.OriginPoint.City.Description);
-        Assert.Equal("Terminal Salitre", actual.DestinationPoint.Detail);
+        Assert.Equal("Medellín", actual.OriginPoint!.City!.Description);
+        Assert.Equal("Terminal Salitre", actual.DestinationPoint!.Detail);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class DetailResponseShapeTests : ComponentTest
     {
         var actual = await GetAsync<VehicleDto>($"{ApiPaths.VehiclesFullPath}/1");
 
-        Assert.Equal("SCANIA", actual.Manufacturer.Description);
+        Assert.Equal("SCANIA", actual.Manufacturer!.Description);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class DetailResponseShapeTests : ComponentTest
     {
         var actual = await GetAsync<ScheduleDto>($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}");
 
-        Assert.Equal("Terminal de Transporte Norte", actual.Route!.OriginPoint.Detail);
+        Assert.Equal("Terminal de Transporte Norte", actual.Route!.OriginPoint!.Detail);
         Assert.Equal("ABC123", actual.Vehicle!.LicensePlate);
     }
 
@@ -53,9 +53,9 @@ public class DetailResponseShapeTests : ComponentTest
     {
         var actual = await GetAsync<ReservationDto>($"{ApiPaths.ReservationsFullPath}/{DatabaseSeeder.UpcomingReservationId}");
 
-        Assert.Equal(DatabaseSeeder.ScheduleId, actual.Schedule.ScheduleId);
-        Assert.Equal("Bogotá", actual.Schedule.Route!.DestinationPoint.City.Description);
-        Assert.Equal("Cédula de ciudadanía", actual.IdentificationType.Description);
+        Assert.Equal(DatabaseSeeder.ScheduleId, actual.Schedule!.ScheduleId);
+        Assert.Equal("Bogotá", actual.Schedule!.Route!.DestinationPoint!.City!.Description);
+        Assert.Equal("Cédula de ciudadanía", actual.IdentificationType!.Description);
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class DetailResponseShapeTests : ComponentTest
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, apiResponse.StatusCode);
-        Assert.Equal("Bogotá", actual!.Data!.OriginPoint.City.Description);
+        Assert.Equal("Bogotá", actual!.Data!.OriginPoint!.City!.Description);
     }
 
     private async Task<T> GetAsync<T>(string url)

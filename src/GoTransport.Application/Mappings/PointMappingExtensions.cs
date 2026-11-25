@@ -12,7 +12,7 @@ internal static class PointMappingExtensions
     public static PointDto ToDto(this Point point) => new()
     {
         PointId = point.PointId,
-        City = point.City?.ToDto()!,
+        City = point.City?.ToDto(),
         Detail = point.Detail
     };
 

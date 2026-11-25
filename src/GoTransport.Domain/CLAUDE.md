@@ -15,7 +15,8 @@ Only `Microsoft.Extensions.Identity.Stores` (`User`/`Role` and the Identity join
 
 ## Conventions
 
-- New entities extend `AuditableEntity`; Persistence stamps the audit fields on save (see `src/GoTransport.Persistence/CLAUDE.md`).
+- New entities extend `AuditableEntity`; Persistence stamps the audit fields on save (see `src/GoTransport.Persistence/CLAUDE.md`). `IsActive` is a plain `bool` that starts `true` for a new entity; the column is NOT NULL with no database default.
+- Reference navigations to a required principal use EF's `= null!` pattern: they are null until a specification `Include`s them, so map them with `?.` (see the Application mapping convention).
 - Name entities and properties with the `GLOSSARY.md` terms. Pick `App/` vs `Bas/` by the split above.
 - Existing entity XML docs are in Spanish; write new ones in English.
 

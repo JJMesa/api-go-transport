@@ -33,7 +33,7 @@ Each repository call saves on its own. When a check and a write must be atomic, 
 
 ### Mapping (manual, no library)
 
-Each entity has an `internal static class <Entity>MappingExtensions` with up to three methods: `entity.ToDto()`, `creationDto.ToEntity()` and `updateDto.ApplyTo(entity)` (copies the editable fields onto the tracked entity; never the key, since services already reject a URL/body id mismatch). `ToDto` maps a navigation that wasn't loaded to `null` (`city.Department?.ToDto()!`) and a null `IsActive` to `false`. Map lists with `.Select(x => x.ToDto()).ToList()`. Paged specifications still project in `Query.Select(...)` because EF must translate that expression to SQL — keep it in sync with `ToDto` when a DTO changes.
+Each entity has an `internal static class <Entity>MappingExtensions` with up to three methods: `entity.ToDto()`, `creationDto.ToEntity()` and `updateDto.ApplyTo(entity)` (copies the editable fields onto the tracked entity; never the key, since services already reject a URL/body id mismatch). `ToDto` maps a navigation that wasn't loaded to `null` (`city.Department?.ToDto()`), so DTO navigation properties are nullable (`DepartmentDto? Department`). Map lists with `.Select(x => x.ToDto()).ToList()`. Paged specifications still project in `Query.Select(...)` because EF must translate that expression to SQL — keep it in sync with `ToDto` when a DTO changes.
 
 ### Responses
 

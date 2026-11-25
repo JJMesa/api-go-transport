@@ -8,7 +8,7 @@ public class CityDto
 
     public string Description { get; set; } = null!;
 
-    public DepartmentDto Department { get; set; } = null!;
+    public DepartmentDto? Department { get; set; }
 
     public bool IsActive { get; set; }
 }

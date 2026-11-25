@@ -95,7 +95,7 @@ public class AdminBootstrapServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.AdministratorRoleMissing, actual.Errors);
+        Assert.Contains(ErrorMessages.AdministratorRoleMissing, actual.Errors!);
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -114,7 +114,7 @@ public class AdminBootstrapServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(passwordError.Description, actual.Errors);
+        Assert.Contains(passwordError.Description, actual.Errors!);
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 

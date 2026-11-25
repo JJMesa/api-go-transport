@@ -16,7 +16,7 @@ public class TripReservationSpecification : Specification<Reservation>
         Query.Where(reservation =>
             reservation.ScheduleId == scheduleId
             && reservation.ReservationDate == date
-            && reservation.IsActive == true);
+            && reservation.IsActive);
 
         // A Reservation being moved must not count against the place it is moving into.
         if (excludedReservationId.HasValue)

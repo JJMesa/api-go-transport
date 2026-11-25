@@ -50,7 +50,7 @@ public class CatalogCacheTests : ComponentTest
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, updated.StatusCode);
-        Assert.Equal("Terminal del Norte", routes.Single(route => route.RouteId == 1).OriginPoint.Detail);
+        Assert.Equal("Terminal del Norte", routes.Single(route => route.RouteId == 1).OriginPoint!.Detail);
     }
 
     private async Task<List<T>> GetAllAsync<T>(string path)

@@ -14,7 +14,7 @@ public class CitySpecification : Specification<City>
 
         if (cityId.HasValue)
             Query.Where(city => city.CityId == cityId.Value);
-        Query.Where(City => City.IsActive!.Value);
+        Query.Where(City => City.IsActive);
 
         Query.OrderBy(city => city.Description);
 

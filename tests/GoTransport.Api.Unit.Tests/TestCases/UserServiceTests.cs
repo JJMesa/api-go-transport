@@ -85,7 +85,7 @@ public class UserServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.UrlAndBodyIdNotEqual, actual.Errors);
+        Assert.Contains(ErrorMessages.UrlAndBodyIdNotEqual, actual.Errors!);
     }
 
     [Fact]
@@ -102,7 +102,7 @@ public class UserServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(roleError.Description, actual.Errors);
+        Assert.Contains(roleError.Description, actual.Errors!);
     }
 
     #endregion UpdateAsync
@@ -120,7 +120,7 @@ public class UserServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors);
+        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors!);
         _userManagerMock.Verify(x => x.UpdateSecurityStampAsync(It.IsAny<User>()), Times.Never);
     }
 
@@ -138,7 +138,7 @@ public class UserServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors);
+        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors!);
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 

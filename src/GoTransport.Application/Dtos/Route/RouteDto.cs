@@ -8,9 +8,9 @@ public class RouteDto
 
     public string Description { get; set; } = null!;
 
-    public PointDto OriginPoint { get; set; } = null!;
+    public PointDto? OriginPoint { get; set; }
 
-    public PointDto DestinationPoint { get; set; } = null!;
+    public PointDto? DestinationPoint { get; set; }
 
     public bool IsActive { get; set; }
 }

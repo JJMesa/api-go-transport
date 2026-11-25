@@ -40,7 +40,7 @@ internal class AccountService : IAccountService
     {
         var user = await _userManager.FindByEmailAsync(userLogin.Email);
         // A deactivated account gets the same answer as an unknown one, so the response does not reveal it exists.
-        if (user is null || user.IsActive != true) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
+        if (user is null || !user.IsActive) return ResponseBuilder<UserTokenDto>.BadRequest(ErrorMessages.InvalidCredentials);
 
         var signInResult = await _signInManager.CheckPasswordSignInAsync(user, userLogin.Password, lockoutOnFailure: true);
 
@@ -66,7 +66,7 @@ internal class AccountService : IAccountService
         if (userId is null || tokenStamp is null) return false;
 
         var user = await _userManager.FindByIdAsync(userId);
-        if (user is null || user.IsActive != true) return false;
+        if (user is null || !user.IsActive) return false;
 
         // Deactivating a user or changing their role rotates the stamp, which retires every token issued before.
         return tokenStamp == (user.SecurityStamp ?? string.Empty);

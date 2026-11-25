@@ -29,15 +29,15 @@ public class MappingExtensionsTests
         Assert.Equal(3, actual.CityId);
         Assert.Equal("city 3", actual.Description);
         Assert.True(actual.IsActive);
-        Assert.Equal(2, actual.Department.DepartmentId);
+        Assert.Equal(2, actual.Department!.DepartmentId);
         Assert.Equal("department 2", actual.Department.Description);
         Assert.True(actual.Department.IsActive);
     }
 
     [Fact]
-    public void ToDto_ShouldMapUnloadedNavigationToNullAndNullIsActiveToFalse()
+    public void ToDto_ShouldMapUnloadedNavigationToNullAndKeepIsActive()
     {
-        // Arrange
+        // Arrange: a new entity starts active
         var reservation = new Reservation { ReservationId = Guid.NewGuid(), PassengerIdentification = "123" };
 
         // Act
@@ -46,7 +46,7 @@ public class MappingExtensionsTests
         // Assert
         Assert.Null(actual.Schedule);
         Assert.Null(actual.IdentificationType);
-        Assert.False(actual.IsActive);
+        Assert.True(actual.IsActive);
     }
 
     [Fact]
@@ -90,18 +90,18 @@ public class MappingExtensionsTests
         var actual = reservation.ToDto();
 
         // Assert
-        Assert.Equal("CC", actual.IdentificationType.Description);
-        Assert.Equal(TimeSpan.FromHours(2), actual.Schedule.Duration);
-        Assert.Equal("manufacturer 9", actual.Schedule.Vehicle!.Manufacturer.Description);
-        Assert.Equal("origin", actual.Schedule.Route!.OriginPoint.Detail);
-        Assert.Equal("department 1", actual.Schedule.Route.DestinationPoint.City.Department.Description);
+        Assert.Equal("CC", actual.IdentificationType!.Description);
+        Assert.Equal(TimeSpan.FromHours(2), actual.Schedule!.Duration);
+        Assert.Equal("manufacturer 9", actual.Schedule!.Vehicle!.Manufacturer!.Description);
+        Assert.Equal("origin", actual.Schedule!.Route!.OriginPoint!.Detail);
+        Assert.Equal("department 1", actual.Schedule!.Route!.DestinationPoint!.City!.Department!.Description);
     }
 
     [Fact]
     public void UserToDto_ShouldMapIdToUserId()
     {
         // Arrange
-        var user = new User { Id = 10, FirstName = "Jane", LastName = "Doe", Email = "jane@test.com", IsActive = null };
+        var user = new User { Id = 10, FirstName = "Jane", LastName = "Doe", Email = "jane@test.com", IsActive = false };
 
         // Act
         var actual = user.ToDto();
@@ -109,7 +109,7 @@ public class MappingExtensionsTests
         // Assert
         Assert.Equal(10, actual.UserId);
         Assert.Equal("jane@test.com", actual.Email);
-        Assert.Null(actual.IsActive);
+        Assert.False(actual.IsActive);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ public class ScheduleSpecification : Specification<Schedule>
 {
     public ScheduleSpecification(int routeId)
     {
-        Query.Where(schedule => schedule.IsActive!.Value);
+        Query.Where(schedule => schedule.IsActive);
         Query.Where(schedule => schedule.RouteId == routeId);
 
         Query.OrderBy(schedule => schedule.DepartureTime);

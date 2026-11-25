@@ -35,7 +35,7 @@ public class CitiesControllerTests : ComponentTest
         // Assert
         Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, actual?.HttpCode);
-        Assert.DoesNotContain(actual?.Data!, value => value.Department.DepartmentId != departmentId);
+        Assert.DoesNotContain(actual?.Data!, value => value.Department!.DepartmentId != departmentId);
         Assert.NotNull(apiResponse.Content);
     }
 
@@ -57,7 +57,7 @@ public class CitiesControllerTests : ComponentTest
         Assert.Equal(HttpStatusCode.OK, actual?.HttpCode);
         Assert.NotNull(actual?.Data);
         Assert.NotNull(sortActual);
-        Assert.DoesNotContain(actual?.Data!, value => value.Department.DepartmentId != departmentId);
+        Assert.DoesNotContain(actual?.Data!, value => value.Department!.DepartmentId != departmentId);
         Assert.Equal(sortActual, actual?.Data);
     }
 

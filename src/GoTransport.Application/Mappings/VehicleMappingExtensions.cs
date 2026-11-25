@@ -11,11 +11,11 @@ internal static class VehicleMappingExtensions
     public static VehicleDto ToDto(this Vehicle vehicle) => new()
     {
         VehicleId = vehicle.VehicleId,
-        Manufacturer = vehicle.Manufacturer?.ToDto()!,
+        Manufacturer = vehicle.Manufacturer?.ToDto(),
         LicensePlate = vehicle.LicensePlate,
         Model = vehicle.Model,
         Capacity = vehicle.Capacity,
-        IsActive = vehicle.IsActive ?? false
+        IsActive = vehicle.IsActive
     };
 
     public static Vehicle ToEntity(this VehicleCreationDto vehicleCreation) => new()

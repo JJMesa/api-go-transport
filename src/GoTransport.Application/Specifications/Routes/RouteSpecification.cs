@@ -8,7 +8,7 @@ public class RouteSpecification : Specification<Route>
 {
     public RouteSpecification()
     {
-        Query.Where(route => route.IsActive!.Value);
+        Query.Where(route => route.IsActive);
 
         Query.OrderBy(route => route.Description);
 

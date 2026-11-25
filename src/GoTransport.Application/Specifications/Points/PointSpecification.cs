@@ -8,7 +8,7 @@ public class PointSpecification : Specification<Point>
 {
     public PointSpecification()
     {
-        Query.Where(point => point.IsActive!.Value);
+        Query.Where(point => point.IsActive);
 
         Query.Include(point => point.City);
 

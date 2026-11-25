@@ -58,7 +58,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                         {
                             CityId = reservation.Schedule.Route.OriginPoint.City.CityId,
                             Description = reservation.Schedule.Route.OriginPoint.City.Description,
-                            IsActive = reservation.Schedule.Route.OriginPoint.City.IsActive!.Value
+                            IsActive = reservation.Schedule.Route.OriginPoint.City.IsActive
                         }
                     },
                     DestinationPoint = new PointDto
@@ -69,10 +69,10 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                         {
                             CityId = reservation.Schedule.Route.DestinationPoint.City.CityId,
                             Description = reservation.Schedule.Route.DestinationPoint.City.Description,
-                            IsActive = reservation.Schedule.Route.DestinationPoint.City.IsActive!.Value
+                            IsActive = reservation.Schedule.Route.DestinationPoint.City.IsActive
                         }
                     },
-                    IsActive = reservation.Schedule.Route.IsActive!.Value
+                    IsActive = reservation.Schedule.Route.IsActive
                 }
             },
             ReservationDate = reservation.ReservationDate,
@@ -85,7 +85,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
             },
             PassengerIdentification = reservation.PassengerIdentification,
             Detail = reservation.Detail,
-            IsActive = reservation.IsActive!.Value
+            IsActive = reservation.IsActive
         });
     }
 }

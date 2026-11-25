@@ -13,9 +13,9 @@ internal static class RouteMappingExtensions
     {
         RouteId = route.RouteId,
         Description = route.Description,
-        OriginPoint = route.OriginPoint?.ToDto()!,
-        DestinationPoint = route.DestinationPoint?.ToDto()!,
-        IsActive = route.IsActive ?? false
+        OriginPoint = route.OriginPoint?.ToDto(),
+        DestinationPoint = route.DestinationPoint?.ToDto(),
+        IsActive = route.IsActive
     };
 
     public static Route ToEntity(this RouteCreationDto routeCreation) => new()

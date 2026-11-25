@@ -10,5 +10,5 @@ public class UserDto
 
     public string Email { get; set; } = null!;
 
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; }
 }

@@ -7,10 +7,11 @@ public abstract class BaseEntityConfiguration<TEntity> : IEntityTypeConfiguratio
 {
     public virtual void Configure(EntityTypeBuilder<TEntity> builder)
     {
-        builder.Property<bool?>("IsActive")
+        // Required, with no database default: new entities start active in code, and a bool default of true
+        // would make EF send the default instead of an explicit false.
+        builder.Property<bool>("IsActive")
             .HasColumnName("IS_ACTIVE")
-            .IsRequired(false)
-            .HasDefaultValue(true);
+            .IsRequired();
 
         builder.Property<DateTime>("CreatedAt")
             .HasColumnName("CREATED_AT");

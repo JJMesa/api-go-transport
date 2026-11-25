@@ -37,7 +37,7 @@ public class PagedPointSpecification : Specification<Point, PointDto>
             {
                 CityId = point.City!.CityId,
                 Description = point.City!.Description,
-                IsActive = point.City!.IsActive!.Value
+                IsActive = point.City!.IsActive
             },
             Detail = point.Detail
         });

@@ -8,7 +8,7 @@ public class VehicleSpecification : Specification<Vehicle>
 {
     public VehicleSpecification()
     {
-        Query.Where(vehicle => vehicle.IsActive!.Value);
+        Query.Where(vehicle => vehicle.IsActive);
 
         Query.OrderBy(vehicle => vehicle.LicensePlate);
 
