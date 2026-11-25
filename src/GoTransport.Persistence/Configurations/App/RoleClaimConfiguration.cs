@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class RoleClaimConfiguration : BaseEntityConfiguration<RoleClaim>
+internal sealed class RoleClaimConfiguration : BaseEntityConfiguration<RoleClaim>
 {
     public override void Configure(EntityTypeBuilder<RoleClaim> builder)
     {

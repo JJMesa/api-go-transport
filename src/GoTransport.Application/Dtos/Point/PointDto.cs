@@ -6,7 +6,7 @@ public class PointDto
 {
     public int PointId { get; set; }
 
-    public CityDto City { get; set; } = null!;
+    public CityDto? City { get; set; }
 
     public string Detail { get; set; } = null!;
 }

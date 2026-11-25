@@ -10,14 +10,7 @@ public class PagedUserSpecification : Specification<User, UserDto>
 {
     public PagedUserSpecification(UserParameters parameters)
     {
-        if (parameters.RoleId.HasValue)
-            Query.Where(user => user.UserRoles.Any(role => role.RoleId == parameters.RoleId.Value));
-
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-        {
-            Query.Search(user => $"{user.FirstName}", $"%{parameters.SearchCriteria}%");
-            Query.Search(user => $"{user.LastName}", $"%{parameters.SearchCriteria}%");
-        }
+        UserFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -37,9 +30,6 @@ public class PagedUserSpecification : Specification<User, UserDto>
                 break;
         }
 
-        if (parameters.IsActive.HasValue)
-            Query.Where(user => user.IsActive == parameters.IsActive);
-
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
         Query.Select(user => new UserDto
@@ -47,7 +37,7 @@ public class PagedUserSpecification : Specification<User, UserDto>
             UserId = user.Id,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            Email = user.Email,
+            Email = user.Email ?? string.Empty,
             IsActive = user.IsActive
         });
     }

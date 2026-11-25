@@ -47,7 +47,7 @@ The year of a Vehicle's model (e.g. 2022), not a commercial model name.
 _Avoid_: Model, version
 
 **Capacity**:
-The maximum number of Passengers a Vehicle can carry on one Trip. There are no seat numbers or seat assignment.
+The maximum number of Passengers a Vehicle can carry on one Trip, so the active Reservations on a Trip never exceed it. There are no seat numbers or seat assignment.
 _Avoid_: Seats, seating
 
 ### Booking
@@ -55,6 +55,10 @@ _Avoid_: Seats, seating
 **Reservation**:
 A place on a Trip held for exactly one Passenger.
 _Avoid_: Booking, ticket
+
+**Cancellation**:
+Ending a Reservation before its Trip. The Reservation stays on record as inactive and can no longer change, and its place on the Trip is free again.
+_Avoid_: Deletion, refund
 
 **Passenger**:
 The person who travels on a Trip, identified on the Reservation by name and identification document. Passengers never sign in; staff create Reservations on their behalf.

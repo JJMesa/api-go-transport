@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class RouteConfiguration : BaseEntityConfiguration<Route>
+internal sealed class RouteConfiguration : BaseEntityConfiguration<Route>
 {
     public override void Configure(EntityTypeBuilder<Route> builder)
     {
@@ -34,6 +34,11 @@ internal class RouteConfiguration : BaseEntityConfiguration<Route>
         builder.Property(e => e.DestinationPointId)
             .HasColumnName("DESTINATION_POINT_ID")
             .HasColumnOrder(4);
+
+        // Backs DuplicationRouteSpecification: one Route per origin-destination pair.
+        builder.HasIndex(e => new { e.OriginPointId, e.DestinationPointId })
+            .IsUnique()
+            .HasDatabaseName("IX_APP_ROUTE_ORIGIN_POINT_ID_DESTINATION_POINT_ID");
 
         builder.HasOne(d => d.OriginPoint).WithMany(p => p.OriginRoutes)
             .HasForeignKey(d => d.OriginPointId)

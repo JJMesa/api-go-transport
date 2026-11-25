@@ -1,16 +1,14 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Manufacturer;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.Bas;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class ManufacturerService : IManufacturerService
 {
     private readonly IRepository<Manufacturer> _manufacturerRepository;

@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class UserLoginConfiguration : BaseEntityConfiguration<UserLogin>
+internal sealed class UserLoginConfiguration : BaseEntityConfiguration<UserLogin>
 {
     public override void Configure(EntityTypeBuilder<UserLogin> builder)
     {

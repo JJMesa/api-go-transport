@@ -2,8 +2,6 @@
 using System.Net.Mime;
 using System.Text;
 using GoTransport.Api.Component.Tests.Infrastructure;
-using GoTransport.Api.Test.Utilities.Commons;
-using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Wrappers;
@@ -24,7 +22,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetAllByDepartmentAsync_Ok()
     {
         // Arrange
-        int departmentId = Utils.DefaultId;
+        int departmentId = DatabaseSeeder.AntioquiaDepartmentId;
 
         // Act
         await AddAuthorization();
@@ -35,7 +33,7 @@ public class CitiesControllerTests : ComponentTest
         // Assert
         Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, actual?.HttpCode);
-        Assert.DoesNotContain(actual?.Data!, value => value.Department.DepartmentId != departmentId);
+        Assert.DoesNotContain(actual?.Data!, value => value.Department!.DepartmentId != departmentId);
         Assert.NotNull(apiResponse.Content);
     }
 
@@ -43,7 +41,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetAllByDepartmentAsync_SortedByDescriptionAscending_Ok()
     {
         // Arrange
-        int departmentId = Utils.DefaultId;
+        int departmentId = DatabaseSeeder.AntioquiaDepartmentId;
 
         // Act
         await AddAuthorization();
@@ -57,7 +55,7 @@ public class CitiesControllerTests : ComponentTest
         Assert.Equal(HttpStatusCode.OK, actual?.HttpCode);
         Assert.NotNull(actual?.Data);
         Assert.NotNull(sortActual);
-        Assert.DoesNotContain(actual?.Data!, value => value.Department.DepartmentId != departmentId);
+        Assert.DoesNotContain(actual?.Data!, value => value.Department!.DepartmentId != departmentId);
         Assert.Equal(sortActual, actual?.Data);
     }
 
@@ -95,7 +93,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetAsync_Pagination_PageSizeOutsideLimit_Ok(int pageSize)
     {
         // Arrange}
-        int pageNumber = Utils.StandarPageNumber;
+        int pageNumber = 1;
 
         // Act
         await AddAuthorization();
@@ -154,7 +152,7 @@ public class CitiesControllerTests : ComponentTest
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public async Task GetAsync_Parameters_WithFilterNullOrEmpty_Ok(string description)
+    public async Task GetAsync_Parameters_WithFilterNullOrEmpty_Ok(string? description)
     {
         // Act
         await AddAuthorization();
@@ -172,7 +170,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetAsync_Parameters_WithDepartmentId_Ok()
     {
         // Arrange
-        int departmentId = Utils.DefaultId;
+        int departmentId = DatabaseSeeder.AntioquiaDepartmentId;
 
         // Act
         await AddAuthorization();
@@ -187,10 +185,26 @@ public class CitiesControllerTests : ComponentTest
     }
 
     [Fact]
+    public async Task GetAsync_Parameters_WithDepartmentId_CountsOnlyThatDepartment()
+    {
+        // Arrange: the seed has 2 Cities in Cundinamarca (Bogotá, Soacha) and 7 in total.
+        const int cundinamarca = 2;
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.GetAsync($"{ApiPaths.CitiesFullPath}?departmentId={cundinamarca}");
+        var metadata = JsonConvert.DeserializeObject<Metadata>(apiResponse.Headers.GetValues(Constants.PaginationHeader).Single());
+
+        // Assert: the total count used to ignore the Department filter.
+        Assert.Equal(2, metadata!.TotalItems);
+        Assert.Equal(1, metadata.TotalPages);
+    }
+
+    [Fact]
     public async Task GetAsync_Parameters_WithNotExistsDepartmentId_Ok()
     {
         // Arrange
-        int departmentId = Utils.IdDoesNotExist;
+        int departmentId = DatabaseSeeder.UnknownId;
 
         // Act
         await AddAuthorization();
@@ -212,7 +226,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetByIdAsync_Ok()
     {
         // Arrange
-        int cityId = Utils.DefaultId;
+        int cityId = DatabaseSeeder.MedellinCityId;
 
         // Act
         await AddAuthorization();
@@ -231,7 +245,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task GetByIdAsync_WithNotExistsCityId_NotFound()
     {
         // Arrange
-        int cityId = Utils.IdDoesNotExist;
+        int cityId = DatabaseSeeder.UnknownId;
 
         // Act
         await AddAuthorization();
@@ -268,7 +282,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task CreateAsync_Ok()
     {
         // Arrange
-        var cityCreationDto = CityBuilderMother.CityCreationDtoOk();
+        var cityCreationDto = NewCity();
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityCreationDto), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         // Act
@@ -290,8 +304,8 @@ public class CitiesControllerTests : ComponentTest
     public async Task CreateAsync_WithInvalidDescription_BadRequest()
     {
         // Arrange
-        var cityCreationDto = CityBuilderMother.CityCreationDtoOk();
-        cityCreationDto.Description = Utils.MoreThan128Characters;
+        var cityCreationDto = NewCity();
+        cityCreationDto.Description = MoreThan128Characters;
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityCreationDto), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         // Act
@@ -310,7 +324,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task CreateAsync_WithoutRequiredProperties_BadRequest()
     {
         // Arrange
-        var cityCreationDto = CityBuilderMother.CityCreationDtoOk();
+        var cityCreationDto = NewCity();
         cityCreationDto.Description = "";
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityCreationDto), Encoding.UTF8, MediaTypeNames.Application.Json);
 
@@ -336,7 +350,7 @@ public class CitiesControllerTests : ComponentTest
         #region Create
 
         // Arrange
-        var cityCreationDto = CityBuilderMother.CityCreationDtoOk();
+        var cityCreationDto = NewCity();
         var contentRequestCreated = new StringContent(JsonConvert.SerializeObject(cityCreationDto), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         // Act
@@ -353,7 +367,7 @@ public class CitiesControllerTests : ComponentTest
         #region Update
 
         // Arrange
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(actualCreation.Data!.CityId);
+        var cityUpdateDto = CityUpdate(actualCreation.Data!.CityId);
         var contentRequestUpdated = new StringContent(JsonConvert.SerializeObject(cityUpdateDto), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         //Act
@@ -383,8 +397,8 @@ public class CitiesControllerTests : ComponentTest
     public async Task UpdateAsync_AsSignedInUser_StampsUpdateUser()
     {
         // Arrange — the seeded City was created by the system user
-        int cityId = Utils.DefaultId;
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
+        int cityId = DatabaseSeeder.MedellinCityId;
+        var cityUpdateDto = CityUpdate(cityId);
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         // Act
@@ -402,9 +416,9 @@ public class CitiesControllerTests : ComponentTest
     public async Task UpdateAsync_WithInvalidDescription_BadRequest()
     {
         //Arrange
-        int cityId = Utils.DefaultId;
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
-        cityUpdateDto.Description = Utils.MoreThan128Characters;
+        int cityId = DatabaseSeeder.MedellinCityId;
+        var cityUpdateDto = CityUpdate(cityId);
+        cityUpdateDto.Description = MoreThan128Characters;
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         //Act
@@ -423,8 +437,8 @@ public class CitiesControllerTests : ComponentTest
     public async Task UpdateAsync_WithoutRequiredProperties_BadRequest()
     {
         //Arrange
-        int cityId = Utils.DefaultId;
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId);
+        int cityId = DatabaseSeeder.MedellinCityId;
+        var cityUpdateDto = CityUpdate(cityId);
         cityUpdateDto.Description = "";
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
@@ -444,12 +458,12 @@ public class CitiesControllerTests : ComponentTest
     public async Task UpdateAsync_WithIdDifferentToBodyId_BadRequest()
     {
         //Arrange
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(Utils.DefaultId);
+        var cityUpdateDto = CityUpdate(DatabaseSeeder.MedellinCityId);
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         //Act
         await AddAuthorization();
-        var apiResponse = await Client.PutAsync($"{ApiPaths.CitiesFullPath}/{Utils.IdDoesNotExist}", contentRequest);
+        var apiResponse = await Client.PutAsync($"{ApiPaths.CitiesFullPath}/{DatabaseSeeder.UnknownId}", contentRequest);
         var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
         var actual = JsonConvert.DeserializeObject<JsonResponse<CityDto>>(jsonResponse, JsonSettings);
 
@@ -467,7 +481,7 @@ public class CitiesControllerTests : ComponentTest
     public async Task UpdateAsync_WithInvalidCityId_NotFound(string id)
     {
         //Arrange
-        var cityUpdateDto = CityBuilderMother.CityUpdateDtoOk(cityId: 9999);
+        var cityUpdateDto = CityUpdate(cityId: 9999);
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityUpdateDto, JsonSettings), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         //Act
@@ -491,7 +505,7 @@ public class CitiesControllerTests : ComponentTest
         #region Create
 
         // Arrange
-        var cityTobeCreated = CityBuilderMother.CityCreationDtoOk();
+        var cityTobeCreated = NewCity();
         var contentRequest = new StringContent(JsonConvert.SerializeObject(cityTobeCreated), Encoding.UTF8, MediaTypeNames.Application.Json);
 
         // Act
@@ -533,4 +547,20 @@ public class CitiesControllerTests : ComponentTest
     }
 
     #endregion DeleteAsync
+
+    private const string MoreThan128Characters = "Lorem ipsum dolor sit amet consectetur adipiscing elit potenti ultricies sapien, cubilia scelerisque augue feugiat proin nam curabitur";
+
+    private static CityCreationDto NewCity(int departmentId = DatabaseSeeder.AntioquiaDepartmentId) => new()
+    {
+        Description = "Prueba Creación",
+        DepartmentId = departmentId
+    };
+
+    private static CityUpdateDto CityUpdate(int cityId = DatabaseSeeder.MedellinCityId, int departmentId = DatabaseSeeder.AntioquiaDepartmentId) => new()
+    {
+        CityId = cityId,
+        Description = "Prueba Actualización",
+        DepartmentId = departmentId,
+        IsActive = true
+    };
 }

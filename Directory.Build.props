@@ -1,0 +1,15 @@
+<Project>
+
+  <!-- Shared by every project in the solution. Package versions live in Directory.Packages.props. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- The recommended .NET analyzer set plus the code style in .editorconfig, checked by every build. -->
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <!-- CI (GitHub Actions sets CI=true) fails on any warning; locally, run `dotnet build -warnaserror` to check. -->
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+</Project>

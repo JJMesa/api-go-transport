@@ -16,8 +16,10 @@ public class RouteCreationValidator : AbstractValidator<RouteCreationDto>
             .NotNull()
             .NotEmpty();
 
+        // A Route connects two different Points.
         RuleFor(x => x.DestinationPointId)
             .NotNull()
-            .NotEmpty();
+            .NotEmpty()
+            .NotEqual(x => x.OriginPointId);
     }
 }

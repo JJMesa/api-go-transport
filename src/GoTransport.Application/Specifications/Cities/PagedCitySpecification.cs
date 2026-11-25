@@ -11,11 +11,7 @@ public class PagedCitySpecification : Specification<City, CityDto>
 {
     public PagedCitySpecification(CityParameters parameters)
     {
-        if (parameters.DepartmentId.HasValue)
-            Query.Where(city => city.DepartmentId == parameters.DepartmentId.Value);
-
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Where(city => city.Description.Contains(parameters.SearchCriteria));
+        CityFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -32,9 +28,6 @@ public class PagedCitySpecification : Specification<City, CityDto>
                 break;
         }
 
-        if (parameters.IsActive.HasValue)
-            Query.Where(city => city.IsActive == parameters.IsActive);
-
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
         Query.Select(city => new CityDto
@@ -45,9 +38,9 @@ public class PagedCitySpecification : Specification<City, CityDto>
             {
                 DepartmentId = city.Department.DepartmentId,
                 Description = city.Department.Description,
-                IsActive = city.Department.IsActive!.Value
+                IsActive = city.Department.IsActive
             },
-            IsActive = city.IsActive!.Value
+            IsActive = city.IsActive
         });
     }
 }

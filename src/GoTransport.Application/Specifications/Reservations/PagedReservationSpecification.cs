@@ -15,14 +15,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
 {
     public PagedReservationSpecification(Guid scheduleId, ReservationParameters parameters)
     {
-        Query.Where(reservation => reservation.ScheduleId == scheduleId);
-
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-        {
-            Query.Search(x => $"{x.PassengerFirstName}", $"%{parameters.SearchCriteria}%");
-            Query.Search(x => $"{x.PassengerLastName}", $"%{parameters.SearchCriteria}%");
-            Query.Search(x => $"{x.PassengerIdentification}", $"%{parameters.SearchCriteria}%");
-        }
+        ReservationFilter.Apply(Query, scheduleId, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -41,9 +34,6 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                     .ThenBy(schedule => schedule.PassengerLastName);
                 break;
         }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(schedule => schedule.IsActive == parameters.IsActive);
 
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
@@ -68,7 +58,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                         {
                             CityId = reservation.Schedule.Route.OriginPoint.City.CityId,
                             Description = reservation.Schedule.Route.OriginPoint.City.Description,
-                            IsActive = reservation.Schedule.Route.OriginPoint.City.IsActive!.Value
+                            IsActive = reservation.Schedule.Route.OriginPoint.City.IsActive
                         }
                     },
                     DestinationPoint = new PointDto
@@ -79,12 +69,13 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
                         {
                             CityId = reservation.Schedule.Route.DestinationPoint.City.CityId,
                             Description = reservation.Schedule.Route.DestinationPoint.City.Description,
-                            IsActive = reservation.Schedule.Route.DestinationPoint.City.IsActive!.Value
+                            IsActive = reservation.Schedule.Route.DestinationPoint.City.IsActive
                         }
                     },
-                    IsActive = reservation.Schedule.Route.IsActive!.Value
+                    IsActive = reservation.Schedule.Route.IsActive
                 }
             },
+            ReservationDate = reservation.ReservationDate,
             PassengerFirstName = reservation.PassengerFirstName,
             PassengerLastName = reservation.PassengerLastName,
             IdentificationType = new IdentificationTypeDto
@@ -94,7 +85,7 @@ public class PagedReservationSpecification : Specification<Reservation, Reservat
             },
             PassengerIdentification = reservation.PassengerIdentification,
             Detail = reservation.Detail,
-            IsActive = reservation.IsActive!.Value
+            IsActive = reservation.IsActive
         });
     }
 }

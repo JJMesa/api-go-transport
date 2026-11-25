@@ -1,5 +1,4 @@
 ﻿using Ardalis.Specification;
-using GoTransport.Application.Enums;
 using GoTransport.Application.Parameters;
 using GoTransport.Domain.Entities.App;
 
@@ -9,11 +8,14 @@ public class PointSpecification : Specification<Point>
 {
     public PointSpecification()
     {
-        Query.Where(point => point.IsActive!.Value);
+        Query.Where(point => point.IsActive);
 
         Query.Include(point => point.City);
 
         Query.OrderBy(point => point.City.Description);
+
+        // Read-only: nothing loaded here is saved back, so skip change tracking.
+        Query.AsNoTracking();
     }
 
     public PointSpecification(int id)
@@ -25,22 +27,6 @@ public class PointSpecification : Specification<Point>
 
     public PointSpecification(PointParameters parameters)
     {
-        switch (parameters.OrderBy)
-        {
-            case SortDirection.Ascending:
-                Query.OrderBy(point => point.Detail);
-                break;
-
-            case SortDirection.Descending:
-                Query.OrderByDescending(point => point.Detail);
-                break;
-
-            default:
-                Query.OrderBy(point => point.Detail);
-                break;
-        }
-
-        if (parameters.IsActive.HasValue)
-            Query.Where(point => point.IsActive == parameters.IsActive);
+        PointFilter.Apply(Query, parameters);
     }
 }

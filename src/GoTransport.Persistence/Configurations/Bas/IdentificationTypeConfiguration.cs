@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.Bas;
 
-internal class IdentificationTypeConfiguration : BaseEntityConfiguration<IdentificationType>
+internal sealed class IdentificationTypeConfiguration : BaseEntityConfiguration<IdentificationType>
 {
     public override void Configure(EntityTypeBuilder<IdentificationType> builder)
     {

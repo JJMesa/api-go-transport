@@ -1,13 +1,26 @@
 ﻿using GoTransport.Application.Dtos.Reservation;
-using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Wrappers;
 
 namespace GoTransport.Application.Interfaces;
 
-public interface IReservationService : IServiceBase<Guid, ReservationCreationDto, ReservationUpdateDto, ReservationDto>
+/// <summary>
+/// Reservations have no unbounded "all" list (F-38): they are listed per Schedule, optionally per Trip.
+/// </summary>
+public interface IReservationService
 {
+    Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+
+    Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation, CancellationToken cancellationToken);
+
+    Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdate, CancellationToken cancellationToken);
+
+    Task<JsonResponse<bool?>> DeleteAsync(Guid id, CancellationToken cancellationToken);
+
     Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken);
 
-    Task<JsonResponse<ReservationDto>> GetDetailsByPerson(string id, string passengerIdentification, CancellationToken cancellationToken);
+    /// <summary>
+    /// The Reservation with this id, if it belongs to the Passenger with this document number.
+    /// </summary>
+    Task<JsonResponse<ReservationDto>> GetByPassengerAsync(Guid id, string passengerIdentification, CancellationToken cancellationToken);
 }

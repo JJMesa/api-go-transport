@@ -13,9 +13,7 @@
 
 ## Dependencies
 
-One-way: **Api → Persistence → Application → Domain**, and Api also references Application directly. Domain depends on nothing but ASP.NET Core Identity.
-
-Persistence reaches up into Application for `IRepository<T>` (declared in Application, implemented in Persistence), the settings classes, `Constants.ApplicationUser` and the `ToPacificStandardTime()` helper. Plan item F-16 narrows that to Domain only; place new shared code in the lowest layer that needs it so the edge stops growing.
+**Api → Application → Domain** and **Api → Persistence → Domain**. Persistence does not reference Application: it implements the Domain contracts (`IRepository<T>`, `IUnitOfWork`), and Api composes both layers. Domain references only Identity's store types (`Microsoft.Extensions.Identity.Stores`, no EF Core) and `Ardalis.Specification`. `LayerDependencyTests` in the component tests checks these rules on the compiled assemblies; place new shared code in the lowest layer that needs it.
 
 ## Conventions
 

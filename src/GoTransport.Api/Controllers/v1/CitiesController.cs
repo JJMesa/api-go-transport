@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class CitiesController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<CityDto>>>> GetAsync([FromQuery] CityParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _cityService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 
@@ -51,25 +51,26 @@ public class CitiesController : ControllerBase
 
     //POST: api/cities
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<CityDto>>> CreateAsync([FromBody] CityCreationDto cityCreationDto)
+    public async Task<ActionResult<JsonResponse<CityDto>>> CreateAsync([FromBody] CityCreationDto cityCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _cityService.CreateAsync(cityCreationDto);
+        var response = await _cityService.CreateAsync(cityCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.CityId);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/cities/4
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<JsonResponse<CityDto>>> UpdateAsync(int id, [FromBody] CityUpdateDto cityUpdateDto)
+    public async Task<ActionResult<JsonResponse<CityDto>>> UpdateAsync(int id, [FromBody] CityUpdateDto cityUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _cityService.UpdateAsync(id, cityUpdateDto);
+        var response = await _cityService.UpdateAsync(id, cityUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //DELETE: api/cities/4
     [HttpDelete("{id:int}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var response = await _cityService.DeleteAsync(id);
+        var response = await _cityService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

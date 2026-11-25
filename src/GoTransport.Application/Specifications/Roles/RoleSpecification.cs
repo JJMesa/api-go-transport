@@ -9,9 +9,4 @@ public class RoleSpecification : Specification<Role>
     {
         Query.Where(x => x.Id == roleId);
     }
-
-    public RoleSpecification(User user)
-    {
-        Query.Where(role => role.UserRoles.Any(userRole => userRole.UserId == user.Id));
-    }
 }

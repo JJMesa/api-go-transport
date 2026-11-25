@@ -1,43 +1,35 @@
-﻿using GoTransport.Application.Attributes;
+﻿using System.Data;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Reservations;
-using GoTransport.Application.Specifications.Vehicles;
+using GoTransport.Application.Specifications.Schedules;
 using GoTransport.Application.Wrappers;
 using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class ReservationService : IReservationService
 {
     private readonly IRepository<Reservation> _reservationRepository;
-    private readonly IRepository<Vehicle> _vehicleRepository;
-    private readonly ICacheService<Reservation> _cacheService;
+    private readonly IRepository<Schedule> _scheduleRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly TimeProvider _clock;
 
     public ReservationService(IRepository<Reservation> reservationRepository
-        , IRepository<Vehicle> vehicleRepository
-        , ICacheService<Reservation> cacheService)
+        , IRepository<Schedule> scheduleRepository
+        , IUnitOfWork unitOfWork
+        , TimeProvider clock)
     {
+        _clock = clock;
         _reservationRepository = reservationRepository;
-        _vehicleRepository = vehicleRepository;
-        _cacheService = cacheService;
-    }
-
-    public async Task<JsonResponse<IEnumerable<ReservationDto>>> GetAllAsync(CancellationToken cancellationToken)
-    {
-        var reservations = _cacheService.Get(CacheKey.Reservations);
-        if (reservations is null)
-        {
-            reservations = await _reservationRepository.ListAsync(new ReservationSpecification(), cancellationToken);
-            _cacheService.Set(CacheKey.Reservations, reservations);
-        }
-        return ResponseBuilder<IEnumerable<ReservationDto>>.Ok(reservations.Select(reservation => reservation.ToDto()).ToList());
+        _scheduleRepository = scheduleRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<JsonPagedResponse<IEnumerable<ReservationDto>>> GetByScheduleAsync(Guid scheduleId, ReservationParameters parameters, CancellationToken cancellationToken)
@@ -48,7 +40,7 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<IEnumerable<ReservationDto>>.OkPaged(reservations, metadata);
     }
 
-    public async Task<JsonResponse<ReservationDto>> GetDetailsByPerson(string id, string passengerIdentification, CancellationToken cancellationToken)
+    public async Task<JsonResponse<ReservationDto>> GetByPassengerAsync(Guid id, string passengerIdentification, CancellationToken cancellationToken)
     {
         var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(id, passengerIdentification), cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
@@ -57,56 +49,100 @@ internal class ReservationService : IReservationService
 
     public async Task<JsonResponse<ReservationDto>> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
-        var reservation = await _reservationRepository.GetByIdAsync(id, cancellationToken);
+        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationDetailSpecification(id), cancellationToken);
         if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
         return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
-    public async Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation)
-    {
-        var vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleSpecification(reservationCreation.ScheduleId));
-        var reservationsCount = await _reservationRepository.CountAsync(new ReservationSpecification(reservationCreation.ScheduleId));
+    public Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation, CancellationToken cancellationToken) =>
+        // Serializable keeps the count and the insert atomic: a concurrent booking on the same Trip waits,
+        // or fails and is retried, instead of taking a place this count has already handed out.
+        _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var tripCheck = await CheckTripCanTakeAsync(reservationCreation.ScheduleId, reservationCreation.ReservationDate, cancellationToken: cancellationToken);
+            if (tripCheck is not null) return tripCheck;
 
-        if (IsVehicleFull(reservationsCount, vehicle!.Capacity))
-            return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
+            var reservation = reservationCreation.ToEntity();
+            await _reservationRepository.AddAsync(reservation, cancellationToken);
 
-        var reservation = reservationCreation.ToEntity();
-        await _reservationRepository.AddAsync(reservation);
-        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
-    }
+            // Reload with the navigations, so the response has the same shape as a get-by-id.
+            reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationDetailSpecification(reservation.ReservationId), cancellationToken) ?? reservation;
+            return ResponseBuilder<ReservationDto>.Created(reservation.ToDto());
+        }, IsolationLevel.Serializable, cancellationToken);
 
-    public async Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdateDto)
+    public async Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdateDto, CancellationToken cancellationToken)
     {
         if (id != reservationUpdateDto.ReservationId)
             return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id));
-        if (reservation is null) return ResponseBuilder<ReservationDto>.NotFound();
+        // Same isolation as a booking: moving onto a Trip takes one of its places.
+        return await _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id), cancellationToken);
 
-        if (IsReservationDatePassed(reservation))
-            return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.ReservationDatePassed);
+            // A cancelled Reservation is kept for the record but can no longer change.
+            if (reservation is null || !reservation.IsActive) return ResponseBuilder<ReservationDto>.NotFound();
 
-        reservationUpdateDto.ApplyTo(reservation);
-        await _reservationRepository.UpdateAsync(reservation);
-        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
+            if (HasTripEnded(reservation.ReservationDate, reservation.Schedule))
+                return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.ReservationDatePassed);
+
+            // Moving to another Trip must pass the same checks as a new booking on it.
+            if (IsMovingToAnotherTrip(reservation, reservationUpdateDto))
+            {
+                var tripCheck = await CheckTripCanTakeAsync(reservationUpdateDto.ScheduleId, reservationUpdateDto.ReservationDate, movingReservationId: id, cancellationToken: cancellationToken);
+                if (tripCheck is not null) return tripCheck;
+            }
+
+            reservationUpdateDto.ApplyTo(reservation);
+            await _reservationRepository.UpdateAsync(reservation, cancellationToken);
+            return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
+        }, IsolationLevel.Serializable, cancellationToken);
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
         // The "trip passed" check reads the Schedule, so load it with the Reservation.
-        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id));
-        if (reservation is null) return ResponseBuilder<bool?>.NotFound();
+        var reservation = await _reservationRepository.FirstOrDefaultAsync(new ReservationSpecification(reservationId: id), cancellationToken);
+        if (reservation is null || !reservation.IsActive) return ResponseBuilder<bool?>.NotFound();
 
-        if (IsReservationDatePassed(reservation))
+        if (HasTripEnded(reservation.ReservationDate, reservation.Schedule))
             return ResponseBuilder<bool?>.BadRequest(ErrorMessages.ReservationDatePassed);
 
-        await _reservationRepository.DeleteAsync(reservation);
+        // A cancellation keeps the Reservation on record as inactive. Only active Reservations count
+        // against Capacity, so its place on the Trip is free again.
+        reservation.IsActive = false;
+        await _reservationRepository.UpdateAsync(reservation, cancellationToken);
         return ResponseBuilder<bool?>.NoContent();
     }
+
+    /// <summary>
+    /// Checks that a Reservation can be placed on the Trip (Schedule + travel date): the Schedule exists,
+    /// the Trip has not taken place, and its Vehicle has a free place. Returns the failure, or null when it can.
+    /// </summary>
+    private async Task<JsonResponse<ReservationDto>?> CheckTripCanTakeAsync(Guid scheduleId, DateTime travelDate, Guid? movingReservationId = null, CancellationToken cancellationToken = default)
+    {
+        var schedule = await _scheduleRepository.FirstOrDefaultAsync(new ScheduleSpecification(scheduleId), cancellationToken);
+        if (schedule is null)
+            return ResponseBuilder<ReservationDto>.NotFound(ErrorMessages.InvalidSchedule);
+
+        if (HasTripEnded(travelDate, schedule))
+            return ResponseBuilder<ReservationDto>.BadRequest(ErrorMessages.TravelDatePassed);
+
+        var placesTaken = await _reservationRepository.CountAsync(new TripReservationSpecification(scheduleId, travelDate, movingReservationId), cancellationToken);
+        if (IsVehicleFull(placesTaken, schedule.Vehicle.Capacity))
+            return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
+
+        return null;
+    }
+
+    private static bool IsMovingToAnotherTrip(Reservation reservation, ReservationUpdateDto reservationUpdate) =>
+        reservation.ScheduleId != reservationUpdate.ScheduleId
+        || reservation.ReservationDate.Date != reservationUpdate.ReservationDate.Date;
 
     private static bool IsVehicleFull(int reservationsCount, int vehicleCapacity) =>
         reservationsCount >= vehicleCapacity;
 
-    private static bool IsReservationDatePassed(Reservation reservation) =>
-        reservation.ReservationDate.Date + reservation.Schedule.ArrivalTime < DateTime.Now;
+    // Schedules are Colombian wall-clock times, so compare with Colombian "now", whatever the server's zone.
+    private bool HasTripEnded(DateTime travelDate, Schedule schedule) =>
+        schedule.ArrivalOn(travelDate) < ColombiaTime.Now(_clock);
 }

@@ -1,0 +1,56 @@
+using GoTransport.Api.Component.Tests.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi;
+using Swashbuckle.AspNetCore.Swagger;
+
+namespace GoTransport.Api.Component.Tests.TestCases;
+
+/// <summary>
+/// Builds the OpenAPI document in-process. The Swagger UI is only served in Development, but the
+/// generator is registered in every environment, so a broken Swagger setup still fails here.
+/// </summary>
+public class SwaggerDocumentTests : ComponentTest
+{
+    private readonly CustomWebApplicationFactory _factory;
+
+    public SwaggerDocumentTests(CustomWebApplicationFactory factory) : base(factory)
+    {
+        _factory = factory;
+    }
+
+    [Fact]
+    public void GetSwagger_DescribesVersionedRoutes()
+    {
+        // Act
+        var document = _factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
+
+        // Assert
+        Assert.Contains("/api/v1/cities", document.Paths.Keys);
+        Assert.DoesNotContain(document.Paths.Keys, path => path.Contains("{version}"));
+    }
+
+    [Fact]
+    public void GetSwagger_ShowsTheXmlCommentsOfTheDtos()
+    {
+        // Act
+        var document = _factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
+
+        // Assert: ReservationDto.ReservationDate is documented as the travel date
+        var reservationDate = document.Components!.Schemas!["ReservationDto"].Properties!["reservationDate"];
+        Assert.Contains("travel date", reservationDate.Description);
+    }
+
+    [Fact]
+    public void GetSwagger_DeclaresTheBearerScheme()
+    {
+        // Act
+        var document = _factory.Services.GetRequiredService<ISwaggerProvider>().GetSwagger("v1");
+
+        // Assert: an HTTP bearer scheme, so Swagger UI adds the "Bearer " prefix to the pasted token
+        var scheme = document.Components!.SecuritySchemes!["Bearer"];
+        Assert.Equal(SecuritySchemeType.Http, scheme.Type);
+        Assert.Equal("bearer", scheme.Scheme);
+        Assert.Equal("JWT", scheme.BearerFormat);
+        Assert.NotEmpty(document.Security!);
+    }
+}

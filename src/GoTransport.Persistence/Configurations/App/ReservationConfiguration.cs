@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class ReservationConfiguration : BaseEntityConfiguration<Reservation>
+internal sealed class ReservationConfiguration : BaseEntityConfiguration<Reservation>
 {
     public override void Configure(EntityTypeBuilder<Reservation> builder)
     {
@@ -60,6 +60,11 @@ internal class ReservationConfiguration : BaseEntityConfiguration<Reservation>
             .IsRequired(false)
             .HasColumnName("DETAIL")
             .HasColumnOrder(8);
+
+        // Capacity is counted per Trip (Schedule + travel date); this index keeps that count, and the
+        // key-range locks it takes under Serializable, narrow to one Trip.
+        builder.HasIndex(e => new { e.ScheduleId, e.ReservationDate })
+            .HasDatabaseName("IX_APP_RESERVATION_SCHEDULE_ID_RESERVATION_DATE");
 
         builder.HasOne(d => d.Schedule).WithMany(p => p.Reservations)
             .HasForeignKey(d => d.ScheduleId)

@@ -11,8 +11,7 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
 {
     public PagedVehicleSpecification(VehicleParameters parameters)
     {
-        if (!string.IsNullOrWhiteSpace(parameters.SearchCriteria))
-            Query.Search(vehicle => $"{vehicle.LicensePlate}", $"%{parameters.SearchCriteria}%");
+        VehicleFilter.Apply(Query, parameters);
 
         switch (parameters.OrderBy)
         {
@@ -29,9 +28,6 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
                 break;
         }
 
-        if (parameters.IsActive.HasValue)
-            Query.Where(vehicle => vehicle.IsActive == parameters.IsActive);
-
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
         Query.Select(vehicle => new VehicleDto
@@ -45,7 +41,7 @@ public class PagedVehicleSpecification : Specification<Vehicle, VehicleDto>
             },
             Model = vehicle.Model,
             Capacity = vehicle.Capacity,
-            IsActive = vehicle.IsActive!.Value
+            IsActive = vehicle.IsActive
         });
     }
 }

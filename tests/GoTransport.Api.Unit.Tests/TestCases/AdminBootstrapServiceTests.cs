@@ -1,4 +1,5 @@
 using System.Net;
+using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Services;
@@ -18,11 +19,12 @@ public class AdminBootstrapServiceTests
 
     private readonly Mock<UserManager<User>> _userManagerMock;
     private readonly Mock<RoleManager<Role>> _roleManagerMock;
+    private readonly InlineUnitOfWork _unitOfWork = new();
 
     public AdminBootstrapServiceTests()
     {
-        _userManagerMock = CreateUserManagerMock();
-        _roleManagerMock = CreateRoleManagerMock();
+        _userManagerMock = IdentityMocks.UserManager();
+        _roleManagerMock = IdentityMocks.RoleManager();
     }
 
     #region EnsureAdministratorAsync
@@ -75,6 +77,7 @@ public class AdminBootstrapServiceTests
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
         Assert.Equal(AdminBootstrapResult.Created, actual.Data);
+        Assert.Single(_unitOfWork.Transactions);
         _userManagerMock.Verify(x => x.CreateAsync(It.Is<User>(u => u.Email == AdminEmail && u.UserName == AdminEmail), AdminPassword), Times.Once);
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.Is<User>(u => u.Email == AdminEmail), Roles.Administrator), Times.Once);
     }
@@ -92,7 +95,7 @@ public class AdminBootstrapServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(ErrorMessages.AdministratorRoleMissing, actual.Errors);
+        Assert.Contains(ErrorMessages.AdministratorRoleMissing, actual.Errors!);
         _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -111,7 +114,7 @@ public class AdminBootstrapServiceTests
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
-        Assert.Contains(passwordError.Description, actual.Errors);
+        Assert.Contains(passwordError.Description, actual.Errors!);
         _userManagerMock.Verify(x => x.AddToRoleAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
     }
 
@@ -120,25 +123,13 @@ public class AdminBootstrapServiceTests
     #region Helpers
 
     private AdminBootstrapService CreateService(AdminBootstrapSettings settings) =>
-        new(_userManagerMock.Object, _roleManagerMock.Object, Options.Create(settings), NullLogger<AdminBootstrapService>.Instance);
+        new(_userManagerMock.Object, _roleManagerMock.Object, Options.Create(settings), NullLogger<AdminBootstrapService>.Instance, _unitOfWork);
 
     private static AdminBootstrapSettings ConfiguredSettings() => new()
     {
         Email = AdminEmail,
         Password = AdminPassword
     };
-
-    private static Mock<UserManager<User>> CreateUserManagerMock()
-    {
-        var storeMock = new Mock<IUserStore<User>>();
-        return new Mock<UserManager<User>>(storeMock.Object, null!, null!, null!, null!, null!, null!, null!, null!);
-    }
-
-    private static Mock<RoleManager<Role>> CreateRoleManagerMock()
-    {
-        var storeMock = new Mock<IRoleStore<Role>>();
-        return new Mock<RoleManager<Role>>(storeMock.Object, null!, null!, null!, null!);
-    }
 
     #endregion Helpers
 }

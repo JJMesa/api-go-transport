@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Vehicle;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class VehiclesController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<VehicleDto>>>> GetAsync([FromQuery] VehicleParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _vehicleService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 
@@ -51,25 +51,26 @@ public class VehiclesController : ControllerBase
 
     //POST: api/v1/vehicle
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<VehicleDto>>> CreateAsync([FromBody] VehicleCreationDto vehicleCreationDto)
+    public async Task<ActionResult<JsonResponse<VehicleDto>>> CreateAsync([FromBody] VehicleCreationDto vehicleCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _vehicleService.CreateAsync(vehicleCreationDto);
+        var response = await _vehicleService.CreateAsync(vehicleCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.VehicleId);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/v1/vehicle/5
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<JsonResponse<VehicleDto>>> UpdateAsync(int id, [FromBody] VehicleUpdateDto vehicleUpdateDto)
+    public async Task<ActionResult<JsonResponse<VehicleDto>>> UpdateAsync(int id, [FromBody] VehicleUpdateDto vehicleUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _vehicleService.UpdateAsync(id, vehicleUpdateDto);
+        var response = await _vehicleService.UpdateAsync(id, vehicleUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //DELETE: api/v1/vehicle/5
     [HttpDelete("{id:int}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var response = await _vehicleService.DeleteAsync(id);
+        var response = await _vehicleService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

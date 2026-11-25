@@ -11,19 +11,21 @@ internal static class ReservationMappingExtensions
     public static ReservationDto ToDto(this Reservation reservation) => new()
     {
         ReservationId = reservation.ReservationId,
-        Schedule = reservation.Schedule?.ToDto()!,
+        Schedule = reservation.Schedule?.ToDto(),
+        ReservationDate = reservation.ReservationDate,
         PassengerFirstName = reservation.PassengerFirstName,
         PassengerLastName = reservation.PassengerLastName,
-        IdentificationType = reservation.IdentificationType?.ToDto()!,
+        IdentificationType = reservation.IdentificationType?.ToDto(),
         PassengerIdentification = reservation.PassengerIdentification,
         Detail = reservation.Detail,
-        IsActive = reservation.IsActive ?? false
+        IsActive = reservation.IsActive
     };
 
     public static Reservation ToEntity(this ReservationCreationDto reservationCreation) => new()
     {
         ScheduleId = reservationCreation.ScheduleId,
-        ReservationDate = reservationCreation.ReservationDate,
+        // The travel date is a calendar day (a `date` column); a time part would split one Trip in two.
+        ReservationDate = reservationCreation.ReservationDate.Date,
         PassengerFirstName = reservationCreation.PassengerFirstName,
         PassengerLastName = reservationCreation.PassengerLastName,
         IdentificationTypeId = reservationCreation.IdentificationTypeId,
@@ -34,7 +36,7 @@ internal static class ReservationMappingExtensions
     public static void ApplyTo(this ReservationUpdateDto reservationUpdate, Reservation reservation)
     {
         reservation.ScheduleId = reservationUpdate.ScheduleId;
-        reservation.ReservationDate = reservationUpdate.ReservationDate;
+        reservation.ReservationDate = reservationUpdate.ReservationDate.Date;
         reservation.Detail = reservationUpdate.Detail;
     }
 }

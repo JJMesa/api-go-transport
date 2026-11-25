@@ -31,6 +31,11 @@ public static class ResponseBuilder<T>
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.NotFound, Ok = false, Errors = new List<string> { ErrorMessages.NotFound } };
     }
 
+    public static JsonResponse<T> NotFound(string error)
+    {
+        return new JsonResponse<T>() { HttpCode = HttpStatusCode.NotFound, Ok = false, Errors = new List<string> { error } };
+    }
+
     public static JsonResponse<T> BadRequest(string error)
     {
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.BadRequest, Ok = false, Errors = new List<string> { error } };
@@ -44,6 +49,11 @@ public static class ResponseBuilder<T>
     public static JsonResponse<T> Unauthorized(string error)
     {
         return new JsonResponse<T>() { HttpCode = HttpStatusCode.Unauthorized, Ok = false, Errors = new List<string> { error } };
+    }
+
+    public static JsonResponse<T> Forbidden(string error)
+    {
+        return new JsonResponse<T>() { HttpCode = HttpStatusCode.Forbidden, Ok = false, Errors = new List<string> { error } };
     }
 
     public static JsonResponse<T> Conflict(string error)

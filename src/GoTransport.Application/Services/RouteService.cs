@@ -1,10 +1,8 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Route;
-using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Routes;
@@ -13,7 +11,6 @@ using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class RouteService : IRouteService
 {
     private readonly IRepository<Route> _routeRepository;
@@ -48,50 +45,64 @@ internal class RouteService : IRouteService
 
     public async Task<JsonResponse<RouteDto>> GetByIdAsync(int id, CancellationToken cancellationToken)
     {
-        var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
+        var route = await _routeRepository.FirstOrDefaultAsync(new RouteDetailSpecification(id), cancellationToken);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
         return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
 
-    public async Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation)
+    public async Task<JsonResponse<RouteDto>> CreateAsync(RouteCreationDto routeCreation, CancellationToken cancellationToken)
     {
-        if (await IsDuplicarePoints(routeCreation.OriginPointId, routeCreation.DestinationPointId))
-            return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
+        if (await IsDuplicateRouteAsync(routeCreation.OriginPointId, routeCreation.DestinationPointId, cancellationToken: cancellationToken))
+            return ResponseBuilder<RouteDto>.Conflict(ErrorMessages.DuplicateRoute);
 
         var route = routeCreation.ToEntity();
-        await _routeRepository.AddAsync(route);
+        await _routeRepository.AddAsync(route, cancellationToken);
+        InvalidateCachedLists();
+
+        // Reload with the navigations, so the response has the same shape as a get-by-id.
+        route = await _routeRepository.FirstOrDefaultAsync(new RouteDetailSpecification(route.RouteId), cancellationToken) ?? route;
 
         return ResponseBuilder<RouteDto>.Created(route.ToDto());
     }
 
-    public async Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate)
+    public async Task<JsonResponse<RouteDto>> UpdateAsync(int id, RouteUpdateDto routeUpdate, CancellationToken cancellationToken)
     {
         if (id != routeUpdate.RouteId)
             return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var route = await _routeRepository.GetByIdAsync(id);
+        var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
         if (route is null) return ResponseBuilder<RouteDto>.NotFound();
 
-        if (await IsDuplicarePoints(routeUpdate.OriginPointId, routeUpdate.DestinationPointId, id))
-            return ResponseBuilder<RouteDto>.BadRequest(ErrorMessages.DuplicateRoute);
+        if (await IsDuplicateRouteAsync(routeUpdate.OriginPointId, routeUpdate.DestinationPointId, id, cancellationToken: cancellationToken))
+            return ResponseBuilder<RouteDto>.Conflict(ErrorMessages.DuplicateRoute);
 
-        routeUpdate.Description = routeUpdate.Description.RemoveExtraBlank();
 
         routeUpdate.ApplyTo(route);
-        await _routeRepository.UpdateAsync(route);
+        await _routeRepository.UpdateAsync(route, cancellationToken);
+        InvalidateCachedLists();
 
         return ResponseBuilder<RouteDto>.Ok(route.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int id)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var route = await _routeRepository.GetByIdAsync(id);
+        var route = await _routeRepository.GetByIdAsync(id, cancellationToken);
         if (route is null) return ResponseBuilder<bool?>.NotFound();
 
-        await _routeRepository.DeleteAsync(route);
+        await _routeRepository.DeleteAsync(route, cancellationToken);
+
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
-    private async Task<bool> IsDuplicarePoints(int originPointId, int destinationPointId, int? id = null) =>
-        await _routeRepository.AnyAsync(new DuplicationRouteSpecification(originPointId, destinationPointId, id));
+    private async Task<bool> IsDuplicateRouteAsync(int originPointId, int destinationPointId, int? id = null, CancellationToken cancellationToken = default) =>
+        await _routeRepository.AnyAsync(new DuplicationRouteSpecification(originPointId, destinationPointId, id), cancellationToken);
+
+    /// <summary>
+    /// Drops the cached Route list, so the next read shows this write.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Routes);
+    }
 }

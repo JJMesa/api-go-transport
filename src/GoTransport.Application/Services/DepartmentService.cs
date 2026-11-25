@@ -1,9 +1,8 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Departments;
@@ -12,7 +11,6 @@ using GoTransport.Domain.Entities.Bas;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class DepartmentService : IDepartmentService
 {
     private readonly IRepository<Department> _departmentRepository;
@@ -52,41 +50,52 @@ internal class DepartmentService : IDepartmentService
         return ResponseBuilder<DepartmentDto>.Ok(department.ToDto());
     }
 
-    public async Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation)
+    public async Task<JsonResponse<DepartmentDto>> CreateAsync(DepartmentCreationDto departmentCreation, CancellationToken cancellationToken)
     {
-        if (await IsDuplicateDescriptionAsync(departmentCreation.Description))
-            return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
+        if (await IsDuplicateDescriptionAsync(departmentCreation.Description, cancellationToken: cancellationToken))
+            return ResponseBuilder<DepartmentDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         var department = departmentCreation.ToEntity();
-        await _departmentRepository.AddAsync(department);
+        await _departmentRepository.AddAsync(department, cancellationToken);
+        InvalidateCachedLists();
 
         return ResponseBuilder<DepartmentDto>.Created(department.ToDto());
     }
 
-    public async Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate)
+    public async Task<JsonResponse<DepartmentDto>> UpdateAsync(int id, DepartmentUpdateDto departmentUpdate, CancellationToken cancellationToken)
     {
         if (id != departmentUpdate.DepartmentId)
             return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var department = await _departmentRepository.GetByIdAsync(id);
+        var department = await _departmentRepository.GetByIdAsync(id, cancellationToken);
         if (department is null) return ResponseBuilder<DepartmentDto>.NotFound();
 
-        if (await IsDuplicateDescriptionAsync(departmentUpdate.Description, id))
-            return ResponseBuilder<DepartmentDto>.BadRequest(ErrorMessages.DuplicateDescription);
+        if (await IsDuplicateDescriptionAsync(departmentUpdate.Description, id, cancellationToken: cancellationToken))
+            return ResponseBuilder<DepartmentDto>.Conflict(ErrorMessages.DuplicateDescription);
 
         departmentUpdate.ApplyTo(department);
-        await _departmentRepository.UpdateAsync(department);
+        await _departmentRepository.UpdateAsync(department, cancellationToken);
+        InvalidateCachedLists();
         return ResponseBuilder<DepartmentDto>.Ok(department.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int departmentId)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int departmentId, CancellationToken cancellationToken)
     {
-        var department = await _departmentRepository.GetByIdAsync(departmentId);
+        var department = await _departmentRepository.GetByIdAsync(departmentId, cancellationToken);
         if (department is null) return ResponseBuilder<bool?>.NotFound();
-        await _departmentRepository.DeleteAsync(department);
+        await _departmentRepository.DeleteAsync(department, cancellationToken);
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
     }
 
-    private async Task<bool> IsDuplicateDescriptionAsync(string description, int id = 0) =>
-        await _departmentRepository.AnyAsync(new DuplicationDepartmentSpecification(description, id));
+    private async Task<bool> IsDuplicateDescriptionAsync(string description, int id = 0, CancellationToken cancellationToken = default) =>
+        await _departmentRepository.AnyAsync(new DuplicationDepartmentSpecification(description, id), cancellationToken);
+
+    /// <summary>
+    /// Drops the cached Department list, so the next read shows this write.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Departments);
+    }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Schedule;
 using GoTransport.Application.Interfaces;
@@ -22,7 +23,7 @@ public class SchedulesController : ControllerBase
         _scheduleService = scheduleService;
     }
 
-    //GET: api/v1/ruotes/2/schedules-all
+    //GET: api/v1/routes/2/schedules-all
     [HttpGet("/api/v{version:apiVersion}/routes/{routeId:int}/[controller]")]
     public async Task<ActionResult<JsonResponse<IEnumerable<ScheduleDto>>>> GetAllByRouteAsync(int routeId, CancellationToken cancellationToken)
     {
@@ -40,25 +41,26 @@ public class SchedulesController : ControllerBase
 
     //POST: api/v1/schedules
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<ScheduleDto>>> CreateAsync([FromBody] ScheduleCreationDto scheduleCreationDto)
+    public async Task<ActionResult<JsonResponse<ScheduleDto>>> CreateAsync([FromBody] ScheduleCreationDto scheduleCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _scheduleService.CreateAsync(scheduleCreationDto);
+        var response = await _scheduleService.CreateAsync(scheduleCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.ScheduleId);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/v1/schedules/ABCD-1234-A1B2-C3D4
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<JsonResponse<ScheduleDto>>> UpdateAsync(Guid id, [FromBody] ScheduleUpdateDto scheduleUpdateDto)
+    public async Task<ActionResult<JsonResponse<ScheduleDto>>> UpdateAsync(Guid id, [FromBody] ScheduleUpdateDto scheduleUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _scheduleService.UpdateAsync(id, scheduleUpdateDto);
+        var response = await _scheduleService.UpdateAsync(id, scheduleUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //DELETE: api/v1/schedules/ABCD-1234-A1B2-C3D4
     [HttpDelete("{id:guid}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(Guid id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(Guid id, CancellationToken cancellationToken)
     {
-        var response = await _scheduleService.DeleteAsync(id);
+        var response = await _scheduleService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

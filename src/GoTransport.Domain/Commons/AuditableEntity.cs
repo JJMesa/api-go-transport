@@ -7,7 +7,7 @@ public abstract class AuditableEntity : IAuditableEntity
     /// <summary>
     /// Gets or sets ¿Está activo? (1-True, 0-False)
     /// </summary>
-    public bool? IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// Gets or sets fecha de creación del registro

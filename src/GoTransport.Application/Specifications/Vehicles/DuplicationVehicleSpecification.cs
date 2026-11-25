@@ -7,8 +7,9 @@ public class DuplicationVehicleSpecification : Specification<Vehicle>
 {
     public DuplicationVehicleSpecification(string licensePlate, int? vehicleId)
     {
-        Query.Where(vehicle =>
-            vehicle.LicensePlate == licensePlate
-            && (vehicle.VehicleId != vehicleId || vehicleId == null));
+        Query.Where(vehicle => vehicle.LicensePlate == licensePlate);
+
+        if (vehicleId.HasValue)
+            Query.Where(vehicle => vehicle.VehicleId != vehicleId.Value);
     }
 }

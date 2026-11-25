@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <!-- OpenCover format includes cyclomatic complexity, which CRAP scores need -->
+          <Format>cobertura,opencover</Format>
+
+          <!-- Exclude test assemblies -->
+          <Exclude>[*.Tests]*,[*.Benchmark]*</Exclude>
+
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+
+          <!-- EF Core migrations are generated code -->
+          <ExcludeByFile>**/obj/**/*,**/*.g.cs,**/*.designer.cs,**/Migrations/**/*</ExcludeByFile>
+
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SingleHit>false</SingleHit>
+          <!-- Local paths: with Source Link, ReportGenerator downloads each source file from GitHub, which fails for unpushed commits -->
+          <UseSourceLink>false</UseSourceLink>
+          <SkipAutoProps>true</SkipAutoProps>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

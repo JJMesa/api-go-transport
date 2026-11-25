@@ -1,10 +1,8 @@
-﻿using GoTransport.Application.Attributes;
-using GoTransport.Application.Builders;
+﻿using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Point;
-using GoTransport.Application.Extensions;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Specifications.Points;
@@ -13,7 +11,6 @@ using GoTransport.Domain.Entities.App;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class PointService : IPointService
 {
     private readonly IRepository<Point> _pointRepository;
@@ -52,35 +49,49 @@ internal class PointService : IPointService
         return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
-    public async Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation)
+    public async Task<JsonResponse<PointDto>> CreateAsync(PointCreationDto pointCreation, CancellationToken cancellationToken)
     {
         var point = pointCreation.ToEntity();
-        await _pointRepository.AddAsync(point);
+        await _pointRepository.AddAsync(point, cancellationToken);
+        InvalidateCachedLists();
+
+        // Reload with the City, so the response has the same shape as a get-by-id.
+        point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(point.PointId), cancellationToken) ?? point;
 
         return ResponseBuilder<PointDto>.Created(point.ToDto());
     }
 
-    public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate)
+    public async Task<JsonResponse<PointDto>> UpdateAsync(int id, PointUpdateDto pointUpdate, CancellationToken cancellationToken)
     {
         if (id != pointUpdate.PointId)
             return ResponseBuilder<PointDto>.BadRequest(ErrorMessages.UrlAndBodyIdNotEqual);
 
-        var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id));
+        var point = await _pointRepository.FirstOrDefaultAsync(new PointSpecification(id), cancellationToken);
         if (point is null) return ResponseBuilder<PointDto>.NotFound();
 
-        pointUpdate.Detail = pointUpdate.Detail.RemoveExtraBlank();
 
         pointUpdate.ApplyTo(point);
-        await _pointRepository.UpdateAsync(point);
+        await _pointRepository.UpdateAsync(point, cancellationToken);
+        InvalidateCachedLists();
 
         return ResponseBuilder<PointDto>.Ok(point.ToDto());
     }
 
-    public async Task<JsonResponse<bool?>> DeleteAsync(int pointId)
+    public async Task<JsonResponse<bool?>> DeleteAsync(int pointId, CancellationToken cancellationToken)
     {
-        var point = await _pointRepository.GetByIdAsync(pointId);
+        var point = await _pointRepository.GetByIdAsync(pointId, cancellationToken);
         if (point is null) return ResponseBuilder<bool?>.NotFound();
-        await _pointRepository.DeleteAsync(point);
+        await _pointRepository.DeleteAsync(point, cancellationToken);
+        InvalidateCachedLists();
         return ResponseBuilder<bool?>.NoContent();
+    }
+
+    /// <summary>
+    /// Drops the cached lists that show Points: the Point list and the Route list, whose Routes embed their Points.
+    /// </summary>
+    private void InvalidateCachedLists()
+    {
+        _cacheService.Remove(CacheKey.Points);
+        _cacheService.Remove(CacheKey.Routes);
     }
 }

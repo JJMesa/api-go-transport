@@ -5,9 +5,22 @@ namespace GoTransport.Api.Extensions;
 
 public static class AppExtensions
 {
+    /// <summary>
+    /// Must run first, so the request log written by UseSerilogRequestLogging carries the id too.
+    /// </summary>
+    public static void UseCorrelationId(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<CorrelationIdMiddleware>();
+    }
+
     public static void UseErrorHandlerMiddleware(this IApplicationBuilder app)
     {
         app.UseMiddleware<ErrorHandlerMiddleware>();
+    }
+
+    public static void UseSecurityHeaders(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<SecurityHeadersMiddleware>();
     }
 
     /// <summary>
@@ -21,6 +34,6 @@ public static class AppExtensions
 
         var response = await adminBootstrap.EnsureAdministratorAsync();
         if (!response.Ok)
-            throw new InvalidOperationException($"Administrator bootstrap failed: {string.Join(" ", response.Errors)}");
+            throw new InvalidOperationException($"Administrator bootstrap failed: {string.Join(" ", response.Errors ?? [])}");
     }
 }

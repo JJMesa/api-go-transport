@@ -1,13 +1,18 @@
 ---
 paths:
   - "**/*.csproj"
+  - "Directory.*.props"
 ---
 
 # Project files and package versions
 
-- Every project targets `net6.0`, but the EF Core runtime is **7.0.17** (SqlServer, Tools, InMemory). Pin any new `Microsoft.EntityFrameworkCore.*` package to exactly `7.0.17`: a 6.x InMemory package once caused a `MissingMethodException` at runtime.
-- There is no `Directory.Build.props` or central package management yet (F-06), so versions live in each `.csproj`. When you bump a package that several projects share, bump it in all of them in the same change.
-- Known drift to leave alone unless the task is about it: `Ardalis.Specification.EntityFrameworkCore` is 7.0.0 in Application and 8.0.0 in Persistence; the component tests' `Microsoft.AspNetCore.Mvc.Testing` 6.0.28 causes an MSB3277 `Microsoft.Extensions.DependencyModel` 6-vs-7 warning.
-- `dotnet list package --vulnerable --include-transitive` reports High-severity transitive packages (System.Text.Json 7.0.0, System.Formats.Asn1 5.0.0, Microsoft.Extensions.Caching.Memory 6.0.1, among others), tracked in F-34. Run it after any package change and pin patched versions directly when needed.
+- Every project targets `net10.0` (LTS, supported until November 2028). The target framework, `Nullable` and `ImplicitUsings` come from the root `Directory.Build.props`; don't repeat them in a `.csproj`.
+- Central package management is on: a `PackageReference` has no `Version`, and every version lives in the root `Directory.Packages.props`. To add a package, add its `PackageVersion` there and a version-less `PackageReference` in the project.
+- Keep the `Microsoft.AspNetCore.*`, `Microsoft.EntityFrameworkCore.*` and `Microsoft.Extensions.*` packages on one 10.0.x patch, and bump them together. Keep `System.IdentityModel.Tokens.Jwt` on the IdentityModel line that `Microsoft.AspNetCore.Authentication.JwtBearer` depends on: mixed IdentityModel versions can fail token validation at runtime.
+- Application uses `<FrameworkReference Include="Microsoft.AspNetCore.App" />` for Identity, `IHttpContextAccessor` and MVC types instead of individual `Microsoft.Extensions.*` packages. Domain references only `Microsoft.Extensions.Identity.Stores` and `Ardalis.Specification`, and Persistence references Domain but never Application (`LayerDependencyTests`).
+- `Directory.Build.props` turns on `AnalysisLevel` `latest-recommended` and `EnforceCodeStyleInBuild`, and sets `TreatWarningsAsErrors` when `CI=true`. Tune a rule's severity in `.editorconfig` with a comment saying why, never with `NoWarn` in a project.
+- `FluentValidation.AspNetCore` 11.3.1 is the last release of that package and holds FluentValidation on 11.x. Moving to FluentValidation 12 means replacing the auto-validation package.
+- Run `dotnet list package --vulnerable --include-transitive` after any package change; it should report nothing. Restore also runs NuGet Audit and warns (`NU190x`) about vulnerable packages.
+- `dotnet-ef` is a local tool pinned in the root `dotnet-tools.json` (`dotnet tool restore`); keep its version equal to the EF Core packages.
 - `ProjectReference` paths are relative: projects in `src/` reference siblings as `..\<Project>\<Project>.csproj`; test projects reach production code through `..\..\src\<Project>\<Project>.csproj`.
 - `InternalsVisibleTo` entries name assemblies (Application → `GoTransport.Api.Unit.Tests`, Api → `GoTransport.Api.Component.Tests`); keep them in sync if a test project is renamed.

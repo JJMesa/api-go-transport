@@ -6,8 +6,8 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 
 ## Tech stack
 
-- **.NET 6 / C#**, ASP.NET Core Web API, versioned routes (`/api/v1`). `net6.0` is out of support; moving to .NET 10 (LTS) is planned (F-06).
-- **EF Core 7.0.17** on **SQL Server**, with queries expressed as **Ardalis.Specification** objects.
+- **.NET 10 (LTS) / C# 14**, ASP.NET Core Web API, versioned routes (`/api/v1`). Shared build settings live in `Directory.Build.props` and package versions in `Directory.Packages.props` (central package management).
+- **EF Core 10** on **SQL Server**, with queries expressed as **Ardalis.Specification** objects.
 - **ASP.NET Core Identity** with **JWT bearer** authentication and account lockout.
 - **FluentValidation** for request validation, **Serilog** for structured logging, health checks, and **Swagger** in Development.
 - **xUnit**, **Moq** and **EF Core InMemory** for unit and component tests.
@@ -23,10 +23,10 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 │   └── GoTransport.Api/             # controllers, middleware, configuration (startup project)
 ├── tests/
 │   ├── GoTransport.Api.Unit.Tests/
-│   ├── GoTransport.Api.Component.Tests/
-│   └── GoTransport.Api.Test.Utilities/
+│   └── GoTransport.Api.Component.Tests/
 ├── database/seed/                   # SQL seed scripts
 ├── docs/                            # technical audit and improvement plan
+├── .github/workflows/               # CI: build, tests, vulnerable-package gate
 ├── .claude/                         # Claude Code settings, rules and skills
 └── GLOSSARY.md                      # domain vocabulary
 ```
@@ -37,9 +37,9 @@ Dependencies point one way: Api → Persistence → Application → Domain.
 
 ### Prerequisites
 
-- .NET SDK 6.0 or later, plus the .NET 6 runtime
+- .NET SDK 10.0 (`global.json` pins the 10.0 feature band)
 - SQL Server
-- EF Core CLI: `dotnet tool install --global dotnet-ef --version 7.0.17`
+- EF Core CLI: `dotnet tool restore` installs the `dotnet-ef` version pinned in `dotnet-tools.json`
 
 ### 1. Configure
 
@@ -61,7 +61,8 @@ dotnet user-secrets set "AdminBootstrap:Password" "<first administrator password
 | `JwtSettings` | `Secret`, `ExpiryTime`, `TokenIssuer`, `TokenAudience` | `ExpiryTime` is `HH:mm` (default `01:00`) |
 | `CachingSettings` | `SlidingExpiration`, `AbsoluteExpiration` | Minutes |
 | `LockoutSettings` | `MaxFailedAccessAttempts`, `LockoutTimeInMinutes` | Defaults 5 attempts / 15 minutes |
-| `AdminBootstrap` | `Email`, `Password`, optional `FirstName`, `LastName` | Creates the first `Administrador` at startup; remove it once that user exists |
+| `AdminBootstrap` | `Email`, `Password`, optional `FirstName`, `LastName` | Creates the first `Administrador` at startup; remove it once that user exists. The password needs 12+ characters (6 distinct) with upper and lower case, a digit and a symbol |
+| `Cors` | `AllowedOrigins` (array) | Browser front ends allowed to call the API. Unset: any origin in Development, none elsewhere |
 | `Serilog` | — | Console plus a daily rolling file in `src/GoTransport.Api/Logs/` (7-day retention) |
 
 ### 2. Create the database
@@ -87,10 +88,10 @@ dotnet run --project src/GoTransport.Api
 
 - **Address:** the API listens on `https://localhost:7046`.
 - **Swagger UI:** available at `/swagger` in the Development environment.
-- **Health:** `/health` reports the API and database health.
+- **Health:** `/health/live` (process up) and `/health/ready` (database reachable; `/health` is the same) return only `{"status":...}` to anonymous callers. `/health/details` lists each check with its error, for Administrators.
 - **First administrator:** on startup, if no administrator exists and `AdminBootstrap` is set, the API creates one. If that creation fails, for example because the password breaks the policy, the API stops with the reason.
 
-Log in with `POST /api/v1/account/login` (`{ "email": "...", "password": "..." }`) to get a JWT, then send it as `Authorization: Bearer <token>`.
+Log in with `POST /api/v1/account/login` (`{ "email": "...", "password": "..." }`) to get a JWT, then send it as `Authorization: Bearer <token>`. In Swagger UI, click **Authorize** and paste only the token (Swagger adds the prefix); in Postman, use the **Bearer Token** type on the Authorization tab. A token sent without the `Bearer ` prefix is not read: the `401` then says so.
 
 ## API overview
 
@@ -107,7 +108,7 @@ All routes live under `/api/v1` and are lowercase. Swagger documents the full co
 | Vehicles | `/vehicles` (CRUD, paged list, `/all`) | Administrador |
 | Manufacturers | `GET /manufacturers/all` | Administrador |
 | Identification types | `GET /identification-types/all` | Anonymous |
-| Reservations | `/reservations` (CRUD, `/all`, passenger details), `GET /schedules/{scheduleId}/reservations` | Any signed-in User |
+| Reservations | `/reservations` (get, create, update; `DELETE` cancels and keeps the record), `POST /reservations/{id}/passenger-lookup` (document number in the body), `GET /schedules/{scheduleId}/reservations` (paged; `?travelDate=` narrows it to one Trip) | Administrador, Operario |
 | Users | `/users` (paged list, get, create, update) | Administrador |
 | Roles | `GET /roles/all` | Administrador |
 
@@ -117,7 +118,7 @@ Every response uses the same envelope, for example:
 { "httpCode": 200, "ok": true, "data": { } }
 ```
 
-Failed requests return `ok: false` with an `errors` list. Paged endpoints also return paging metadata in a `Pagination` response header.
+Failed requests return `ok: false` with an `errors` list: `400` for invalid input, `404` for an unknown id, `409` for a duplicate or a full Trip. Creates answer `201` with a `Location` header. Paged endpoints also return paging metadata in a `Pagination` response header. Why the API keeps this envelope rather than ProblemDetails: [ADR 0001](docs/adr/0001-keep-the-json-response-envelope.md).
 
 ## Tests
 
@@ -127,6 +128,8 @@ dotnet test tests/GoTransport.Api.Component.Tests   # full HTTP pipeline over EF
 ```
 
 Neither suite needs SQL Server, seed data or secrets.
+
+**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push to `master` and `Dev` and on every pull request. It restores, builds in Release with warnings as errors (the .NET analyzers at `latest-recommended` and the code style in [`.editorconfig`](.editorconfig) run in every build), runs both suites with [`coverage.runsettings`](coverage.runsettings) (TRX results go to the `test-results` artifact), merges their coverage with ReportGenerator (HTML report with Risk Hotspots in the `coverage-report` artifact and a summary on the run page), fails under 80% line / 60% branch coverage or on any method with a CRAP score above 30 ([`tools/coverage/coverage_gate.py`](tools/coverage/coverage_gate.py)), and fails when `dotnet list package --vulnerable --include-transitive` reports a High or Critical advisory. Run `dotnet build -warnaserror` locally to see what CI will reject.
 
 ## Contributing
 

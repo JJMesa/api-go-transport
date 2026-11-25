@@ -1,12 +1,11 @@
 ﻿using System.Net;
-using GoTransport.Api.Test.Utilities.Commons;
-using GoTransport.Api.Test.Utilities.Mothers;
+using GoTransport.Api.Unit.Tests.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.City;
 using GoTransport.Application.Dtos.Department;
 using GoTransport.Application.Enums;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Parameters;
 using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Cities;
@@ -23,7 +22,7 @@ public class CityServiceTests
     public CityServiceTests()
     {
         _cityRepositoryMock = new Mock<IRepository<City>>();
-        _cityService = new CityService(_cityRepositoryMock.Object);
+        _cityService = new CityService(_cityRepositoryMock.Object, new Mock<ICacheService<City>>().Object);
     }
 
     #region DataSeed
@@ -72,7 +71,7 @@ public class CityServiceTests
     public async Task GetAllByDepartmentAsync_ShouldReturnCitiesForValidDepartment()
     {
         // Arrange
-        var departmentId = Utils.DefaultId;
+        var departmentId = TestIds.Existing;
         var cityData = CitiesList();
         var cityDtoData = CitiesDtoList();
 
@@ -91,7 +90,7 @@ public class CityServiceTests
     public async Task GetAllByDepartmentAsync_ShouldReturnEmptyListForNonexistentDepartment()
     {
         // Arrange
-        var departmentId = Utils.IdDoesNotExist;
+        var departmentId = TestIds.Unknown;
         var cityData = new List<City>();
         var cityDtoData = new List<CityDto>();
 
@@ -156,7 +155,7 @@ public class CityServiceTests
     public async Task GetAsync_ShouldReturnCitiesForValidDepartment(int departmentId)
     {
         // Arrange
-        var cityDtoData = CitiesDtoList().Where(x => x.Department.DepartmentId == departmentId).ToList();
+        var cityDtoData = CitiesDtoList().Where(x => x.Department!.DepartmentId == departmentId).ToList();
 
         _cityRepositoryMock.Setup(x => x.ListAsync(It.IsAny<PagedCitySpecification>(), CancellationToken.None)).ReturnsAsync(cityDtoData);
         _cityRepositoryMock.Setup(x => x.CountAsync(It.IsAny<CitySpecification>(), CancellationToken.None)).ReturnsAsync(cityDtoData.Count);
@@ -341,15 +340,15 @@ public class CityServiceTests
     public async Task CreateAsync_ShouldCreateCityAndReturnOk()
     {
         //Arrange
-        var cityData = CitiesList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
-        var cityDtoData = CitiesDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        var cityData = CitiesList().FirstOrDefault(x => x.CityId == TestIds.Existing);
+        var cityDtoData = CitiesDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
         var cityCreationDtoData = CitiesCreationDtoList().FirstOrDefault(x => x.Description == cityDtoData!.Description);
 
         _cityRepositoryMock.Setup(x => x.AddAsync(It.IsAny<City>(), CancellationToken.None))
-                           .Callback((City city, CancellationToken _) => city.CityId = Utils.DefaultId);
+                           .Callback((City city, CancellationToken _) => city.CityId = TestIds.Existing);
 
         // Act
-        var actual = await _cityService.CreateAsync(cityCreationDtoData!);
+        var actual = await _cityService.CreateAsync(cityCreationDtoData!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.Created, actual.HttpCode);
@@ -357,6 +356,21 @@ public class CityServiceTests
         Assert.Equal(cityDtoData?.CityId, actual.Data.CityId);
         Assert.Equal(cityDtoData?.Description, actual.Data.Description);
         _cityRepositoryMock.Verify(x => x.AddAsync(It.IsAny<City>(), CancellationToken.None), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnConflictForADuplicateDescriptionInTheDepartment()
+    {
+        // Arrange
+        _cityRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationCitySpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        // Act
+        var actual = await _cityService.CreateAsync(new CityCreationDto { Description = "city 1", DepartmentId = 1 }, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
+        _cityRepositoryMock.Verify(x => x.AddAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion CreateAsync
@@ -382,7 +396,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.UpdateAsync(cityData!, CancellationToken.None));
 
         // Act
-        var actual = await _cityService.UpdateAsync(cityId, cityUpdateDto);
+        var actual = await _cityService.UpdateAsync(cityId, cityUpdateDto, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, actual.HttpCode);
@@ -396,14 +410,14 @@ public class CityServiceTests
     public async Task UpdateAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int invalidCityId = Utils.IdDoesNotExist;
-        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        int invalidCityId = TestIds.Unknown;
+        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
         cityUpdateDto!.CityId = invalidCityId;
 
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(invalidCityId, CancellationToken.None)).ReturnsAsync((City)null!);
 
         // Act
-        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!);
+        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);
@@ -416,17 +430,35 @@ public class CityServiceTests
     public async Task UpdateAsync_ShouldReturnBadRequestForUrlAndBodyIdMismatch()
     {
         // Arrange
-        int invalidCityId = Utils.IdDoesNotExist;
-        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == Utils.DefaultId);
+        int invalidCityId = TestIds.Unknown;
+        var cityUpdateDto = CitiesUpdateDtoList().FirstOrDefault(x => x.CityId == TestIds.Existing);
 
         // Act
-        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!);
+        var actual = await _cityService.UpdateAsync(invalidCityId, cityUpdateDto!, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
         Assert.Null(actual.Data);
         _cityRepositoryMock.Verify(x => x.GetByIdAsync(invalidCityId, CancellationToken.None), Times.Never);
         _cityRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<City>(), CancellationToken.None), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnConflictForADuplicateDescriptionInTheDepartment()
+    {
+        // Arrange
+        var city = CitiesList().First(x => x.CityId == TestIds.Existing);
+        _cityRepositoryMock.Setup(x => x.GetByIdAsync(city.CityId, It.IsAny<CancellationToken>())).ReturnsAsync(city);
+        _cityRepositoryMock.Setup(x => x.AnyAsync(It.IsAny<DuplicationCitySpecification>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+        // Act
+        var actual = await _cityService.UpdateAsync(city.CityId,
+            new CityUpdateDto { CityId = city.CityId, Description = "city 2", DepartmentId = 1, IsActive = true }, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, actual.HttpCode);
+        Assert.Contains(ErrorMessages.DuplicateDescription, actual.Errors!);
+        _cityRepositoryMock.Verify(x => x.UpdateAsync(It.IsAny<City>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion UpdateAsync
@@ -447,7 +479,7 @@ public class CityServiceTests
         _cityRepositoryMock.Setup(x => x.DeleteAsync(cityToDelete!, CancellationToken.None));
 
         // Act
-        var actual = await _cityService.DeleteAsync(cityId);
+        var actual = await _cityService.DeleteAsync(cityId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, actual.HttpCode);
@@ -460,13 +492,13 @@ public class CityServiceTests
     public async Task CityService_DeleteAsync_ShouldReturnNotFoundForInvalidId()
     {
         // Arrange
-        int cityId = Utils.IdDoesNotExist;
+        int cityId = TestIds.Unknown;
         var cityToDelete = CitiesList().FirstOrDefault(x => x.CityId == cityId);
 
         _cityRepositoryMock.Setup(x => x.GetByIdAsync(cityId, CancellationToken.None)).ReturnsAsync(cityToDelete);
 
         // Act
-        var actual = await _cityService.DeleteAsync(cityId);
+        var actual = await _cityService.DeleteAsync(cityId, CancellationToken.None);
 
         // Assert
         Assert.Equal(HttpStatusCode.NotFound, actual.HttpCode);

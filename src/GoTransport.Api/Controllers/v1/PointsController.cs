@@ -1,6 +1,6 @@
 ﻿using System.Net;
-using System.Text.Json;
 using Asp.Versioning;
+using GoTransport.Api.Extensions;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Point;
 using GoTransport.Application.Interfaces;
@@ -37,7 +37,7 @@ public class PointsController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<PointDto>>>> GetAsync([FromQuery] PointParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _pointService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.AddPaginationHeader(response.Metadata);
         return StatusCode((int)response.HttpCode, response);
     }
 
@@ -51,25 +51,26 @@ public class PointsController : ControllerBase
 
     //POST: api/points
     [HttpPost]
-    public async Task<ActionResult<JsonResponse<PointDto>>> CreateAsync(PointCreationDto pointCreationDto)
+    public async Task<ActionResult<JsonResponse<PointDto>>> CreateAsync(PointCreationDto pointCreationDto, CancellationToken cancellationToken)
     {
-        var response = await _pointService.CreateAsync(pointCreationDto);
+        var response = await _pointService.CreateAsync(pointCreationDto, cancellationToken);
+        Response.AddLocationHeader(response, created => created.PointId);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //PUT: api/points/3
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<JsonResponse<PointDto>>> UpdateAsync(int id, PointUpdateDto pointUpdateDto)
+    public async Task<ActionResult<JsonResponse<PointDto>>> UpdateAsync(int id, PointUpdateDto pointUpdateDto, CancellationToken cancellationToken)
     {
-        var response = await _pointService.UpdateAsync(id, pointUpdateDto);
+        var response = await _pointService.UpdateAsync(id, pointUpdateDto, cancellationToken);
         return StatusCode((int)response.HttpCode, response);
     }
 
     //DELETE: api/points/3
     [HttpDelete("{id:int}")]
-    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id)
+    public async Task<ActionResult<JsonResponse<bool?>>> DeleteAsync(int id, CancellationToken cancellationToken)
     {
-        var response = await _pointService.DeleteAsync(id);
+        var response = await _pointService.DeleteAsync(id, cancellationToken);
         return StatusCode((int)response.HttpCode, response.HttpCode != HttpStatusCode.NoContent ? response : null);
     }
 }

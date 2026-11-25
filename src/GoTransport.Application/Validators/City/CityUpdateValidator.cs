@@ -11,10 +11,11 @@ public class CityUpdateValidator : AbstractValidator<CityUpdateDto>
             .NotNull()
             .NotEmpty();
 
+        // BAS_CITY.DESCRIPTION is varchar(32).
         RuleFor(x => x.Description)
             .NotNull()
             .NotEmpty()
-            .MaximumLength(128);
+            .MaximumLength(32);
 
         RuleFor(x => x.DepartmentId)
             .NotEmpty()

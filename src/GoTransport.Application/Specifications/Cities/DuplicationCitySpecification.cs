@@ -8,8 +8,11 @@ public class DuplicationCitySpecification : Specification<City>
 {
     public DuplicationCitySpecification(string description, int departmentId, int id)
     {
-        Query.Where(city => city.Description.ToLower().Equals(description.ToLowerInvariant())
-                    && city.DepartmentId == departmentId
-                    && (city.CityId != id || id == 0));
+        // The column's Modern_Spanish_CI_AS collation already compares case-insensitively; calling
+        // ToLower on it would only stop SQL Server from using the unique index.
+        Query.Where(city => city.DepartmentId == departmentId && city.Description == description);
+
+        if (id != 0)
+            Query.Where(city => city.CityId != id);
     }
 }

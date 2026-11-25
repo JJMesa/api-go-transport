@@ -1,3 +1,4 @@
+using GoTransport.Application.Extensions;
 using GoTransport.Application.Dtos.Point;
 using GoTransport.Domain.Entities.App;
 
@@ -11,20 +12,20 @@ internal static class PointMappingExtensions
     public static PointDto ToDto(this Point point) => new()
     {
         PointId = point.PointId,
-        City = point.City?.ToDto()!,
+        City = point.City?.ToDto(),
         Detail = point.Detail
     };
 
     public static Point ToEntity(this PointCreationDto pointCreation) => new()
     {
         CityId = pointCreation.CityId,
-        Detail = pointCreation.Detail
+        Detail = pointCreation.Detail.RemoveExtraBlank()
     };
 
     public static void ApplyTo(this PointUpdateDto pointUpdate, Point point)
     {
         point.CityId = pointUpdate.CityId;
-        point.Detail = pointUpdate.Detail;
+        point.Detail = pointUpdate.Detail.RemoveExtraBlank();
         point.IsActive = pointUpdate.IsActive;
     }
 }

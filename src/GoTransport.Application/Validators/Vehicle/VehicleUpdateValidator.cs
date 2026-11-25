@@ -12,7 +12,6 @@ public class VehicleUpdateValidator : AbstractValidator<VehicleUpdateDto>
             .NotEmpty();
 
         RuleFor(x => x.Capacity)
-            .NotNull()
-            .NotEmpty();
+            .GreaterThan(0);
     }
 }

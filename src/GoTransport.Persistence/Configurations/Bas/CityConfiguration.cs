@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.Bas;
 
-internal class CityConfiguration : BaseEntityConfiguration<City>
+internal sealed class CityConfiguration : BaseEntityConfiguration<City>
 {
     public override void Configure(EntityTypeBuilder<City> builder)
     {
@@ -31,5 +31,10 @@ internal class CityConfiguration : BaseEntityConfiguration<City>
             .HasColumnType("int")
             .HasColumnName("DEPARTMENT_ID")
             .HasColumnOrder(3);
+
+        // Backs DuplicationCitySpecification: a City name is unique within its Department.
+        builder.HasIndex(e => new { e.DepartmentId, e.Description })
+            .IsUnique()
+            .HasDatabaseName("IX_BAS_CITY_DEPARTMENT_ID_DESCRIPTION");
     }
 }

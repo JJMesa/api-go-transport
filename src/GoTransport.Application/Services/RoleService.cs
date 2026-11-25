@@ -1,10 +1,9 @@
 ﻿using System.Data;
-using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Role;
 using GoTransport.Application.Interfaces;
-using GoTransport.Application.Interfaces.Base;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Application.Mappings;
 using GoTransport.Application.Specifications.Roles;
 using GoTransport.Application.Wrappers;
@@ -13,7 +12,6 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GoTransport.Application.Services;
 
-[Transient]
 internal class RoleService : IRoleService
 {
     private readonly UserManager<User> _userManager;
@@ -41,8 +39,16 @@ internal class RoleService : IRoleService
         return ResponseBuilder<IEnumerable<RoleDto>>.Ok(roles.Select(role => role.ToDto()).ToList());
     }
 
-    public async Task<IdentityResult> AssignRolesToUser(User user, long roleId)
+    public async Task<bool> RoleExistsAsync(long roleId, CancellationToken cancellationToken) =>
+        await _roleRepository.AnyAsync(new RoleSpecification(roleId), cancellationToken);
+
+    public async Task<IdentityResult> AssignRolesToUser(User user, long roleId, CancellationToken cancellationToken)
     {
+        // An unknown role must not silently leave the user with no Role at all.
+        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId), cancellationToken);
+        if (roles.Count == 0)
+            return IdentityResult.Failed(new IdentityError { Code = nameof(ErrorMessages.UnknownRole), Description = ErrorMessages.UnknownRole });
+
         var currentRoles = await _userManager.GetRolesAsync(user);
         if (currentRoles.Any())
         {
@@ -50,8 +56,7 @@ internal class RoleService : IRoleService
             if (!removeResult.Succeeded) return removeResult;
         }
 
-        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId));
-        var roleNames = roles.Select(role => role.Name).Distinct();
+        var roleNames = roles.Select(role => role.Name).OfType<string>().Distinct();
         return await _userManager.AddToRolesAsync(user, roleNames);
     }
 }

@@ -1,19 +1,16 @@
 ﻿using System.Net;
-using System.Net.Mime;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Asp.Versioning;
-using GoTransport.Application.Builders;
+using GoTransport.Api.Middlewares;
 using GoTransport.Application.Commons;
+using GoTransport.Application.Interfaces;
 using GoTransport.Application.Settings;
 using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.Extensions.Options;
+using Microsoft.OpenApi;
 
 namespace GoTransport.Api.Extensions;
 
@@ -24,101 +21,55 @@ public static class ServiceExtensions
         services.AddApiVersioning(config =>
         {
             config.DefaultApiVersion = new ApiVersion(1, 0);
-            config.AssumeDefaultVersionWhenUnspecified = true;
             config.ReportApiVersions = true;
-        }).AddMvc();
+            // Every route carries its version as a URL segment (api/v1/...).
+            config.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddMvc()
+        .AddApiExplorer(options =>
+        {
+            // Groups endpoints as "v1" for Swagger and writes the version into the documented routes.
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
     }
 
-    public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static void AddJwtAuthentication(this IServiceCollection services)
     {
-        var settings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
-        var key = new HMACSHA512(Encoding.UTF8.GetBytes(settings!.Secret));
-        var tokenValidationParameters = new TokenValidationParameters()
-        {
-            ValidateIssuerSigningKey = true,
-            IssuerSigningKey = new SymmetricSecurityKey(key.Key),
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidIssuer = settings.TokenIssuer,
-            ValidAudience = settings.TokenAudience,
-            RequireExpirationTime = true,
-            ValidateLifetime = true,
-            LifetimeValidator = (notBefore, expires, _, _) => DateTime.UtcNow >= notBefore && expires > DateTime.UtcNow
-        };
-
-        services.AddSingleton(tokenValidationParameters);
-
         services.AddAuthentication(opts =>
         {
             opts.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
             opts.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             opts.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
         })
+        // 401 and 403 bodies are written by EnvelopeAuthorizationResultHandler, whatever the scheme.
         .AddJwtBearer(jwt =>
         {
             jwt.SaveToken = true;
-            jwt.TokenValidationParameters = tokenValidationParameters;
             jwt.Events = new JwtBearerEvents()
             {
-                // Disparador error en la autenticacion
-                OnAuthenticationFailed = e =>
+                // A well-signed token is still rejected once its user is deactivated or their security stamp rotates.
+                OnTokenValidated = async e =>
                 {
-                    var endpoint = e.HttpContext.GetEndpoint();
-                    if (endpoint?.Metadata.GetMetadata<AllowAnonymousAttribute>() is not null)
-                    {
-                        e.Response.Headers.Clear();
-                        e.NoResult();
-                        return Task.CompletedTask;
-                    }
-
-                    e.NoResult();
-                    e.Response.ContentType = MediaTypeNames.Application.Json;
-                    e.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                    var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                    var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                    return e.Response.WriteAsync(result);
-                },
-                // Disparador error si no se tiene permiso
-                OnChallenge = e =>
-                {
-                    if (!e.Response.HasStarted)
-                    {
-                        e.HandleResponse();
-                        e.Response.ContentType = MediaTypeNames.Application.Json;
-                        e.Response.StatusCode = (int)HttpStatusCode.Unauthorized;
-                        var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                        var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                        return e.Response.WriteAsync(result);
-                    }
-                    else
-                    {
-                        e.HandleResponse();
-                        return e.Response.WriteAsync(string.Empty);
-                    }
-                },
-                // Disparador error si no se esta verificado
-                OnForbidden = e =>
-                {
-                    e.Response.ContentType = MediaTypeNames.Application.Json;
-                    e.Response.StatusCode = (int)HttpStatusCode.Forbidden;
-                    var response = ResponseBuilder<object>.Unauthorized(ErrorMessages.Unauthorized);
-                    var result = JsonSerializer.Serialize(response,
-                        new JsonSerializerOptions
-                        {
-                            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                        });
-                    return e.Response.WriteAsync(result);
+                    var accountService = e.HttpContext.RequestServices.GetRequiredService<IAccountService>();
+                    if (!await accountService.IsTokenUserValidAsync(e.Principal!))
+                        e.Fail(ErrorMessages.Unauthorized);
                 }
             };
         });
+
+        ConfigureTokenValidation(services);
+    }
+
+    private static void ConfigureTokenValidation(IServiceCollection services) =>
+        // Built from the validated JwtSettings when first needed, so a missing section fails startup validation
+        // with a clear message instead of a NullReferenceException while registering services.
+        services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+            .Configure<IOptions<JwtSettings>>((jwt, settings) => jwt.TokenValidationParameters = settings.Value.CreateValidationParameters());
+
+    public static void AddAuthorizationResponses(this IServiceCollection services)
+    {
+        services.AddSingleton<IAuthorizationMiddlewareResultHandler, EnvelopeAuthorizationResultHandler>();
     }
 
     public static void AddConventionConfiguration(this IServiceCollection services)
@@ -142,39 +93,56 @@ public static class ServiceExtensions
                 }
             });
 
+            // XML comments of the controllers and of the DTOs they exchange.
+            foreach (var assembly in new[] { typeof(ServiceExtensions).Assembly, typeof(JwtSettings).Assembly })
+            {
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, $"{assembly.GetName().Name}.xml");
+                if (File.Exists(xmlPath)) c.IncludeXmlComments(xmlPath);
+            }
+
+            // An HTTP bearer scheme, not an API key: Swagger UI asks for the bare token and sends
+            // "Authorization: Bearer <token>" itself. With an API key it sent whatever was typed, so a token
+            // pasted without the prefix reached the API as an unreadable header and every call answered 401.
             c.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
             {
-                Name = "Authorization",
-                Type = SecuritySchemeType.ApiKey,
-                Scheme = JwtBearerDefaults.AuthenticationScheme,
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
                 BearerFormat = "JWT",
-                In = ParameterLocation.Header,
-                Description = "JWT Authorization header using the bearer scheme.\n\nEnter prefix (Bearer), space, and your token.\nExample: 'Bearer abcdefghi123456789'"
+                Description = "Paste the token returned by POST /api/v1/account/login, without the 'Bearer' prefix."
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = JwtBearerDefaults.AuthenticationScheme }
-                    },
-                    new List<string>()
-                }
+                [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, document)] = []
             });
         });
     }
 
+    public const string CorsPolicy = "Security";
+
+    /// <summary>
+    /// Browser origins come from <c>Cors:AllowedOrigins</c>. With none configured, Development allows any
+    /// origin (local front ends) and every other environment allows none, so a deployment must list its
+    /// front ends explicitly.
+    /// </summary>
     public static void AddCorsConfiguration(this IServiceCollection services)
     {
-        services.AddCors(options =>
-        {
-            options.AddPolicy("Security",
-                builder => builder
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
-        });
+        services.AddCors();
+        services.AddOptions<CorsOptions>()
+            .Configure<IConfiguration, IHostEnvironment>((options, configuration, environment) =>
+            {
+                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+                options.AddPolicy(CorsPolicy, policy =>
+                {
+                    if (allowedOrigins.Length > 0)
+                        policy.WithOrigins(allowedOrigins);
+                    else if (environment.IsDevelopment())
+                        policy.AllowAnyOrigin();
+
+                    policy.AllowAnyMethod().AllowAnyHeader();
+                });
+            });
     }
 
     public static void AddCustomResponseFluentValidation(this IServiceCollection services)

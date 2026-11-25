@@ -4,9 +4,17 @@ namespace GoTransport.Application.Parameters;
 
 public class PaginationParameters
 {
+    private int _pageNumber;
     private int _pageSize;
 
-    public int PageNumber { get; set; }
+    /// <summary>
+    /// 1-based. Model binding uses the setter, so it is clamped here: page 0 or below would make a negative OFFSET.
+    /// </summary>
+    public int PageNumber
+    {
+        get => _pageNumber;
+        set => _pageNumber = value < 1 ? 1 : value;
+    }
 
     public int PageSize
     {
@@ -18,11 +26,5 @@ public class PaginationParameters
     {
         PageNumber = 1;
         PageSize = 10;
-    }
-
-    public PaginationParameters(int pageNumber, int pageSize)
-    {
-        PageNumber = pageNumber < 1 ? 1 : pageNumber;
-        PageSize = pageSize > Constants.MaximumRecordsPaged ? Constants.MaximumRecordsPaged : (pageSize < 1 ? 1 : pageSize);
     }
 }

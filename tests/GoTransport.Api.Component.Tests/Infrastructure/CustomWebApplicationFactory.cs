@@ -1,10 +1,10 @@
-using GoTransport.Application.Settings;
 using GoTransport.Persistence.Contexts;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GoTransport.Api.Component.Tests.Infrastructure;
@@ -25,10 +25,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         builder.ConfigureTestServices(services =>
         {
             ReplaceDatabaseWithInMemory(services);
-            ReplaceAuthenticationWithTestScheme(services);
-            DisableAdminBootstrap(services);
+            if (UseTestAuthentication)
+                ReplaceAuthenticationWithTestScheme(services);
         });
     }
+
+    /// <summary>
+    /// True (the default) signs requests in through <see cref="TestAuthHandler"/>; false keeps the real JWT
+    /// bearer authentication, for the tests that issue and present real tokens.
+    /// </summary>
+    protected virtual bool UseTestAuthentication => true;
 
     /// <summary>
     /// Restores the in-memory database to the known seed data. Called once before each test so
@@ -45,10 +51,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     private void ReplaceDatabaseWithInMemory(IServiceCollection services)
     {
+        // Since EF Core 8, AddDbContext also registers IDbContextOptionsConfiguration<TContext>, which
+        // keeps the SQL Server provider configured unless it is removed too.
         var descriptors = services
             .Where(descriptor =>
                 descriptor.ServiceType == typeof(DbContextOptions<ApplicationDbContext>)
-                || descriptor.ServiceType == typeof(DbContextOptions))
+                || descriptor.ServiceType == typeof(DbContextOptions)
+                || descriptor.ServiceType == typeof(IDbContextOptionsConfiguration<ApplicationDbContext>))
             .ToList();
 
         foreach (var descriptor in descriptors)
@@ -66,18 +75,5 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             options.DefaultScheme = TestAuthHandler.SchemeName;
         })
         .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, _ => { });
-    }
-
-    /// <summary>
-    /// Program.cs also loads the developer's User Secrets, so blank the AdminBootstrap settings to keep
-    /// the startup administrator bootstrap from running against the empty in-memory database.
-    /// </summary>
-    private static void DisableAdminBootstrap(IServiceCollection services)
-    {
-        services.PostConfigure<AdminBootstrapSettings>(settings =>
-        {
-            settings.Email = string.Empty;
-            settings.Password = string.Empty;
-        });
     }
 }

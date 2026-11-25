@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace GoTransport.Persistence.Configurations.App;
 
-internal class ScheduleConfiguration : BaseEntityConfiguration<Schedule>
+internal sealed class ScheduleConfiguration : BaseEntityConfiguration<Schedule>
 {
     public override void Configure(EntityTypeBuilder<Schedule> builder)
     {

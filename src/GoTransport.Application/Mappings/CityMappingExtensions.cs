@@ -12,8 +12,8 @@ internal static class CityMappingExtensions
     {
         CityId = city.CityId,
         Description = city.Description,
-        Department = city.Department?.ToDto()!,
-        IsActive = city.IsActive ?? false
+        Department = city.Department?.ToDto(),
+        IsActive = city.IsActive
     };
 
     public static City ToEntity(this CityCreationDto cityCreation) => new()

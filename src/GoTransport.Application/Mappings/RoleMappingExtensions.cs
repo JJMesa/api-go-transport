@@ -8,6 +8,6 @@ internal static class RoleMappingExtensions
     public static RoleDto ToDto(this Role role) => new()
     {
         RoleId = (int)role.Id,
-        Name = role.Name
+        Name = role.Name ?? string.Empty
     };
 }

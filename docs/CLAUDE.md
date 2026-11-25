@@ -5,7 +5,7 @@
 ## Contents
 
 - `audit/TECHNICAL_AUDIT.md` — technical audit (baseline June 2026, re-assessed November 2026). §3 compares the dimension scores; §5 holds the findings (`A-xx`: open, resolved, no longer applicable) with their evidence; §7.2 is the improvement plan (`F-xx`), the source of truth for what to work on and what each commit references; §7.3 summarizes progress.
-- `adr/` — architecture decision records, created with the first one (format from the `domain-modeling` skill).
+- `adr/` — architecture decision records, numbered `NNNN-title.md` (format from the `domain-modeling` skill). `0001` keeps the `JsonResponse` envelope instead of ProblemDetails.
 
 ## Conventions
 

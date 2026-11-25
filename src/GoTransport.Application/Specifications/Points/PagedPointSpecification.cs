@@ -11,6 +11,8 @@ public class PagedPointSpecification : Specification<Point, PointDto>
 {
     public PagedPointSpecification(PointParameters parameters)
     {
+        PointFilter.Apply(Query, parameters);
+
         switch (parameters.OrderBy)
         {
             case SortDirection.Ascending:
@@ -26,9 +28,6 @@ public class PagedPointSpecification : Specification<Point, PointDto>
                 break;
         }
 
-        if (parameters.IsActive.HasValue)
-            Query.Where(point => point.IsActive == parameters.IsActive);
-
         Query.Skip((parameters.PageNumber - 1) * parameters.PageSize).Take(parameters.PageSize);
 
         Query.Select(point => new PointDto
@@ -38,7 +37,7 @@ public class PagedPointSpecification : Specification<Point, PointDto>
             {
                 CityId = point.City!.CityId,
                 Description = point.City!.Description,
-                IsActive = point.City!.IsActive!.Value
+                IsActive = point.City!.IsActive
             },
             Detail = point.Detail
         });

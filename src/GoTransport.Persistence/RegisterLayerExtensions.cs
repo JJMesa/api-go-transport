@@ -1,8 +1,8 @@
-﻿using GoTransport.Application.Interfaces.Base;
-using GoTransport.Application.Settings;
+using GoTransport.Domain.Interfaces;
 using GoTransport.Domain.Entities.App;
 using GoTransport.Persistence.Contexts;
 using GoTransport.Persistence.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,7 +18,9 @@ public static class RegisterLayerExtensions
         services.AddDbContext<ApplicationDbContext>(opt =>
             opt.UseSqlServer(
                 configuration.GetConnectionString("DefaultConnection")!,
-                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName)
+                // Retries transient SQL Server failures (including deadlock victims). Transactions must then run
+                // through the execution strategy, which IUnitOfWork does.
+                b => b.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName).EnableRetryOnFailure()
             )
         );
 
@@ -26,15 +28,9 @@ public static class RegisterLayerExtensions
 
         #region Configuracion identity
 
-        var lockoutSettings = configuration.GetSection("LockoutSettings").Get<LockoutSettings>() ?? new LockoutSettings();
-
-        services.AddDefaultIdentity<User>(options =>
-            {
-                options.Lockout.AllowedForNewUsers = true;
-                options.Lockout.MaxFailedAccessAttempts = lockoutSettings.MaxFailedAccessAttempts;
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(lockoutSettings.LockoutTimeInMinutes);
-            })
-            .AddRoles<Role>()
+        // Identity itself (users, roles, sign-in, password and lockout rules) is registered by Application;
+        // Persistence only adds the EF Core stores behind it.
+        new IdentityBuilder(typeof(User), typeof(Role), services)
             .AddEntityFrameworkStores<ApplicationDbContext>();
 
         #endregion Configuracion identity
@@ -42,6 +38,7 @@ public static class RegisterLayerExtensions
         #region Repositories
 
         services.AddTransient(typeof(IRepository<>), typeof(BaseRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         #endregion Repositories
     }
