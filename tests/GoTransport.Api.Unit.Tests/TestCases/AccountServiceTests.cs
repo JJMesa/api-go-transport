@@ -27,10 +27,7 @@ public class AccountServiceTests
         _userManagerMock = IdentityMocks.UserManager();
         _signInManagerMock = IdentityMocks.SignInManager(_userManagerMock);
 
-        var jwtSettingsMock = new Mock<IOptionsSnapshot<JwtSettings>>();
-        jwtSettingsMock.Setup(x => x.Value).Returns(AccountBuilderMother.JwtSettings());
-
-        _accountService = new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object, NullLogger<AccountService>.Instance);
+        _accountService = new AccountService(_userManagerMock.Object, _signInManagerMock.Object, Options.Create(AccountBuilderMother.JwtSettings()), NullLogger<AccountService>.Instance);
     }
 
     #region LoginAsync
@@ -301,9 +298,7 @@ public class AccountServiceTests
 
     private AccountService CreateService(JwtSettings settings)
     {
-        var jwtSettingsMock = new Mock<IOptionsSnapshot<JwtSettings>>();
-        jwtSettingsMock.Setup(x => x.Value).Returns(settings);
-        return new AccountService(_userManagerMock.Object, _signInManagerMock.Object, jwtSettingsMock.Object, NullLogger<AccountService>.Instance);
+        return new AccountService(_userManagerMock.Object, _signInManagerMock.Object, Options.Create(settings), NullLogger<AccountService>.Instance);
     }
 
     private User ArrangeSuccessfulLogin()

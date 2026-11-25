@@ -149,7 +149,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 #### 🟢 Low
 
 - **A-12 — Sync `SaveChanges` is not overridden** *(baseline 🟡 → 🟢: nothing in `src/` calls it, so the gap is latent)*. → **F-13**
-- **A-21 — `IOptionsSnapshot<T>` for stable config** in `AccountService.cs:28` and `CacheService.cs:14` *(baseline 🟡 → 🟢: `ValidateScopes` already guards lifetimes; the cost is per-request rebinding)*. → **F-19**
 - **A-24 — CORS `AllowAnyOrigin`** (`ServiceExtensions.cs:174`), mitigated because the API uses bearer tokens. → **F-17**
 - **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
 - **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
@@ -217,6 +216,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-48 | 🟡 Paged and count specifications were copy-pasted and had drifted | F-40 (`[Refactor] Build each page and its count from one shared filter`). Each of the seven paged/count pairs (Cities, Departments, Points, Reservations, Routes, Users, Vehicles) now calls one `<Entity>Filter.Apply`, and the count specifications no longer sort. The City count now honours `DepartmentId`, which a component test pins through the `Pagination` header. |
 | A-67 | 🟢 Specification query hygiene | F-58 (`[Refactor] Tidy specification filters and escape LIKE input`). Optional filters are added only when given (no `col == @p OR @p IS NULL`), the duplicate checks compare columns directly (the CI collation already ignores case, so `ToLower` only defeated the unique indexes), and every `Search` term goes through `ToContainsPattern()`, which escapes `%`, `_` and `[` so they match literally. |
 | A-69 | 🟢 Repository hygiene | F-59 (`[Refactor] Fill in the license holder and ignore IDE, env and log files`). `LICENSE.txt` names the copyright holder (2024, Juan Mesa) instead of the template placeholder, and `.gitignore` covers `.idea/`, `.vscode/`, `.env` files and the Serilog `Logs/` folder. |
+| A-21 | 🟢 `IOptionsSnapshot<T>` for stable config | F-19 (`[Refactor] Read stable settings through IOptions`). `AccountService` and `CacheService` take `IOptions<T>`: JWT and cache settings never change at runtime, so they are bound once instead of on every request. |
 
 ### 5.3 No longer applicable
 
@@ -376,7 +376,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-21 | `CancellationToken` on Create/Update/Delete (services + endpoints) | 🟡 | Async | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-22 | Domain exceptions + ProblemDetails, consistent status codes and `Location`; remove the empty `Exceptions` folder (A-31) | 🟢 | Errors/API | M | ⬜ Open | — | — | ⬜ |
@@ -425,9 +425,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 11 | 0 | 19 | 1 |
-| 🟢 Low | 13 | 8 | 0 | 5 | 0 |
-| **Total** | **59** | **19** | **0** | **39** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **67%** | |
+| 🟢 Low | 13 | 7 | 0 | 6 | 0 |
+| **Total** | **59** | **18** | **0** | **40** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **69%** | |
 
 ---
 

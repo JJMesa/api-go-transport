@@ -11,7 +11,7 @@ internal class CacheService<T> : ICacheService<T>
     private readonly CachingSettings _cachingSettings;
 
     public CacheService(IMemoryCache memoryCache
-        , IOptionsSnapshot<CachingSettings> cachingSettings)
+        , IOptions<CachingSettings> cachingSettings)
     {
         _memoryCache = memoryCache;
         _cachingSettings = cachingSettings.Value;

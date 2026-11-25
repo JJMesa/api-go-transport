@@ -26,7 +26,7 @@ internal class AccountService : IAccountService
 
     public AccountService(UserManager<User> userManager
         , SignInManager<User> signInManager
-        , IOptionsSnapshot<JwtSettings> jwtSettings
+        , IOptions<JwtSettings> jwtSettings
         , ILogger<AccountService> logger)
     {
         _userManager = userManager;
