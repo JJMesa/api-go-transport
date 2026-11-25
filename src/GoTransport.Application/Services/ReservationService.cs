@@ -19,11 +19,14 @@ internal class ReservationService : IReservationService
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Schedule> _scheduleRepository;
     private readonly IUnitOfWork _unitOfWork;
+    private readonly TimeProvider _clock;
 
     public ReservationService(IRepository<Reservation> reservationRepository
         , IRepository<Schedule> scheduleRepository
-        , IUnitOfWork unitOfWork)
+        , IUnitOfWork unitOfWork
+        , TimeProvider clock)
     {
+        _clock = clock;
         _reservationRepository = reservationRepository;
         _scheduleRepository = scheduleRepository;
         _unitOfWork = unitOfWork;
@@ -139,6 +142,7 @@ internal class ReservationService : IReservationService
     private static bool IsVehicleFull(int reservationsCount, int vehicleCapacity) =>
         reservationsCount >= vehicleCapacity;
 
-    private static bool HasTripEnded(DateTime travelDate, Schedule schedule) =>
-        schedule.ArrivalOn(travelDate) < DateTime.Now;
+    // Schedules are Colombian wall-clock times, so compare with Colombian "now", whatever the server's zone.
+    private bool HasTripEnded(DateTime travelDate, Schedule schedule) =>
+        schedule.ArrivalOn(travelDate) < ColombiaTime.Now(_clock);
 }

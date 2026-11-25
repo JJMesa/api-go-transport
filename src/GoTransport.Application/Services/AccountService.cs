@@ -21,12 +21,15 @@ internal class AccountService : IAccountService
     private readonly SignInManager<User> _signInManager;
     private readonly JwtSettings _jwtSettings;
     private readonly ILogger<AccountService> _logger;
+    private readonly TimeProvider _clock;
 
     public AccountService(UserManager<User> userManager
         , SignInManager<User> signInManager
         , IOptions<JwtSettings> jwtSettings
-        , ILogger<AccountService> logger)
+        , ILogger<AccountService> logger
+        , TimeProvider clock)
     {
+        _clock = clock;
         _userManager = userManager;
         _signInManager = signInManager;
         _jwtSettings = jwtSettings.Value;
@@ -74,7 +77,7 @@ internal class AccountService : IAccountService
         var jwtHandler = new JwtSecurityTokenHandler();
         // Login looks the user up by email, so it is always set here.
         var email = user.Email ?? string.Empty;
-        var dateBase = DateTime.UtcNow;
+        var dateBase = _clock.GetUtcNow().UtcDateTime;
         var expires = dateBase.Add(_jwtSettings.ExpiryTime);
 
         var tokenDescriptor = new SecurityTokenDescriptor()
@@ -108,7 +111,8 @@ internal class AccountService : IAccountService
         return new UserTokenDto()
         {
             Token = jwtToken,
-            Expires = expires.ToPacificStandardTime()
+            // UTC, serialized with a "Z" so clients convert it to their own zone.
+            Expires = expires
         };
     }
 }

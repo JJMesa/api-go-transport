@@ -132,10 +132,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - Services return `HttpStatusCode`, and `UserService` uses `[FromQuery]`.
   - `ApplicationDbContext` depends on `IHttpContextAccessor` (`:16`).
   - `AddDefaultIdentity` (`src/GoTransport.Persistence/RegisterLayerExtensions.cs:31`) registers cookie authentication and the Razor UI in a JWT-only API. → **F-52**
-- **A-61 — Inconsistent time handling** *(new)*.
-  - `ToPacificStandardTime()` actually converts to Colombia time (Windows id `SA Pacific Standard Time`, UTC−5) and looks the zone up on every call.
-  - Audit columns store local time without an offset.
-  - The "trip passed" check uses the server's `DateTime.Now` (`ReservationService.cs:110`). → **F-53**
 - **A-63 — Test gaps that let defects through** *(new)*.
   - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
   - 6 of 18 validators have tests (User creation, City, Department and Vehicle limits); the Reservation, Route, Point and Schedule validators have none.
@@ -207,6 +203,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-62 | 🟡 No correlation id or tracing | F-54 (`[Feature] Correlate responses, logs and errors with one request id`). `CorrelationIdMiddleware` runs first and gives every request one id: the W3C trace id of its Activity (so an incoming `traceparent` links it to the caller's trace) or a safe caller-supplied `X-Correlation-Id`. The id is returned in the `X-Correlation-Id` header, added to every log line as `CorrelationId` (including the request log), and returned as `traceId` in unexpected-error bodies. No trace exporter is configured; adding OpenTelemetry later reuses the same trace ids. |
 | A-25 | 🟢 Reflection-based DI over `AppDomain` assemblies | F-15 (`[Refactor] Register services explicitly and hide the DbContext behind the repository`). `RegisterServices()` lists the 13 services with one `AddTransient` line each, and the `[Transient]`/`[Scoped]`/`[Singleton]` attributes are gone, so a forgotten registration fails startup validation by name instead of being skipped by a scan. |
 | A-26 | 🟢 Thin generic repository with an unused public `Context` | F-15 (same commit). `BaseRepository<T>` is `internal` and no longer exposes the `DbContext`; data access goes through `IRepository<T>` and specifications only. |
+| A-61 | 🟡 Inconsistent time handling | F-53 (`[Fix] Store audit times in UTC and judge Trips in Colombian time`). "Now" comes from an injected `TimeProvider`. Audit columns are stamped in UTC, and a data migration moves the rows written before (in Colombian time) forward five hours; the seed scripts use `GETUTCDATE()`. The "Trip has taken place" check compares with `ColombiaTime.Now` (a cached `America/Bogota` zone) instead of the server's `DateTime.Now`. The token's `Expires` is returned in UTC. `ToPacificStandardTime()` is gone. A `FakeTimeProvider` test pins the Colombian cut-off. |
 
 ### 5.3 No longer applicable
 
@@ -400,7 +397,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [x] | F-50 | Align validators with the database columns; clamp `PageNumber` (A-58) | 🟡 | API/Data | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-51 | Consistent auth error bodies (camelCase, a real 403) (A-59) | 🟡 | API | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-52 | Decouple Application and Persistence from HTTP; `AddIdentityCore` instead of `AddDefaultIdentity` (A-60) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-53 | Consistent time handling: injected clock, UTC storage, cached Colombia time zone, rename `ToPacificStandardTime` (A-61) | 🟡 | Quality/Data | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-54 | Correlation id in responses and logs + tracing (A-62) | 🟡 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-55 | Close the test gaps: per-controller component tests with a 401/403 role matrix, JWT round trip, validator tests, specifications on a relational provider (A-04, A-63) | 🟡 | Testing | L | ⬜ Open | — | — | ⬜ |
 | [ ] | F-56 | Truthful nullable annotations (nullable navigations, non-nullable `IsActive`) (A-64) | 🟡 | Quality | M | ⬜ Open | — | — | ⬜ |
@@ -414,10 +411,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 6 | 0 | 24 | 1 |
+| 🟡 Medium | 31 | 5 | 0 | 25 | 1 |
 | 🟢 Low | 13 | 0 | 0 | 13 | 0 |
-| **Total** | **59** | **6** | **0** | **52** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **90%** | |
+| **Total** | **59** | **5** | **0** | **53** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **91%** | |
 
 ---
 

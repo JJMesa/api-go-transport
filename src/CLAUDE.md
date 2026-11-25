@@ -15,7 +15,7 @@
 
 One-way: **Api → Persistence → Application → Domain**, and Api also references Application directly. Domain depends on nothing but ASP.NET Core Identity.
 
-Persistence reaches up into Application for `IRepository<T>` (declared in Application, implemented in Persistence), the settings classes, `Constants.ApplicationUser` and the `ToPacificStandardTime()` helper. Plan item F-16 narrows that to Domain only; place new shared code in the lowest layer that needs it so the edge stops growing.
+Persistence reaches up into Application for `IRepository<T>` (declared in Application, implemented in Persistence), the settings classes and `Constants.ApplicationUser`. Plan item F-16 narrows that to Domain only; place new shared code in the lowest layer that needs it so the edge stops growing.
 
 ## Conventions
 

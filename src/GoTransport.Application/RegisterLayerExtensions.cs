@@ -7,6 +7,7 @@ using GoTransport.Application.Services;
 using GoTransport.Application.Settings;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 
 namespace GoTransport.Application;
@@ -19,6 +20,8 @@ public static class RegisterLayerExtensions
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         services.AddFluentValidationAutoValidation();
         services.AddMemoryCache();
+        // The one source of "now", so time-dependent rules can be tested with a fake clock.
+        services.TryAddSingleton(TimeProvider.System);
         services.AddTransient(typeof(ICacheService<>), typeof(CacheService<>));
 
         // Invalid settings stop the host at startup instead of failing the first request that reads them.

@@ -10,6 +10,7 @@ using GoTransport.Application.Services;
 using GoTransport.Application.Specifications.Reservations;
 using GoTransport.Application.Specifications.Schedules;
 using GoTransport.Domain.Entities.App;
+using Microsoft.Extensions.Time.Testing;
 using Moq;
 
 namespace GoTransport.Api.Unit.Tests.TestCases;
@@ -19,6 +20,7 @@ public class ReservationServiceTests
     private readonly Mock<IRepository<Reservation>> _reservationRepositoryMock;
     private readonly Mock<IRepository<Schedule>> _scheduleRepositoryMock;
     private readonly InlineUnitOfWork _unitOfWork;
+    private readonly FakeTimeProvider _clock;
     private readonly IReservationService _reservationService;
 
     public ReservationServiceTests()
@@ -26,7 +28,8 @@ public class ReservationServiceTests
         _reservationRepositoryMock = new Mock<IRepository<Reservation>>();
         _scheduleRepositoryMock = new Mock<IRepository<Schedule>>();
         _unitOfWork = new InlineUnitOfWork();
-        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _scheduleRepositoryMock.Object, _unitOfWork);
+        _clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
+        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _scheduleRepositoryMock.Object, _unitOfWork, _clock);
     }
 
     #region GetByScheduleAsync
@@ -478,6 +481,26 @@ public class ReservationServiceTests
         Assert.Null(actual.Data);
         Assert.Contains(ErrorMessages.ReservationDatePassed, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Theory]
+    [InlineData("14:59", HttpStatusCode.NoContent)]
+    [InlineData("15:01", HttpStatusCode.BadRequest)]
+    public async Task DeleteAsync_ShouldJudgeTheTripEndInColombianTime(string colombianNow, HttpStatusCode expected)
+    {
+        // Arrange: a Trip that arrives at 15:00 Colombian time on 2026-12-24 (UTC−5, so 20:00 UTC)
+        var schedule = ReservationBuilderMother.ScheduleEntity(arrivalTime: new TimeSpan(15, 0, 0));
+        var reservation = ReservationBuilderMother.ReservationEntity(Guid.NewGuid(), new DateTime(2026, 12, 24), schedule);
+        _reservationRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(reservation);
+        var now = TimeSpan.Parse(colombianNow);
+        _clock.SetUtcNow(new DateTimeOffset(2026, 12, 24, now.Hours, now.Minutes, 0, TimeSpan.FromHours(-5)));
+
+        // Act
+        var actual = await _reservationService.DeleteAsync(reservation.ReservationId, CancellationToken.None);
+
+        // Assert
+        Assert.Equal(expected, actual.HttpCode);
     }
 
     #endregion DeleteAsync

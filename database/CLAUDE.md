@@ -19,6 +19,7 @@
 - The schema belongs to the EF Core migrations in `src/GoTransport.Persistence/Migrations`; scripts here contain data (`INSERT`s) only.
 - Users and credentials stay out of these scripts; accounts come from the startup bootstrap or the Users API.
 - Keep persisted Spanish values exactly as they are (`Administrador`, `Operario`, the `SISTEMA` audit user): the application matches on them.
+- Audit timestamps are UTC: stamp `CREATED_AT` / `UPDATED_AT` with `GETUTCDATE()`, as both scripts do.
 - Table and column names follow Persistence's `BAS_*` / `APP_*` and `UPPER_SNAKE_CASE` convention.
 
 ## Gotchas
