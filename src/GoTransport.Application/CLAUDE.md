@@ -17,7 +17,7 @@
 
 ## Dependencies
 
-References Domain (plus Ardalis.Specification, FluentValidation and Identity packages). Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
+References Domain, the ASP.NET Core shared framework (Identity, `IHttpContextAccessor`), Ardalis.Specification (core only, no EF Core), FluentValidation and `System.IdentityModel.Tokens.Jwt`. Data access goes through `IRepository<T>` + specifications only; the concrete repository and `DbContext` live in Persistence.
 
 ## Conventions
 

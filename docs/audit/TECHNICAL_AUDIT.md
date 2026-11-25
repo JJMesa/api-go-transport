@@ -23,7 +23,7 @@
   3. Extreme consistency across the 12 resource services, plus documentation that keeps it that way: per-area `CLAUDE.md` files, a glossary and a tracked plan.
 - **Top 3 urgent risks:**
   1. 🔴 **Every Reservation cancellation fails with a 500** (A-36 → F-28). *Resolved on 2026-11-19.*
-  2. 🟠 **Known-vulnerable runtime and packages:** `net6.0` is out of support, and so are .NET 8 and 9 since 2026-11-10. High-severity advisories affect transitive packages (A-06, A-42 → F-06, F-34).
+  2. 🟠 **Known-vulnerable runtime and packages:** `net6.0` is out of support, and so are .NET 8 and 9 since 2026-11-10. High-severity advisories affect transitive packages (A-06, A-42 → F-06, F-34). *Resolved on 2026-11-24.*
   3. 🟠 **Personal data and access control:**
      - The Passenger list of any Schedule is anonymous (A-35). *Resolved on 2026-11-19.*
      - Deactivated users keep signing in (A-43). *Resolved on 2026-11-24.*
@@ -117,7 +117,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 
 #### 🟠 High
 
-- **A-06 — Runtime out of support.** All 7 projects target `net6.0` (EOL 2024-11-12). The planned target, `net8.0`, also lost support on 2026-11-10. Retarget to **`net10.0`** (LTS). → **F-06**
 - **A-04 — Thin test coverage** *(partial)*.
   - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete and the per-Schedule list only).
   - Detailed test gaps are in A-63. → **F-55**
@@ -125,20 +124,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - **Evidence:** `ReservationService.cs:68` counts with `ReservationSpecification.cs:28`, which filters by `ScheduleId` only.
   - Because a Schedule recurs daily, it becomes "full" for ever after `Capacity` Reservations on any dates.
   - The count-then-insert also runs with no transaction or lock, so two concurrent bookings can both take the last place. → **F-29**
-- **A-42 — Vulnerable packages in the dependency closure** *(new)*.
-  - **Evidence** (`dotnet list package --vulnerable --include-transitive`):
-
-    | Severity | Package | Advisory | Projects |
-    |---|---|---|---|
-    | High | System.Text.Json 7.0.0 | GHSA-hh2w-p6rv-4g7w | Api |
-    | High | System.Formats.Asn1 5.0.0 | GHSA-447r-wph3-92pm | Api, tests |
-    | High | Microsoft.Extensions.Caching.Memory 6.0.1 | GHSA-qj66-m88j-hmgj | Application, Domain, Test.Utilities |
-    | Moderate | Azure.Identity 1.10.3 | GHSA-wvxc-855f-jvrv | Api |
-    | Low | Microsoft.Identity.Client 4.56.0 | GHSA-x674-v45j-fwxw | Api |
-    | High | System.Net.Http 4.3.0 | GHSA-7jgj-8wvc-jh57 | test projects only |
-    | High | System.Text.RegularExpressions 4.3.0 | GHSA-cmhx-cq75-c4mj | test projects only |
-
-  - **Recommendation:** pin patched versions directly now, and add the scan to CI. The F-06 upgrade removes most of them. → **F-34**
 - **A-44 — Updating a Reservation bypasses the Trip rules** *(new)*.
   - **Evidence:** `ReservationService.cs:89` calls `ReservationMappingExtensions.ApplyTo`, which overwrites `ScheduleId` and `ReservationDate` (`ReservationMappingExtensions.cs:36-37`). It checks neither Capacity on the target Trip nor that the new travel date is in the future.
   - **Impact:** an update can move a Passenger onto a full Trip or a past date. → **F-36**
@@ -223,12 +208,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
 - **A-65 — Anonymous `/health` exposes error text** *(new)*. `src/GoTransport.Api/Extensions/HealthCheckExtensions.cs:58` returns `Exception?.Message`; SQL connection failures can reveal server or login names. → **F-57**
-- **A-66 — Package and test-stack drift** *(new)*.
-  - ASP.NET packages sit at 6.0.27/6.0.28.
-  - Extensions packages mix 6.x and 7.0.0.
-  - Unit tests use xunit 2.4.2 / coverlet 3.2.0, while component tests use 2.6.1 / 6.0.0.
-  - Unused packages: `Identity.UI`, EF InMemory in the unit tests, and UserSecrets in the component tests. → **F-06**
-
 #### 🟢 Low
 
 - **A-12 — Sync `SaveChanges` is not overridden** *(baseline 🟡 → 🟢: nothing in `src/` calls it, so the gap is latent)*. → **F-13**
@@ -249,7 +228,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - `ValidateAndThrowArgumentException`;
   - unused specifications and `ErrorMessages`;
   - a singleton `TokenValidationParameters` that is never resolved. → **F-20**
-- **A-33 — Conservative C#** (no records). Primary constructors need C# 12, which F-06 unlocks. *(subjective)* → **F-06**
 - **A-34 — XML docs not exposed in Swagger.** The versioned API explorer is also missing, so Swagger does not substitute the API version in routes. → **F-25**
 - **A-40 — A Route can have the same origin and destination Point.** → **F-32**
 - **A-67 — Specification query hygiene** *(new)*.
@@ -281,6 +259,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-36 | 🔴 Every Reservation cancellation failed with a 500 | F-28 / QW-6 (`[Fix] Load the Schedule when cancelling a Reservation`). `DeleteAsync` now loads the Reservation through `ReservationSpecification`, which includes `Schedule`. Component tests over the real pipeline cover an upcoming Trip (204), a past travel date (400) and an unknown id (404). |
 | A-43 | 🟠 Deactivated users kept signing in; role changes on update were ignored | F-35 / QW-10 (`[Fix] Retire the access of deactivated users and apply role changes`). Login answers an inactive account like an unknown one. `UserService.UpdateAsync` saves through `UserManager`, rotates the security stamp and applies `RoleId`. Tokens now carry the stamp, and `OnTokenValidated` rejects a token whose user is inactive or whose stamp has rotated, so existing tokens stop working at once. Tokens issued before the fix have no stamp claim and are rejected: every user signs in again once. |
 | A-45 | 🟠 Reservation responses omitted the travel date | F-37 / QW-11 (`[Fix] Return the travel date in Reservation responses`). `ReservationDto.ReservationDate` is filled by `ToDto` and by the `PagedReservationSpecification` projection, under the same name the create and update requests use. Component tests read it back from get-by-id and the per-Schedule list. |
+| A-06 | 🟠 Runtime out of support (`net6.0`) | F-06 (`[Feature] Move to .NET 10 with central build and package management`). All 7 projects target `net10.0` (LTS, supported until November 2028) through the root `Directory.Build.props`; `global.json` pins the 10.0 SDK band. |
+| A-42 | 🟠 Vulnerable packages in the dependency closure | F-06 / F-34 / QW-9 (same commit). The upgrade replaced every flagged package; `dotnet list package --vulnerable --include-transitive` now reports none in any project, so nothing had to be pinned. NuGet Audit warns on restore if one reappears. |
+| A-66 | 🟡 Package and test-stack drift | F-06 (same commit). `Directory.Packages.props` holds one version per package: ASP.NET Core and EF Core on 10.0.15, Ardalis.Specification 10 in both layers (core package only in Application), one xunit/coverlet/Test SDK stack for both test projects. EF InMemory left the unit tests and UserSecrets the component tests. `Identity.UI` stays until F-52 replaces `AddDefaultIdentity`. |
+| A-33 | 🟢 Conservative C# (no records, no primary constructors) | F-06 (same commit). The code now compiles as C# 14, so the language ceiling is gone; existing classes are not rewritten, and new code may use records and primary constructors. |
 
 ### 5.3 No longer applicable
 
@@ -412,7 +394,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | QW-6 | Load `Schedule` before the "trip passed" check in `DeleteAsync` (F-28) | 🔴 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-7 | Require auth on `GET schedules/{id}/reservations` (F-27) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-8 | Always stamp `UpdateUser` on modified entities (F-33) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | QW-9 | Pin patched versions of the vulnerable packages (F-34) | 🟠 | ⬜ Open | — | — | ⬜ |
+| [x] | QW-9 | Pin patched versions of the vulnerable packages (F-34) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-10 | Reject inactive users at login (F-35) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | QW-11 | Return the travel date in `ReservationDto` (F-37) | 🟠 | ✅ Done | Juan Mesa | — | ✅ |
 
@@ -425,7 +407,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-03 | Lockout + `CheckPasswordSignInAsync` | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-04 | Structured logging (`ILogger`/Serilog) + health checks | 🟠 | Observability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-05 | Isolate the database in component tests + broaden unit coverage | 🟠 | Testing | M | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-06 | Migrate to `net10.0` (LTS; `net8.0` also lost support on 2026-11-10) + `Directory.Build.props` + CPM; align package and test-stack versions, drop unused packages (A-06, A-33, A-66) | 🟠 | NuGet/Maintainability | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-06 | Migrate to `net10.0` (LTS; `net8.0` also lost support on 2026-11-10) + `Directory.Build.props` + CPM; align package and test-stack versions, drop unused packages (A-06, A-33, A-66) | 🟠 | NuGet/Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-07 | One `SymmetricSecurityKey` for signing and validation; built-in lifetime validation with a small `ClockSkew`; numeric `iat` (A-08, A-29) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-08 | Emit every role as a claim (multi-role) (A-09) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-09 | `AsNoTracking` in read specifications + `Include`s in `GetAll` (A-10) | 🟡 | Data/Performance | S | ⬜ Open | — | — | ⬜ |
@@ -453,7 +435,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-33 | Stamp `UpdateUser` on every modification (A-41) | 🟠 | Data | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-34 | Pin patched versions of the vulnerable transitive packages (A-42) | 🟠 | NuGet/Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-35 | Reject inactive users at login; apply `RoleId` on user update through `UserManager`; refresh the security stamp (A-43) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-36 | Apply the Trip Capacity and travel-date rules on Reservation update (A-44) | 🟠 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [x] | F-37 | Return the travel date in `ReservationDto` and its projections (A-45) | 🟠 | API | S | ✅ Done | Juan Mesa | — | ✅ |
@@ -485,11 +467,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 6 | 0 | 7 |
+| 🟠 High | 13 | 4 | 0 | 9 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **47** | **0** | **12** |
-| **% Completed** | | | | **20%** |
+| **Total** | **59** | **45** | **0** | **14** |
+| **% Completed** | | | | **24%** |
 
 ---
 

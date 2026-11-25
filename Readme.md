@@ -6,8 +6,8 @@ Despite the repository name, there is no Go code here: "Go" is the product name,
 
 ## Tech stack
 
-- **.NET 6 / C#**, ASP.NET Core Web API, versioned routes (`/api/v1`). `net6.0` is out of support; moving to .NET 10 (LTS) is planned (F-06).
-- **EF Core 7.0.17** on **SQL Server**, with queries expressed as **Ardalis.Specification** objects.
+- **.NET 10 (LTS) / C# 14**, ASP.NET Core Web API, versioned routes (`/api/v1`). Shared build settings live in `Directory.Build.props` and package versions in `Directory.Packages.props` (central package management).
+- **EF Core 10** on **SQL Server**, with queries expressed as **Ardalis.Specification** objects.
 - **ASP.NET Core Identity** with **JWT bearer** authentication and account lockout.
 - **FluentValidation** for request validation, **Serilog** for structured logging, health checks, and **Swagger** in Development.
 - **xUnit**, **Moq** and **EF Core InMemory** for unit and component tests.
@@ -37,9 +37,9 @@ Dependencies point one way: Api → Persistence → Application → Domain.
 
 ### Prerequisites
 
-- .NET SDK 6.0 or later, plus the .NET 6 runtime
+- .NET SDK 10.0 (`global.json` pins the 10.0 feature band)
 - SQL Server
-- EF Core CLI: `dotnet tool install --global dotnet-ef --version 7.0.17`
+- EF Core CLI: `dotnet tool restore` installs the `dotnet-ef` version pinned in `dotnet-tools.json`
 
 ### 1. Configure
 

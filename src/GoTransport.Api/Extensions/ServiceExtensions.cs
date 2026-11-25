@@ -14,7 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace GoTransport.Api.Extensions;
 
@@ -25,9 +25,17 @@ public static class ServiceExtensions
         services.AddApiVersioning(config =>
         {
             config.DefaultApiVersion = new ApiVersion(1, 0);
-            config.AssumeDefaultVersionWhenUnspecified = true;
             config.ReportApiVersions = true;
-        }).AddMvc();
+            // Every route carries its version as a URL segment (api/v1/...).
+            config.ApiVersionReader = new UrlSegmentApiVersionReader();
+        })
+        .AddMvc()
+        .AddApiExplorer(options =>
+        {
+            // Groups endpoints as "v1" for Swagger and writes the version into the documented routes.
+            options.GroupNameFormat = "'v'VVV";
+            options.SubstituteApiVersionInUrl = true;
+        });
     }
 
     public static void AddJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
@@ -160,15 +168,9 @@ public static class ServiceExtensions
                 Description = "JWT Authorization header using the bearer scheme.\n\nEnter prefix (Bearer), space, and your token.\nExample: 'Bearer abcdefghi123456789'"
             });
 
-            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            c.AddSecurityRequirement(document => new OpenApiSecurityRequirement
             {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = JwtBearerDefaults.AuthenticationScheme }
-                    },
-                    new List<string>()
-                }
+                [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme, document)] = []
             });
         });
     }

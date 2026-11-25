@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`GoTransport.Api` is a **.NET 6 / C# REST API** for an intercity passenger-transport company in Colombia (network of routes and schedules, fleet, reservations, staff users). Despite the `api_go_transport` repo name, there is **no Go code here** — "Go" is the product name. The pre-existing codebase is Spanish: comments, error messages and domain values (`Administrador`, `Operario`, `SISTEMA`) are in Spanish, and FluentValidation runs under the `es-CO` culture. `Readme.md` is in English.
+`GoTransport.Api` is a **.NET 10 / C# REST API** for an intercity passenger-transport company in Colombia (network of routes and schedules, fleet, reservations, staff users). Despite the `api_go_transport` repo name, there is **no Go code here** — "Go" is the product name. The pre-existing codebase is Spanish: comments, error messages and domain values (`Administrador`, `Operario`, `SISTEMA`) are in Spanish, and FluentValidation runs under the `es-CO` culture. `Readme.md` is in English.
 
 Use the domain vocabulary below for names in code, docs and conversation:
 
@@ -50,7 +50,7 @@ dotnet test tests/GoTransport.Api.Component.Tests
 dotnet test --filter "FullyQualifiedName~CityServiceTests"
 dotnet test --filter "Name=GetByIdAsync_ShouldReturnCityForValidId"
 
-# EF Core migrations (migrations live in Persistence; Api is the startup project)
+# EF Core migrations (migrations live in Persistence; Api is the startup project; run `dotnet tool restore` once for dotnet-ef)
 dotnet ef database update --project src/GoTransport.Persistence --startup-project src/GoTransport.Api
 dotnet ef migrations add <Name> --project src/GoTransport.Persistence --startup-project src/GoTransport.Api
 ```

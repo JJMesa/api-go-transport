@@ -37,7 +37,7 @@ public class PointsController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<PointDto>>>> GetAsync([FromQuery] PointParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _pointService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
         return StatusCode((int)response.HttpCode, response);
     }
 

@@ -47,7 +47,7 @@ public class PagedUserSpecification : Specification<User, UserDto>
             UserId = user.Id,
             FirstName = user.FirstName,
             LastName = user.LastName,
-            Email = user.Email,
+            Email = user.Email ?? string.Empty,
             IsActive = user.IsActive
         });
     }

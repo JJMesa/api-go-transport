@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GoTransport.Api.Component.Tests.Infrastructure;
@@ -45,10 +46,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
     private void ReplaceDatabaseWithInMemory(IServiceCollection services)
     {
+        // Since EF Core 8, AddDbContext also registers IDbContextOptionsConfiguration<TContext>, which
+        // keeps the SQL Server provider configured unless it is removed too.
         var descriptors = services
             .Where(descriptor =>
                 descriptor.ServiceType == typeof(DbContextOptions<ApplicationDbContext>)
-                || descriptor.ServiceType == typeof(DbContextOptions))
+                || descriptor.ServiceType == typeof(DbContextOptions)
+                || descriptor.ServiceType == typeof(IDbContextOptionsConfiguration<ApplicationDbContext>))
             .ToList();
 
         foreach (var descriptor in descriptors)

@@ -154,7 +154,7 @@ public class CitiesControllerTests : ComponentTest
     [Theory]
     [InlineData("")]
     [InlineData(null)]
-    public async Task GetAsync_Parameters_WithFilterNullOrEmpty_Ok(string description)
+    public async Task GetAsync_Parameters_WithFilterNullOrEmpty_Ok(string? description)
     {
         // Act
         await AddAuthorization();

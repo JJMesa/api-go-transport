@@ -51,7 +51,7 @@ internal class RoleService : IRoleService
         }
 
         var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId));
-        var roleNames = roles.Select(role => role.Name).Distinct();
+        var roleNames = roles.Select(role => role.Name).OfType<string>().Distinct();
         return await _userManager.AddToRolesAsync(user, roleNames);
     }
 }

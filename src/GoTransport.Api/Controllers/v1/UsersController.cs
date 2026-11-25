@@ -28,7 +28,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<UserDto>>>> GetAsync([FromQuery] UserParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _userService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
         return StatusCode((int)response.HttpCode, response);
     }
 

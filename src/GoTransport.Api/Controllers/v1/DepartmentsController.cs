@@ -37,7 +37,7 @@ public class DepartmentsController : ControllerBase
     public async Task<ActionResult<JsonPagedResponse<IEnumerable<DepartmentDto>>>> GetAsync([FromQuery] DepartmentParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _departmentService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
         return StatusCode((int)response.HttpCode, response);
     }
 

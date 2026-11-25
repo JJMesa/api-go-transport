@@ -17,7 +17,7 @@ Application and Persistence. Controllers depend only on `I<Entity>Service` inter
 
 ### Controllers
 
-Each action calls the service and returns `return StatusCode((int)response.HttpCode, response);`. Paged endpoints also write the response `Metadata` to a `Pagination` header. Routing uses Asp.Versioning: default `v1.0`, template `api/v{version:apiVersion}/[controller]`, lowercase URLs. Gate access with `[Authorize(Roles = Roles.Administrator)]` (constants in `Application/Commons/Roles.cs`); keep `[AllowAnonymous]` for endpoints that return no personal data (Passenger names or document numbers never qualify).
+Each action calls the service and returns `return StatusCode((int)response.HttpCode, response);`. Paged endpoints also write the response `Metadata` to a `Pagination` header. Routing uses Asp.Versioning: default `v1.0`, template `api/v{version:apiVersion}/[controller]`, lowercase URLs. The version is read from the URL segment only, and the versioned API explorer groups endpoints as `v1` for Swagger with the version substituted into each documented route. Gate access with `[Authorize(Roles = Roles.Administrator)]` (constants in `Application/Commons/Roles.cs`); keep `[AllowAnonymous]` for endpoints that return no personal data (Passenger names or document numbers never qualify).
 
 ### Composition (`Program.cs`)
 

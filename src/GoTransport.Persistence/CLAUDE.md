@@ -32,4 +32,4 @@ Create them with `dotnet ef migrations add <Name> --project src/GoTransport.Pers
 
 - No lazy loading: a navigation is `null` unless the specification `Include`s it.
 - Deletes are hard deletes through `RepositoryBase` (F-23 covers soft delete).
-- EF Core runtime is 7.0.17 on a `net6.0` target — see `.claude/rules/csproj.md` before touching packages.
+- EF Core 10 on `net10.0`; versions are central in `Directory.Packages.props` — see `.claude/rules/csproj.md` before touching packages.

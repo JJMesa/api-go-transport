@@ -1,0 +1,10 @@
+<Project>
+
+  <!-- Shared by every project in the solution. Package versions live in Directory.Packages.props. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

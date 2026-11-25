@@ -38,7 +38,7 @@ public class RoutesController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<RouteDto>>>> GetAsync([FromQuery] RouteParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _routeService.GetAsync(parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
         return StatusCode((int)response.HttpCode, response);
     }
 

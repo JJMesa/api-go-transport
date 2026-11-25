@@ -37,7 +37,7 @@ public class ReservationsController : ControllerBase
     public async Task<ActionResult<JsonResponse<IEnumerable<ReservationDto>>>> GetByScheduleAsync(Guid scheduleId, [FromQuery] ReservationParameters parameters, CancellationToken cancellationToken)
     {
         var response = await _reservationService.GetByScheduleAsync(scheduleId, parameters, cancellationToken);
-        Response.Headers.Add(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
+        Response.Headers.Append(Constants.PaginationHeader, JsonSerializer.Serialize(response.Metadata));
         return StatusCode((int)response.HttpCode, response);
     }
 

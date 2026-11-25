@@ -64,6 +64,8 @@ internal class AccountService : IAccountService
     private async Task<UserTokenDto> GenerateToken(User user)
     {
         var jwtHandler = new JwtSecurityTokenHandler();
+        // Login looks the user up by email, so it is always set here.
+        var email = user.Email ?? string.Empty;
         var key = Encoding.UTF8.GetBytes(_jwtSettings.Secret);
         var dateBase = DateTime.UtcNow;
         var expires = dateBase.Add(_jwtSettings.ExpiryTime);
@@ -76,8 +78,8 @@ internal class AccountService : IAccountService
                 new Claim(UserCustomClaims.FirstName, user.FirstName),
                 new Claim(UserCustomClaims.LastName, user.LastName),
                 new Claim(UserCustomClaims.SecurityStamp, user.SecurityStamp ?? string.Empty),
-                new Claim(JwtRegisteredClaimNames.Sub, user.Email),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, email),
+                new Claim(JwtRegisteredClaimNames.Email, email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(JwtRegisteredClaimNames.Iat, dateBase.ToLongDateString())
             })),
