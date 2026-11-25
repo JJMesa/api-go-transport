@@ -86,6 +86,30 @@ public class ReservationsControllerTests : ComponentTest
         Assert.DoesNotContain("1000123456", jsonResponse);
     }
 
+    [Fact]
+    public async Task GetByScheduleAsync_AsOperator_Ok()
+    {
+        // Act
+        await AddAuthorization(Roles.Operator);
+        var apiResponse = await Client.GetAsync($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetByScheduleAsync_WithoutRole_Forbidden()
+    {
+        // Act
+        await AddAuthorization(TestAuthHandler.NoRole);
+        var apiResponse = await Client.GetAsync($"{ApiPaths.SchedulesFullPath}/{DatabaseSeeder.ScheduleId}{ApiPaths.ReservationsPath}");
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Forbidden, apiResponse.StatusCode);
+        Assert.DoesNotContain("1000123456", jsonResponse);
+    }
+
     #endregion GetByScheduleAsync
 
     #region GetByIdAsync

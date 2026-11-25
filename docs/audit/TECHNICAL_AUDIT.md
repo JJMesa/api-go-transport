@@ -149,9 +149,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-53 — Login enumeration and lockout abuse** *(new)*.
   - An unknown email returns 400 at once; a known one returns 429 after 5 failures (`AccountService.cs:37-43`).
   - There is no rate limiting, so anyone can confirm accounts and keep the administrator locked out with 5 requests every 15 minutes. → **F-45**
-- **A-54 — Reservations need a login but no role** *(new)*.
-  - `ReservationsController` has a plain `[Authorize]` (`:14`), and `Roles.Operator` is never used (`src/GoTransport.Application/Commons/Roles.cs:6`).
-  - `RoleService.AssignRolesToUser` succeeds with an unknown `roleId` (`RoleService.cs:44-55`), so a user can end up with no role and still use Reservations. → **F-46**
 - **A-55 — Configuration precedence and validation** *(new)*.
   - `Program.cs:23` adds User Secrets last in **every** environment, so they override environment variables. The component-test factory has to blank `AdminBootstrap` to cope.
   - Settings are bound without validation: a zero cache TTL or a short JWT secret fails at runtime, not at startup. → **F-47**
@@ -177,7 +174,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - The "trip passed" check uses the server's `DateTime.Now` (`ReservationService.cs:110`). → **F-53**
 - **A-62 — No correlation id or tracing** *(new)*. Error responses carry no trace id and logs have no request enrichment, so a client error cannot be matched to its log line. → **F-54**
 - **A-63 — Test gaps that let defects through** *(new)*.
-  - Almost no authorization tests: one 401 test exists (the per-Schedule Reservation list, F-27), and `TestAuthHandler` can only produce an `Administrador`, so no 403/role test is possible.
+  - Few authorization tests: the per-Schedule Reservation list has 401, 403 and Operator cases (F-27, F-46); other controllers have none. `TestAuthHandler` can now sign in with any Role.
   - 0 of 14 validators are tested.
   - No specification runs against a relational provider, and the Reservation Object Mother hides A-36. → **F-55**
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
@@ -245,6 +242,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-08 | 🟡 Two different JWT keys; custom lifetime validator with no clock skew | F-07 (`[Fix] Sign and validate tokens with one key and standard lifetime rules`). `JwtSettings.CreateSigningKey()` is the only key, used to sign in `AccountService` and to validate through `JwtSettings.CreateValidationParameters()`, which uses the built-in lifetime check with a 30-second `ClockSkew`. A unit test issues a token and validates it with those parameters, including a secret over 128 bytes. The unused singleton `TokenValidationParameters` is gone. |
 | A-29 | 🟢 `iat` written with `ToLongDateString()` | F-07 (same commit). The token descriptor sets `IssuedAt`, so `iat` is a numeric date like `nbf` and `exp`. |
 | A-09 | 🟡 One role per token (`roleList.First()`) | F-08 (`[Fix] Put every Role of a User in the token`). `GenerateToken` adds one `ClaimTypes.Role` claim per Role, and none for a User without Roles (it used to add an empty one). |
+| A-54 | 🟡 Reservations needed a login but no Role; unknown roles were accepted | F-46 (`[Fix] Limit Reservations to Administrators and Operators`). `ReservationsController` requires `Administrador` or `Operario`. `RoleService.AssignRolesToUser` fails for an unknown role, and `UserService` checks the role before creating or updating a user (400 `UnknownRole`). `TestAuthHandler` now signs in with any Role or none, and component tests pin 200 for an Operator and 403 without a Role. |
 
 ### 5.3 No longer applicable
 
@@ -431,7 +429,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-43 | Exact `Guid` lookup for Passenger details; move the document number out of the URL path (A-51) | 🟡 | Security/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-44 | Stronger password policy in Identity options, single source shared with the validators (A-52) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-45 | Rate-limit login; uniform response for unknown and locked accounts (A-53) | 🟡 | Security | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-46 | Role-based authorization on Reservations (`Administrador`, `Operario`); reject unknown roles (A-54) | 🟡 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-47 | Load User Secrets only in Development; validate settings at startup (`ValidateOnStart`) (A-55) | 🟡 | Config/DI | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-48 | `EnableRetryOnFailure` + non-zero exit code on fatal startup (A-56) | 🟡 | Resilience | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-49 | Map database errors to 409/503/500 and handle cancellations (A-57) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
@@ -452,10 +450,10 @@ None open. A-36 was resolved by F-28 (see §5.2).
 |---|:--:|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
-| 🟡 Medium | 31 | 24 | 0 | 6 | 1 |
+| 🟡 Medium | 31 | 23 | 0 | 7 | 1 |
 | 🟢 Low | 13 | 10 | 0 | 3 | 0 |
-| **Total** | **59** | **34** | **0** | **24** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **41%** | |
+| **Total** | **59** | **33** | **0** | **25** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **43%** | |
 
 ---
 

@@ -7,7 +7,7 @@
 - Runs in the `ComponentTesting` environment; `src/GoTransport.Api/appsettings.ComponentTesting.json` supplies dummy JWT/caching values.
 - The SQL Server `DbContext` is swapped for an EF Core InMemory database, unique per factory. The factory removes `DbContextOptions<T>` **and** EF's `IDbContextOptionsConfiguration<T>` registrations; leaving the latter keeps SQL Server configured and fails every test with "Services for database providers ... have been registered".
 - The `AdminBootstrap` settings are blanked, because `Program.cs` also loads the developer's User Secrets and the bootstrap would otherwise run against the empty database.
-- JWT auth is replaced by `Infrastructure/TestAuthHandler`: a request is authenticated as an `Administrador` only if it carries the `X-Test-Auth` header. Call `await AddAuthorization()` in a test to set it; omit it to test `401`s.
+- JWT auth is replaced by `Infrastructure/TestAuthHandler`: a request is authenticated only if it carries the `X-Test-Auth` header, whose value is the user's Role. `await AddAuthorization()` signs in as an `Administrador`; pass `Roles.Operator` or `TestAuthHandler.NoRole` to test role rules (`403`); omit it to test `401`s.
 
 ## Conventions
 

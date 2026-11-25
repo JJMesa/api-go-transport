@@ -108,7 +108,7 @@ All routes live under `/api/v1` and are lowercase. Swagger documents the full co
 | Vehicles | `/vehicles` (CRUD, paged list, `/all`) | Administrador |
 | Manufacturers | `GET /manufacturers/all` | Administrador |
 | Identification types | `GET /identification-types/all` | Anonymous |
-| Reservations | `/reservations` (get, create, update, delete, passenger details), `GET /schedules/{scheduleId}/reservations` (paged; `?travelDate=` narrows it to one Trip) | Any signed-in User |
+| Reservations | `/reservations` (get, create, update, delete, passenger details), `GET /schedules/{scheduleId}/reservations` (paged; `?travelDate=` narrows it to one Trip) | Administrador, Operario |
 | Users | `/users` (paged list, get, create, update) | Administrador |
 | Roles | `GET /roles/all` | Administrador |
 

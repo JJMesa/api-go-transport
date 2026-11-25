@@ -41,8 +41,16 @@ internal class RoleService : IRoleService
         return ResponseBuilder<IEnumerable<RoleDto>>.Ok(roles.Select(role => role.ToDto()).ToList());
     }
 
+    public async Task<bool> RoleExistsAsync(long roleId) =>
+        await _roleRepository.AnyAsync(new RoleSpecification(roleId));
+
     public async Task<IdentityResult> AssignRolesToUser(User user, long roleId)
     {
+        // An unknown role must not silently leave the user with no Role at all.
+        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId));
+        if (roles.Count == 0)
+            return IdentityResult.Failed(new IdentityError { Code = nameof(ErrorMessages.UnknownRole), Description = ErrorMessages.UnknownRole });
+
         var currentRoles = await _userManager.GetRolesAsync(user);
         if (currentRoles.Any())
         {
@@ -50,7 +58,6 @@ internal class RoleService : IRoleService
             if (!removeResult.Succeeded) return removeResult;
         }
 
-        var roles = await _roleRepository.ListAsync(new RoleSpecification(roleId));
         var roleNames = roles.Select(role => role.Name).OfType<string>().Distinct();
         return await _userManager.AddToRolesAsync(user, roleNames);
     }

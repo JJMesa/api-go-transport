@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Mime;
 using GoTransport.Api.Component.Tests.Infrastructure;
+using GoTransport.Application.Commons;
 using GoTransport.Persistence.Contexts;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -27,13 +28,14 @@ public abstract class ComponentTest : IClassFixture<CustomWebApplicationFactory>
     }
 
     /// <summary>
-    /// Marks subsequent requests as authenticated for the test authentication scheme. Kept as an
-    /// awaitable member so the existing call sites that predate the in-memory setup remain valid.
+    /// Marks subsequent requests as authenticated for the test authentication scheme, as a user with
+    /// <paramref name="role"/> (an <c>Administrador</c> by default; <see cref="TestAuthHandler.NoRole"/>
+    /// for none). Kept awaitable so the call sites that predate the in-memory setup remain valid.
     /// </summary>
-    protected Task AddAuthorization()
+    protected Task AddAuthorization(string role = Roles.Administrator)
     {
-        if (!Client.DefaultRequestHeaders.Contains(TestAuthHandler.AuthHeader))
-            Client.DefaultRequestHeaders.Add(TestAuthHandler.AuthHeader, "true");
+        Client.DefaultRequestHeaders.Remove(TestAuthHandler.AuthHeader);
+        Client.DefaultRequestHeaders.Add(TestAuthHandler.AuthHeader, role);
 
         return Task.CompletedTask;
     }

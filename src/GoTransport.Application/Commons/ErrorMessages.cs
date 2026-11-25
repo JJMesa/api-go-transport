@@ -21,5 +21,6 @@ public static class ErrorMessages
     public const string CanceledTask = "La solicitud ha sido cancelada por parte del usuario.";
     public const string ConflictForeignKey = "No es posible realizar la acción debido a que parte de la información proporcionada no es válida.";
     public const string ConflictPrimaryKey = "No es posible realizar la acción debido a que ya hay un registro con la misma información.";
+    public const string UnknownRole = "The selected role does not exist.";
     public const string AdministratorRoleMissing = "The 'Administrador' role does not exist. Run database/seed/INSERT_SEED.sql first.";
 }

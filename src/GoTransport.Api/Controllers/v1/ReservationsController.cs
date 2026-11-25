@@ -11,7 +11,8 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace GoTransport.Api.Controllers.v1;
 
-[Authorize]
+// Reservations are what Operators manage; Administrators manage everything.
+[Authorize(Roles = $"{Roles.Administrator},{Roles.Operator}")]
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]

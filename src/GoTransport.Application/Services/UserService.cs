@@ -51,6 +51,9 @@ internal class UserService : IUserService
         if (await IsDuplicateEmailAsync(userCreationDto.Email))
             return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.DuplicateEmail);
 
+        if (!await _roleService.RoleExistsAsync(userCreationDto.RoleId))
+            return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);
+
         var user = userCreationDto.ToEntity();
         var isCreated = await _userManager.CreateAsync(user, userCreationDto.Password);
 
@@ -76,6 +79,9 @@ internal class UserService : IUserService
 
         var user = await _userManager.FindByIdAsync(id.ToString());
         if (user is null) return ResponseBuilder<UserDto>.NotFound();
+
+        if (!await _roleService.RoleExistsAsync(userUpdateDto.RoleId))
+            return ResponseBuilder<UserDto>.BadRequest(ErrorMessages.UnknownRole);
 
         userUpdateDto.ApplyTo(user);
 

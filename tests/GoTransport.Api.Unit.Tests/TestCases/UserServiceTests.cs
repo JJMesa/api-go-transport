@@ -2,6 +2,7 @@ using System.Net;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Application.Commons;
+using GoTransport.Application.Dtos.User;
 using GoTransport.Application.Interfaces;
 using GoTransport.Application.Interfaces.Base;
 using GoTransport.Application.Services;
@@ -106,6 +107,43 @@ public class UserServiceTests
 
     #endregion UpdateAsync
 
+    [Fact]
+    public async Task UpdateAsync_ShouldReturnBadRequestForUnknownRole()
+    {
+        // Arrange
+        var user = AccountBuilderMother.UserEntity();
+        ArrangeSuccessfulUpdate(user);
+        _roleServiceMock.Setup(x => x.RoleExistsAsync(OperatorRoleId)).ReturnsAsync(false);
+
+        // Act
+        var actual = await _userService.UpdateAsync(user.Id, AccountBuilderMother.UserUpdateDtoOk(user.Id, OperatorRoleId));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors);
+        _userManagerMock.Verify(x => x.UpdateSecurityStampAsync(It.IsAny<User>()), Times.Never);
+    }
+
+    #region CreateAsync
+
+    [Fact]
+    public async Task CreateAsync_ShouldReturnBadRequestForUnknownRoleWithoutCreatingTheUser()
+    {
+        // Arrange
+        var creation = new UserCreationDto { FirstName = "Ana", LastName = "Ruiz", Email = "ana@gotransport.test", Password = "Secret#123", RoleId = 99 };
+        _roleServiceMock.Setup(x => x.RoleExistsAsync(99)).ReturnsAsync(false);
+
+        // Act
+        var actual = await _userService.CreateAsync(creation);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, actual.HttpCode);
+        Assert.Contains(ErrorMessages.UnknownRole, actual.Errors);
+        _userManagerMock.Verify(x => x.CreateAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
+    }
+
+    #endregion CreateAsync
+
     #region Helpers
 
     private void ArrangeSuccessfulUpdate(User user)
@@ -113,6 +151,7 @@ public class UserServiceTests
         _userManagerMock.Setup(x => x.FindByIdAsync(user.Id.ToString())).ReturnsAsync(user);
         _userManagerMock.Setup(x => x.UpdateSecurityStampAsync(user)).ReturnsAsync(IdentityResult.Success);
         _roleServiceMock.Setup(x => x.AssignRolesToUser(user, It.IsAny<long>())).ReturnsAsync(IdentityResult.Success);
+        _roleServiceMock.Setup(x => x.RoleExistsAsync(It.IsAny<long>())).ReturnsAsync(true);
     }
 
     #endregion Helpers

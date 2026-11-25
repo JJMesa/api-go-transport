@@ -9,5 +9,7 @@ public interface IRoleService
 {
     Task<IdentityResult> AssignRolesToUser(User user, long roleId);
 
+    Task<bool> RoleExistsAsync(long roleId);
+
     Task<JsonResponse<IEnumerable<RoleDto>>> GetAllAsync(CancellationToken cancellationToken);
 }
