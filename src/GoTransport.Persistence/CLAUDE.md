@@ -8,6 +8,7 @@
 - `Configurations/{App,Bas}/` — one `IEntityTypeConfiguration` per entity; `Configurations/Common/BaseEntityConfiguration<T>` maps the audit columns once.
 - `Migrations/` — EF Core migrations, the source of truth for the schema.
 - `Repositories/BaseRepository.cs` — open-generic `IRepository<T>` on Ardalis `RepositoryBase`.
+- `Repositories/UnitOfWork.cs` — `IUnitOfWork`: one transaction (with the EF execution strategy) around several repository calls; a no-op on EF InMemory.
 - `RegisterLayerExtensions.cs` — `AddPersistenceLayer`: `DbContext`, Identity (lockout from `LockoutSettings`), repository registration.
 
 ## Dependencies

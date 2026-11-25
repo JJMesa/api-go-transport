@@ -1,4 +1,6 @@
+using System.Data;
 using System.Net;
+using GoTransport.Api.Unit.Tests.Helpers;
 using GoTransport.Api.Test.Utilities.Mothers;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
@@ -17,6 +19,7 @@ public class ReservationServiceTests
     private readonly Mock<IRepository<Reservation>> _reservationRepositoryMock;
     private readonly Mock<IRepository<Vehicle>> _vehicleRepositoryMock;
     private readonly Mock<ICacheService<Reservation>> _cacheServiceMock;
+    private readonly InlineUnitOfWork _unitOfWork;
     private readonly IReservationService _reservationService;
 
     public ReservationServiceTests()
@@ -24,7 +27,8 @@ public class ReservationServiceTests
         _reservationRepositoryMock = new Mock<IRepository<Reservation>>();
         _vehicleRepositoryMock = new Mock<IRepository<Vehicle>>();
         _cacheServiceMock = new Mock<ICacheService<Reservation>>();
-        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _vehicleRepositoryMock.Object, _cacheServiceMock.Object);
+        _unitOfWork = new InlineUnitOfWork();
+        _reservationService = new ReservationService(_reservationRepositoryMock.Object, _vehicleRepositoryMock.Object, _cacheServiceMock.Object, _unitOfWork);
     }
 
     #region GetAllAsync
@@ -173,7 +177,7 @@ public class ReservationServiceTests
 
         _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 10 });
-        _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+        _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(0);
 
         // Act
@@ -194,7 +198,7 @@ public class ReservationServiceTests
 
         _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 5 });
-        _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<ReservationSpecification>(), It.IsAny<CancellationToken>()))
+        _reservationRepositoryMock.Setup(x => x.CountAsync(It.IsAny<TripReservationSpecification>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(5);
 
         // Act
@@ -205,6 +209,21 @@ public class ReservationServiceTests
         Assert.Null(actual.Data);
         Assert.Contains(ErrorMessages.VehicleFull, actual.Errors!);
         _reservationRepositoryMock.Verify(x => x.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task CreateAsync_ShouldCountAndInsertInOneSerializableTransaction()
+    {
+        // Arrange
+        var creationDto = ReservationBuilderMother.ReservationCreationDtoOk(Guid.NewGuid());
+        _vehicleRepositoryMock.Setup(x => x.FirstOrDefaultAsync(It.IsAny<VehicleSpecification>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Vehicle { VehicleId = 1, Capacity = 10 });
+
+        // Act
+        await _reservationService.CreateAsync(creationDto);
+
+        // Assert
+        Assert.Equal(new[] { IsolationLevel.Serializable }, _unitOfWork.Transactions);
     }
 
     #endregion CreateAsync

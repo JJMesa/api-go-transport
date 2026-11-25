@@ -47,7 +47,7 @@ The year of a Vehicle's model (e.g. 2022), not a commercial model name.
 _Avoid_: Model, version
 
 **Capacity**:
-The maximum number of Passengers a Vehicle can carry on one Trip. There are no seat numbers or seat assignment.
+The maximum number of Passengers a Vehicle can carry on one Trip, so the active Reservations on a Trip never exceed it. There are no seat numbers or seat assignment.
 _Avoid_: Seats, seating
 
 ### Booking

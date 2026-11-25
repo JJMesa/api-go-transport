@@ -18,7 +18,7 @@ namespace GoTransport.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .UseCollation("Modern_Spanish_CI_AS")
-                .HasAnnotation("ProductVersion", "7.0.17")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -166,7 +166,8 @@ namespace GoTransport.Persistence.Migrations
 
                     b.HasIndex("IdentificationTypeId");
 
-                    b.HasIndex("ScheduleId");
+                    b.HasIndex("ScheduleId", "ReservationDate")
+                        .HasDatabaseName("IX_APP_RESERVATION_SCHEDULE_ID_RESERVATION_DATE");
 
                     b.ToTable("APP_RESERVATION", (string)null);
                 });

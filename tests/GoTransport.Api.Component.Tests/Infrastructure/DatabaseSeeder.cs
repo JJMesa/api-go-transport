@@ -20,6 +20,12 @@ public static class DatabaseSeeder
     /// <summary>A Reservation whose Trip took place a week ago, so it can no longer be changed.</summary>
     public static readonly Guid PastReservationId = new("5f1c9a3e-0000-4000-8000-000000000003");
 
+    /// <summary>Capacity of the seeded Vehicle. Kept small so a test can fill a Trip with a few bookings.</summary>
+    public const int VehicleCapacity = 2;
+
+    /// <summary>Travel date of the upcoming seeded Reservation, so its Trip already has one place taken.</summary>
+    public static DateTime UpcomingTravelDate => DateTime.Today.AddDays(7);
+
     public static void Seed(ApplicationDbContext context)
     {
         context.Set<Department>().AddRange(
@@ -51,7 +57,7 @@ public static class DatabaseSeeder
             new Point { PointId = 2, CityId = 6, Detail = "Terminal Salitre", IsActive = true });
 
         context.Set<Route>().Add(new Route { RouteId = 1, Description = "Medellín - Bogotá", OriginPointId = 1, DestinationPointId = 2, IsActive = true });
-        context.Set<Vehicle>().Add(new Vehicle { VehicleId = 1, ManufacturerId = 1, LicensePlate = "ABC123", Model = 2022, Capacity = 40, IsActive = true });
+        context.Set<Vehicle>().Add(new Vehicle { VehicleId = 1, ManufacturerId = 1, LicensePlate = "ABC123", Model = 2022, Capacity = VehicleCapacity, IsActive = true });
 
         context.Set<Schedule>().Add(new Schedule
         {
@@ -65,7 +71,7 @@ public static class DatabaseSeeder
         });
 
         context.Set<Reservation>().AddRange(
-            NewReservation(UpcomingReservationId, DateTime.Today.AddDays(7)),
+            NewReservation(UpcomingReservationId, UpcomingTravelDate),
             NewReservation(PastReservationId, DateTime.Today.AddDays(-7)));
     }
 

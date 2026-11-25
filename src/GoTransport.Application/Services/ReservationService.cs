@@ -1,4 +1,5 @@
-﻿using GoTransport.Application.Attributes;
+﻿using System.Data;
+using GoTransport.Application.Attributes;
 using GoTransport.Application.Builders;
 using GoTransport.Application.Commons;
 using GoTransport.Application.Dtos.Reservation;
@@ -19,14 +20,17 @@ internal class ReservationService : IReservationService
     private readonly IRepository<Reservation> _reservationRepository;
     private readonly IRepository<Vehicle> _vehicleRepository;
     private readonly ICacheService<Reservation> _cacheService;
+    private readonly IUnitOfWork _unitOfWork;
 
     public ReservationService(IRepository<Reservation> reservationRepository
         , IRepository<Vehicle> vehicleRepository
-        , ICacheService<Reservation> cacheService)
+        , ICacheService<Reservation> cacheService
+        , IUnitOfWork unitOfWork)
     {
         _reservationRepository = reservationRepository;
         _vehicleRepository = vehicleRepository;
         _cacheService = cacheService;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<JsonResponse<IEnumerable<ReservationDto>>> GetAllAsync(CancellationToken cancellationToken)
@@ -62,18 +66,22 @@ internal class ReservationService : IReservationService
         return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
     }
 
-    public async Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation)
-    {
-        var vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleSpecification(reservationCreation.ScheduleId));
-        var reservationsCount = await _reservationRepository.CountAsync(new ReservationSpecification(reservationCreation.ScheduleId));
+    public Task<JsonResponse<ReservationDto>> CreateAsync(ReservationCreationDto reservationCreation) =>
+        // Serializable keeps the count and the insert atomic: a concurrent booking on the same Trip waits,
+        // or fails and is retried, instead of taking a place this count has already handed out.
+        _unitOfWork.ExecuteInTransactionAsync(async () =>
+        {
+            var vehicle = await _vehicleRepository.FirstOrDefaultAsync(new VehicleSpecification(reservationCreation.ScheduleId));
+            var placesTaken = await _reservationRepository.CountAsync(
+                new TripReservationSpecification(reservationCreation.ScheduleId, reservationCreation.ReservationDate));
 
-        if (IsVehicleFull(reservationsCount, vehicle!.Capacity))
-            return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
+            if (IsVehicleFull(placesTaken, vehicle!.Capacity))
+                return ResponseBuilder<ReservationDto>.Conflict(ErrorMessages.VehicleFull);
 
-        var reservation = reservationCreation.ToEntity();
-        await _reservationRepository.AddAsync(reservation);
-        return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
-    }
+            var reservation = reservationCreation.ToEntity();
+            await _reservationRepository.AddAsync(reservation);
+            return ResponseBuilder<ReservationDto>.Ok(reservation.ToDto());
+        }, IsolationLevel.Serializable);
 
     public async Task<JsonResponse<ReservationDto>> UpdateAsync(Guid id, ReservationUpdateDto reservationUpdateDto)
     {

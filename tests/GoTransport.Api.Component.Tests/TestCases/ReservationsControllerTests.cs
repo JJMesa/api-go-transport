@@ -1,4 +1,6 @@
 using System.Net;
+using System.Net.Mime;
+using System.Text;
 using GoTransport.Api.Component.Tests.Infrastructure;
 using GoTransport.Api.Test.Utilities.Commons;
 using GoTransport.Application.Commons;
@@ -78,6 +80,45 @@ public class ReservationsControllerTests : ComponentTest
 
     #endregion GetByIdAsync
 
+    #region CreateAsync
+
+    [Fact]
+    public async Task CreateAsync_OnAnotherDateOfTheSchedule_Ok()
+    {
+        // Arrange: the seeded Schedule already has as many Reservations as the Vehicle has places, on two other dates.
+        var travelDate = DateTime.Today.AddDays(14);
+
+        // Act
+        await AddAuthorization();
+        var apiResponse = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(travelDate)));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, apiResponse.StatusCode);
+        Assert.Equal(travelDate, actual?.Data?.ReservationDate);
+    }
+
+    [Fact]
+    public async Task CreateAsync_OnAFullTrip_Conflict()
+    {
+        // Arrange: the upcoming Trip has one seeded Reservation; this booking takes its last place.
+        await AddAuthorization();
+        var lastPlace = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
+
+        // Act
+        var apiResponse = await Client.PostAsync(ApiPaths.ReservationsFullPath, JsonContent(NewReservation(DatabaseSeeder.UpcomingTravelDate)));
+        var jsonResponse = await apiResponse.Content.ReadAsStringAsync();
+        var actual = JsonConvert.DeserializeObject<JsonResponse<ReservationDto>>(jsonResponse, JsonSettings);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, lastPlace.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, apiResponse.StatusCode);
+        Assert.Contains(ErrorMessages.VehicleFull, actual?.Errors!);
+    }
+
+    #endregion CreateAsync
+
     #region DeleteAsync
 
     [Fact]
@@ -119,4 +160,22 @@ public class ReservationsControllerTests : ComponentTest
     }
 
     #endregion DeleteAsync
+
+    #region Helpers
+
+    private static ReservationCreationDto NewReservation(DateTime travelDate) => new()
+    {
+        ScheduleId = DatabaseSeeder.ScheduleId,
+        ReservationDate = travelDate,
+        PassengerFirstName = "Jane",
+        PassengerLastName = "Roe",
+        IdentificationTypeId = 1,
+        PassengerIdentification = "1000654321",
+        Detail = "Window seat"
+    };
+
+    private static StringContent JsonContent(object body) =>
+        new(JsonConvert.SerializeObject(body), Encoding.UTF8, MediaTypeNames.Application.Json);
+
+    #endregion Helpers
 }

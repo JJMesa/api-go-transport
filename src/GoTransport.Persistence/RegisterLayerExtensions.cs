@@ -42,6 +42,7 @@ public static class RegisterLayerExtensions
         #region Repositories
 
         services.AddTransient(typeof(IRepository<>), typeof(BaseRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
 
         #endregion Repositories
     }

@@ -120,10 +120,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-04 — Thin test coverage** *(partial)*.
   - Unit tests cover 5 of 14 service classes; component tests cover 2 of 12 controllers (`CitiesControllerTests`, and `ReservationsControllerTests` for delete and the per-Schedule list only).
   - Detailed test gaps are in A-63. → **F-55**
-- **A-37 — Capacity is counted per Schedule, not per Trip, and the check is not atomic.**
-  - **Evidence:** `ReservationService.cs:68` counts with `ReservationSpecification.cs:28`, which filters by `ScheduleId` only.
-  - Because a Schedule recurs daily, it becomes "full" for ever after `Capacity` Reservations on any dates.
-  - The count-then-insert also runs with no transaction or lock, so two concurrent bookings can both take the last place. → **F-29**
 - **A-44 — Updating a Reservation bypasses the Trip rules** *(new)*.
   - **Evidence:** `ReservationService.cs:89` calls `ReservationMappingExtensions.ApplyTo`, which overwrites `ScheduleId` and `ReservationDate` (`ReservationMappingExtensions.cs:36-37`). It checks neither Capacity on the target Trip nor that the new travel date is in the future.
   - **Impact:** an update can move a Passenger onto a full Trip or a past date. → **F-36**
@@ -142,8 +138,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - A custom `LifetimeValidator` (`ServiceExtensions.cs:46`) also removes all clock skew. → **F-07**
 - **A-09 — One role per token.** `AccountService.cs:96` uses `roleList.First()`. → **F-08**
 - **A-10 — No `AsNoTracking`** on entity reads (0 occurrences in `src/`). → **F-09**
-- **A-11 — No unit of work.** Each repository call saves on its own.
-  - Concrete cases: `UserService.cs:55-59` and `AdminBootstrapService` create the user and assign the role in separate saves.
+- **A-11 — Multi-step user writes are not atomic** *(partial: `IUnitOfWork` exists since F-29)*.
+  - `UserService.CreateAsync` and `AdminBootstrapService` still create the user and assign the role in separate saves.
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
 - **A-13 — `ReservationService.GetAllAsync` loads no navigations** *(partial)*. The `NullReferenceException` is gone (mappings are null-safe), but `Schedule` and `IdentificationType` come back `null` and are cached that way (`ReservationService.cs:34-38`). → **F-14**
 - **A-16 — The cache is never invalidated.** `CacheService.Remove` (`src/GoTransport.Application/Services/CacheService.cs:40`) has no callers. → **F-10**
@@ -264,6 +260,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-66 | 🟡 Package and test-stack drift | F-06 (same commit). `Directory.Packages.props` holds one version per package: ASP.NET Core and EF Core on 10.0.15, Ardalis.Specification 10 in both layers (core package only in Application), one xunit/coverlet/Test SDK stack for both test projects. EF InMemory left the unit tests and UserSecrets the component tests. `Identity.UI` stays until F-52 replaces `AddDefaultIdentity`. |
 | A-33 | 🟢 Conservative C# (no records, no primary constructors) | F-06 (same commit). The code now compiles as C# 14, so the language ceiling is gone; existing classes are not rewritten, and new code may use records and primary constructors. |
 | A-22 (CI part) | 🟡 No CI | F-11 (`[Feature] Add a CI workflow with tests and a vulnerable-package gate`). `.github/workflows/ci.yml` builds in Release, runs both suites with coverage, uploads the results, and fails on High/Critical advisories in the dependency closure. The `.editorconfig`/analyzer part stays open as F-12. |
+| A-37 | 🟠 Capacity counted per Schedule, not per Trip, and not atomically | F-29 (`[Fix] Count Capacity per Trip inside a serializable transaction`). `CreateAsync` counts the active Reservations on the Trip (`TripReservationSpecification`: Schedule + travel date) and inserts inside `IUnitOfWork.ExecuteInTransactionAsync` with `Serializable`, so a concurrent booking waits or deadlocks and is retried instead of overselling. A migration replaces the `SCHEDULE_ID` index with (`SCHEDULE_ID`, `RESERVATION_DATE`) to keep those range locks to one Trip. Travel dates are stored without a time part. |
 
 ### 5.3 No longer applicable
 
@@ -431,7 +428,7 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | [x] | F-26 | Reorganize the repo into `src/` `tests/` `docs/` `database/` with a `CLAUDE.md` per area, glossary and `.claude/` | 🟢 | Maintainability | M | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-27 | Require auth on `GET schedules/{id}/reservations` (A-35) | 🟠 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [x] | F-28 | Load `Schedule` in `ReservationService.DeleteAsync` so cancellation stops failing (A-36) | 🔴 *(was 🟠)* | Data/Errors | S | ✅ Done | Juan Mesa | — | ✅ |
-| [ ] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ⬜ Open | — | — | ⬜ |
+| [x] | F-29 | Count Capacity per Trip (Schedule + travel date) and make the check atomic (A-37) | 🟠 | Business rules | M | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-30 | 404 instead of 500 for an unknown `ScheduleId` in `CreateAsync` (A-38) | 🟡 | Errors/API | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-31 | Support Schedules that cross midnight (`Duration` and "trip passed") (A-39) | 🟡 | Business rules | S | ⬜ Open | — | — | ⬜ |
 | [ ] | F-32 | Reject Routes whose origin and destination are the same Point (A-40) | 🟢 | Business rules | S | ⬜ Open | — | — | ⬜ |
@@ -468,11 +465,11 @@ None. Every baseline finding is either resolved (§5.2) or still present (§5.1)
 | Severity | Total | ⬜ Open | 🟦 In progress | ✅ Done |
 |---|:--:|:--:|:--:|:--:|
 | 🔴 Critical | 2 | 0 | 0 | 2 |
-| 🟠 High | 13 | 3 | 0 | 10 |
+| 🟠 High | 13 | 2 | 0 | 11 |
 | 🟡 Medium | 31 | 30 | 0 | 1 |
 | 🟢 Low | 13 | 11 | 0 | 2 |
-| **Total** | **59** | **44** | **0** | **15** |
-| **% Completed** | | | | **25%** |
+| **Total** | **59** | **43** | **0** | **16** |
+| **% Completed** | | | | **27%** |
 
 ---
 
