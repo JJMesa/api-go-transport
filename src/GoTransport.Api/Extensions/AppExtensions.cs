@@ -10,6 +10,11 @@ public static class AppExtensions
         app.UseMiddleware<ErrorHandlerMiddleware>();
     }
 
+    public static void UseSecurityHeaders(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<SecurityHeadersMiddleware>();
+    }
+
     /// <summary>
     /// Creates the first Administrador user from the AdminBootstrap settings when none exists.
     /// A failed bootstrap stops startup so a misconfiguration never leaves the API without an administrator.

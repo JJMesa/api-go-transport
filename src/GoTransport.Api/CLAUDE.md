@@ -21,7 +21,7 @@ Each action calls the service and returns `return StatusCode((int)response.HttpC
 
 ### Composition (`Program.cs`)
 
-Everything composes through extension methods: `AddApplicationLayer` / `AddPersistenceLayer` plus the API-level `Add*Configuration` methods. `ValidateOnBuild` + `ValidateScopes` are on, so a missing or mis-scoped registration fails at startup — and therefore fails every component test. Right after `Build()`, `EnsureAdministratorAsync()` runs the administrator bootstrap and stops startup if it fails. A fatal startup error is logged and rethrown, so the process exits non-zero; only EF's design-time `HostAbortedException` is let through. `UseSerilogRequestLogging()` is deliberately the outermost middleware, ahead of `UseErrorHandlerMiddleware()`.
+Everything composes through extension methods: `AddApplicationLayer` / `AddPersistenceLayer` plus the API-level `Add*Configuration` methods. `ValidateOnBuild` + `ValidateScopes` are on, so a missing or mis-scoped registration fails at startup — and therefore fails every component test. Right after `Build()`, `EnsureAdministratorAsync()` runs the administrator bootstrap and stops startup if it fails. A fatal startup error is logged and rethrown, so the process exits non-zero; only EF's design-time `HostAbortedException` is let through. `UseSerilogRequestLogging()` is deliberately the outermost middleware, ahead of `UseErrorHandlerMiddleware()`; `UseSecurityHeaders()` follows, and `UseHsts()` runs outside Development.
 
 ### Errors, auth and logging
 
@@ -39,6 +39,7 @@ Supply settings through User Secrets (loaded in `Development` only) or environme
 - `CachingSettings`: `SlidingExpiration`, `AbsoluteExpiration` (minutes)
 - `LockoutSettings`: `MaxFailedAccessAttempts`, `LockoutTimeInMinutes` (defaults 5 / 15)
 - `AdminBootstrap`: `Email`, `Password` (optional `FirstName`, `LastName`) — creates the first `Administrador` at startup when none exists; the password must meet `Application/Commons/PasswordPolicy` (12+ characters, 6 distinct, upper, lower, digit, symbol) or startup stops; set it only in User Secrets / environment, and remove it once the administrator exists
+- `Cors:AllowedOrigins` — browser front ends allowed to call the API. Unset: any origin in Development, none elsewhere.
 - `Serilog` section drives logging: Console + daily rolling file at `Logs/gotransport-*.log` under this project (7-day retention).
 
 `appsettings.ComponentTesting.json` holds dummy JWT/caching values for the component tests. Developers keep local edits to `appsettings.json`; commit only intended changes to it.

@@ -7,6 +7,7 @@ using GoTransport.Application.Settings;
 using GoTransport.Application.Wrappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi;
@@ -109,16 +110,31 @@ public static class ServiceExtensions
         });
     }
 
+    public const string CorsPolicy = "Security";
+
+    /// <summary>
+    /// Browser origins come from <c>Cors:AllowedOrigins</c>. With none configured, Development allows any
+    /// origin (local front ends) and every other environment allows none, so a deployment must list its
+    /// front ends explicitly.
+    /// </summary>
     public static void AddCorsConfiguration(this IServiceCollection services)
     {
-        services.AddCors(options =>
-        {
-            options.AddPolicy("Security",
-                builder => builder
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
-        });
+        services.AddCors();
+        services.AddOptions<CorsOptions>()
+            .Configure<IConfiguration, IHostEnvironment>((options, configuration, environment) =>
+            {
+                var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+
+                options.AddPolicy(CorsPolicy, policy =>
+                {
+                    if (allowedOrigins.Length > 0)
+                        policy.WithOrigins(allowedOrigins);
+                    else if (environment.IsDevelopment())
+                        policy.AllowAnyOrigin();
+
+                    policy.AllowAnyMethod().AllowAnyHeader();
+                });
+            });
     }
 
     public static void AddCustomResponseFluentValidation(this IServiceCollection services)

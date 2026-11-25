@@ -127,7 +127,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
   - **Impact:** a failure in between leaves a user with no role, and the bootstrap then fails on every restart. → **F-16**
 - **A-17 — Persistence depends on Application** for `IRepository<T>`, settings, `Constants` and `ToPacificStandardTime()`. → **F-16**
 - **A-18 — `IServiceBase` covers only 4 of 14 service interfaces** (Department, Point, Route, Vehicle). CRUD-like City, Schedule and User do not use it, and Reservation left it when F-38 removed its unbounded `GetAllAsync`. → **F-18**
-- **A-19 — No HSTS or security headers.** There is `UseHttpsRedirection` (`Program.cs:62`) but no `UseHsts`. → **F-17**
 - **A-22 — No `.editorconfig` or analyzers** *(partial: CI exists since F-11)*. Nothing enforces a code style or analyzer rules, and warnings do not fail the build. → **F-12**
 - **A-23 — Domain depends on ASP.NET Core Identity**, which pulls EF Core into Domain. → **F-16**
 - **A-60 — HTTP and Identity UI leak into inner layers** *(new; partly subjective)*.
@@ -146,7 +145,6 @@ None open. A-36 was resolved by F-28 (see §5.2).
 - **A-64 — Nullable annotations are defeated** *(new)*. 7 `?.ToDto()!` and 19 `IsActive!.Value` in Application, plus `Errors = null!` in `JsonResponse`. The root cause is the tri-state `bool? IsActive` on entities. → **F-56**
 #### 🟢 Low
 
-- **A-24 — CORS `AllowAnyOrigin`** (`ServiceExtensions.cs:174`), mitigated because the API uses bearer tokens. → **F-17**
 - **A-25 — Reflection-based DI over `AppDomain` assemblies.** It also filters with `inherit: true` but registers with `inherit: false`, so a subclass that only inherits the attribute is silently skipped (`src/GoTransport.Application/RegisterLayerExtensions.cs:39` vs `:49-56`). → **F-15**
 - **A-26 — Thin generic repository** with an unused public `Context`. → **F-15**
 - **A-27 — Hard deletes despite `IsActive` columns.** → **F-23**
@@ -217,6 +215,8 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | A-12 | 🟢 Sync `SaveChanges` was not overridden | F-13 (`[Fix] Stamp audit columns on synchronous saves too`). `ApplicationDbContext` overrides the two `bool acceptAllChangesOnSuccess` overloads that every `SaveChanges`/`SaveChangesAsync` call ends in, so both paths stamp the audit columns. A component test saves synchronously and reads the stamps back. |
 | A-10 | 🟡 No `AsNoTracking` | F-09 (`[Refactor] Read without change tracking where nothing is saved back`). The specifications behind GET endpoints and cached catalogs (City, Department, Point, Route, Vehicle, the Schedules of a Route, Reservation detail and passenger lookup) call `AsNoTracking()`; the ones that load an entity to update stay tracked. The cached Vehicle catalog now includes the Manufacturer and the Schedules of a Route include their Vehicle. `SpecificationTrackingTests` pins both kinds. |
 | A-16 | 🟡 The cache was never invalidated | F-10 (`[Fix] Drop cached catalogs on every write and keep them longer`). Department, Point, Route, Vehicle and City writes call `ICacheService.Remove` for every cached list they make stale (a Point or City write also drops the Route list, whose Routes embed them). With invalidation in place the committed TTLs rise from 1/1 to 30/120 minutes (sliding/absolute). `CatalogCacheTests` covers a create and a cross-list update over the real memory cache. |
+| A-19 | 🟡 No HSTS or security headers | F-17 (`[Fix] Restrict CORS to configured origins and add HSTS and security headers`). `UseHsts` runs outside Development, and `SecurityHeadersMiddleware` adds `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and a `default-src 'none'` content policy (Swagger UI excepted). `HttpHardeningTests` checks them. |
+| A-24 | 🟢 CORS `AllowAnyOrigin` | F-17 (same commit). Origins come from `Cors:AllowedOrigins`; with none configured, Development allows any origin and every other environment allows none. Component tests cover the unconfigured and configured cases. |
 
 ### 5.3 No longer applicable
 
@@ -374,7 +374,7 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | [ ] | F-14 | Fix `ReservationService.GetAllAsync` (`Include`s / projection) (A-13) — *superseded by F-38, which removed `GetAllAsync`* | 🟡 | Data | S | ❌ Won't do | Juan Mesa | — | ✅ |
 | [ ] | F-15 | Replace reflection DI with Scrutor or explicit registration; drop the thin repository surface (A-25, A-26) | 🟢 | Patterns/DI | M | ⬜ Open | — | — | ⬜ |
 | [ ] | F-16 | Persistence → Domain only; move the constant/helper to Domain/SharedKernel; unit of work for multi-step writes (A-11, A-17, A-23) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
-| [ ] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ⬜ Open | — | — | ⬜ |
+| [x] | F-17 | Restrict CORS to per-environment origins + `UseHsts` + security headers (A-19, A-24) | 🟢 | Security | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-18 | Put every service behind `IServiceBase` (or remove it) (A-18) | 🟡 | Architecture | M | ⬜ Open | — | — | ⬜ |
 | [x] | F-19 | `IOptions<T>` instead of `IOptionsSnapshot<T>` for stable config (A-21) | 🟢 *(was 🟡)* | DI | S | ✅ Done | Juan Mesa | — | ✅ |
 | [ ] | F-20 | Fix typos (`Ruote`→`Route`) + remove dead code + align conventions (A-30, A-32, A-68) | 🟢 | Quality | S | ⬜ Open | — | — | ⬜ |
@@ -425,9 +425,9 @@ None open. A-36 was resolved by F-28 (see §5.2).
 | 🔴 Critical | 2 | 0 | 0 | 2 | 0 |
 | 🟠 High | 13 | 0 | 0 | 13 | 0 |
 | 🟡 Medium | 31 | 9 | 0 | 21 | 1 |
-| 🟢 Low | 13 | 6 | 0 | 7 | 0 |
-| **Total** | **59** | **15** | **0** | **43** | **1** |
-| **% Completed** (Done ÷ Total − Won't do) | | | | **74%** | |
+| 🟢 Low | 13 | 5 | 0 | 8 | 0 |
+| **Total** | **59** | **14** | **0** | **44** | **1** |
+| **% Completed** (Done ÷ Total − Won't do) | | | | **76%** | |
 
 ---
 

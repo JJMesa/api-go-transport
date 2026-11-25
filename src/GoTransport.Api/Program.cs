@@ -55,15 +55,21 @@ try
 
     app.UseErrorHandlerMiddleware();
 
+    app.UseSecurityHeaders();
+
     if (app.Environment.IsDevelopment())
     {
         app.UseSwagger();
         app.UseSwaggerUI();
     }
 
+    // HSTS tells browsers to use HTTPS only; not in Development, where it would stick to localhost.
+    if (!app.Environment.IsDevelopment())
+        app.UseHsts();
+
     app.UseHttpsRedirection();
 
-    app.UseCors("Security");
+    app.UseCors(ServiceExtensions.CorsPolicy);
 
     app.UseAuthentication();
 

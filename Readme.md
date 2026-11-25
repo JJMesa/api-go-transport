@@ -63,6 +63,7 @@ dotnet user-secrets set "AdminBootstrap:Password" "<first administrator password
 | `CachingSettings` | `SlidingExpiration`, `AbsoluteExpiration` | Minutes |
 | `LockoutSettings` | `MaxFailedAccessAttempts`, `LockoutTimeInMinutes` | Defaults 5 attempts / 15 minutes |
 | `AdminBootstrap` | `Email`, `Password`, optional `FirstName`, `LastName` | Creates the first `Administrador` at startup; remove it once that user exists. The password needs 12+ characters (6 distinct) with upper and lower case, a digit and a symbol |
+| `Cors` | `AllowedOrigins` (array) | Browser front ends allowed to call the API. Unset: any origin in Development, none elsewhere |
 | `Serilog` | — | Console plus a daily rolling file in `src/GoTransport.Api/Logs/` (7-day retention) |
 
 ### 2. Create the database
