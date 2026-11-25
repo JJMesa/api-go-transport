@@ -57,6 +57,9 @@ jobs:
           -reporttypes:"Html;Cobertura;MarkdownSummaryGithub"
           "riskHotspotsAnalysisThresholds:metricThresholdForCrapScore=30"
 
+      - name: Coverage gate tests
+        run: python3 -m unittest discover --start-directory tools/coverage
+
       # Fails under 80% line / 60% branch coverage or on any method with CRAP above 30.
       - name: Coverage gate
         run: |

@@ -53,6 +53,7 @@ dotnet test tests/GoTransport.Api.Unit.Tests --settings coverage.runsettings --r
 dotnet test tests/GoTransport.Api.Component.Tests --settings coverage.runsettings --results-directory coverage/raw
 dotnet reportgenerator -reports:"coverage/raw/**/coverage.cobertura.xml" -targetdir:coverage/report -reporttypes:"Html;Cobertura"
 python tools/coverage/coverage_gate.py coverage/report/Cobertura.xml
+python -m unittest discover -s tools/coverage   # tests of the gate script itself
 
 # A single test class or method
 dotnet test --filter "FullyQualifiedName~CityServiceTests"
